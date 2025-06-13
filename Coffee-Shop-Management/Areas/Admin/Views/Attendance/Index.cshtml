@@ -1,0 +1,689 @@
+﻿@{
+    ViewData["Title"] = "Quản lý Chấm công & Duyệt lương";
+    Layout = "_Layout"; // Chỉ định layout sẽ sử dụng
+}
+
+@* --- SECTION STYLES --- *@
+@section Styles {
+    @* Chỉ thêm CSS cần thiết cho trang này mà Layout chưa có *@
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.5/css/dataTables.bootstrap5.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+
+    @* Phần CSS tùy chỉnh cho trang này *@
+    <style>
+        /* --- Biến màu chủ đạo --- */
+        :root {
+            --primary-color: #5d87ff;
+            --primary-color-rgb: 93, 135, 255;
+            --light-blue-bg: #ecf2ff;
+        }
+        /* --- Style tổng thể --- */
+        .page-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        /* --- Card Styling --- */
+        .attendance-card {
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
+            margin-bottom: 1.5rem;
+            background-color: #fff;
+        }
+
+            .attendance-card .card-header {
+                background-color: var(--light-blue-bg);
+                border-bottom: 1px solid #e9ecef;
+                padding: 0.75rem 1.25rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .attendance-card .card-title {
+                color: var(--primary-color);
+                font-weight: 600;
+                margin-bottom: 0;
+                font-size: 1.1rem;
+                display: inline-flex;
+                align-items: center;
+            }
+
+                .attendance-card .card-title i {
+                    color: var(--primary-color);
+                    margin-right: 0.5rem;
+                }
+
+        .attendance-table-card .card-body {
+            padding: 0;
+        }
+
+        .attendance-table-card .table-responsive {
+            border: none;
+            border-radius: 0;
+        }
+
+        .attendance-table-card table.dataTable {
+            margin-bottom: 0 !important;
+        }
+
+        .attendance-table-card .card-footer {
+            background-color: #f8f9fa;
+            padding: 0.6rem 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+        /* --- Table Styling --- */
+        .table th, .table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        #attendanceDataTable thead th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom-width: 2px;
+            border-color: #dee2e6;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        #attendanceDataTable td:nth-child(2) {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #attendanceDataTable th:last-child, #attendanceDataTable td:last-child {
+            white-space: normal;
+        }
+        /* --- DataTables Controls --- */
+        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_paginate {
+            display: none !important;
+        }
+
+        .dataTables_info_wrapper {
+            padding: 0;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        /* --- Modal Styling --- */
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: none;
+            padding: 1rem 1.25rem;
+        }
+
+            .modal-header .modal-title {
+                font-weight: 600;
+                font-size: 1.15rem;
+            }
+
+        .modal-content {
+            border-radius: 0.75rem;
+            border: none;
+            overflow: hidden;
+        }
+        /* Đã có bo góc ở đây */
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        /* --- Button Styling --- */
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+            .btn-primary-custom:hover, .btn-primary-custom:focus {
+                background-color: #4a6fdd;
+                border-color: #4a6fdd;
+                color: white;
+            }
+
+        .btn-outline-primary-custom {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+            .btn-outline-primary-custom:hover, .btn-outline-primary-custom:focus {
+                background-color: var(--light-blue-bg);
+                color: var(--primary-color);
+                border-color: var(--primary-color);
+            }
+
+  
+        /* --- Badge Styling --- */
+        .badge {
+            font-size: 0.9em;
+            padding: 0.4em 0.65em;
+            font-weight: 600;
+            border-radius: 0.4rem;
+            vertical-align: middle;
+        }
+          
+        /* --- Custom Controls Section --- */
+        .controls-row {
+            margin-bottom: 1.5rem;
+        }
+            /* Giữ margin bottom */
+            .controls-row .form-label, .top-controls-group .form-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.3rem;
+                color: #495057;
+                font-weight: 500;
+                display: block; /* Đảm bảo label luôn ở trên */
+            }
+
+            .controls-row .input-group .input-group-text {
+                font-size: 1rem;
+                background-color: #e9ecef;
+                border-color: #ced4da;
+            }
+        /* --- Table Responsive Container --- */
+        .table-responsive {
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+        /* --- Modal Edit Fields --- */
+        .edit-control {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            width: 100%;
+            border-radius: 0.4rem;
+            border: 1px solid #ced4da;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        textarea.edit-control {
+            min-height: 70px;
+        }
+
+        .form-label-group {
+            margin-bottom: 1rem;
+        }
+
+            .form-label-group label {
+                font-weight: 500;
+                display: block;
+                margin-bottom: 0.4rem;
+                font-size: 0.85rem;
+                color: #495057;
+            }
+
+        #modalActionButtons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .readonly-info p {
+            margin-bottom: 0.7rem;
+            word-wrap: break-word;
+            white-space: normal;
+            font-size: 0.9rem;
+            color: #343a40;
+            line-height: 1.6;
+        }
+
+        .readonly-info strong {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        /* --- Custom Pagination --- */
+        #customPagination .pagination {
+            margin: 0;
+        }
+
+        #customPagination .page-link {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.75rem;
+            color: var(--primary-color);
+            border: 1px solid #dee2e6;
+            margin: 0 2px;
+            border-radius: 0.3rem;
+            background-color: #fff;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #customPagination .page-item.disabled .page-link {
+            color: #6c757d;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        #customPagination .page-item.active .page-link {
+            z-index: 3;
+            color: #fff;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        #customPagination .page-link:hover {
+            background-color: var(--light-blue-bg);
+            border-color: #dee2e6;
+            color: var(--primary-color);
+        }
+
+        #customPagination .page-item.active .page-link:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+        /* --- Cột Hành động --- */
+        #attendanceDataTable td:last-child {
+            text-align: center;
+            min-width: 80px;
+        }
+        /* --- Spinner và Processing Indicator --- */
+        #modalContentLoading .spinner-border {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .dataTables_processing {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            margin-left: -100px;
+            margin-top: -26px;
+            text-align: center;
+            padding: 1em 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 1px solid var(--light-blue-bg);
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1051;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        /* --- Focus Styles --- */
+        .form-control:focus, .form-select:focus, .btn:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
+            outline: 0;
+        }
+
+        *:focus {
+            outline: none;
+        }
+
+        .form-control:focus-visible, .form-select:focus-visible, .btn:focus-visible, a:focus-visible {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
+            outline: 0;
+        }
+        /* --- Loading Overlay --- */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.7);
+            color: #333;
+        }
+
+        body > .loading-overlay {
+            position: fixed;
+            z-index: 1060;
+        }
+
+    </style>
+}
+
+@* --- HTML BODY --- *@
+<div class="container-fluid">
+
+    @* --- Hàng chứa các Control (ĐÃ TÁI CẤU TRÚC) --- *@
+    <div class="row mb-3 gy-3 gx-lg-3 gx-2 align-items-end controls-row">
+        @* --- Cột bên trái: Bộ lọc chính --- *@
+        <div class="col-lg-12">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6 col-lg-5">
+                    @* Điều chỉnh độ rộng cột con *@
+                    <div class="row g-2">
+                        <div class="col-6"><label for="fromDate" class="form-label">Từ ngày</label><input type="text" class="form-control flatpickr-input" id="fromDate" placeholder="dd/mm/yyyy" /></div>
+                        <div class="col-6"><label for="toDate" class="form-label">Đến ngày</label><input type="text" class="form-control flatpickr-input" id="toDate" placeholder="dd/mm/yyyy" /></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-lg-2 col-6"><label for="shiftFilter" class="form-label">Ca làm</label><select class="form-select" id="shiftFilter"><option value="" selected>Tất cả ca</option></select></div>
+                <div class="col-md-3 col-lg-2 col-6"><label for="attendanceStatusFilter" class="form-label">Trạng thái CC</label><select class="form-select" id="attendanceStatusFilter"><option selected value="">Tất cả</option><option value="Đúng giờ">Đúng giờ</option><option value="Vào trễ">Vào trễ</option><option value="Ra sớm">Ra sớm</option><option value="Vào trễ, Ra sớm">Vào trễ, Ra sớm</option><option value="Vắng mặt">Vắng mặt</option><option value="Chưa vào ca">Chưa vào ca</option><option value="Khác">Khác</option></select></div>
+                <div class="col-md-3 col-lg-3 col-6"><label for="approvalStatusFilter" class="form-label">Trạng thái duyệt</label><select class="form-select" id="approvalStatusFilter"><option selected value="">Tất cả</option><option value="Chờ duyệt">Chờ duyệt</option><option value="Đã duyệt">Đã duyệt</option><option value="Từ chối">Từ chối</option></select></div>
+            </div>
+        </div>
+
+        @* --- Cột bên phải: Tìm kiếm, Hiện và Xuất Excel --- *@
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-end align-items-end gap-2">
+                @* Sử dụng flexbox để sắp xếp các control *@
+                <div class="flex-grow-1 col-md-6 col-lg-6" style="min-width: 180px;">
+                    @* Cho phép ô tìm kiếm co dãn *@
+                    <label for="generalSearch" class="form-label">Tìm kiếm</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search" class="form-control" id="generalSearch" placeholder="Tên nhân viên..." />
+                    </div>
+                </div>
+                <div class="col-md-0">
+                    <label for="customLengthSelect" class="form-label">Hiện</label>
+                    <select class="form-select" id="customLengthSelect" style="width: auto;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+               
+            </div>
+        </div>
+    </div> @* --- Hết hàng chứa Control --- *@
+
+
+    @* --- Card chứa Bảng DataTable --- *@
+    <div class="card shadow-sm attendance-table-card">
+        <div class="card-header d-flex justify-content-between flex-wrap">
+            <h5 class="card-title mb-2"><i class="bi bi-calendar-check-fill me-2"></i>Danh sách Chấm công</h5>
+            @* Nút Export đã được chuyển lên trên *@
+            <div class="">
+                @* Nút Xuất Excel được chuyển lên đây *@
+                <button type="button" class="btn btn-success   btn-export" data-bs-toggle="modal" data-bs-target="#exportExcelModal">
+                    <i class="bi bi-download me-1"></i> Xuất Báo Cáo
+                </button>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0">
+            <div class="table-responsive position-relative">
+                <div class="dataTables_processing" style="display: none">Đang xử lý...</div>
+                <table id="attendanceDataTable" class="table table-hover table-bordered" style="width: 100%">
+                    <thead class="table-light"><tr><th>Ngày</th><th>Nhân viên</th><th>Ca làm</th><th>Giờ vào</th><th>Giờ ra</th><th>Trạng thái CC</th><th class="text-end">Lương TT</th><th class="text-center">Trạng thái Duyệt</th><th class="text-center">Hành động</th></tr></thead>
+                    <tbody id="attendanceTableBody"><tr><td colspan="9" class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải dữ liệu...</span></div><p class="mt-2 text-muted">Đang tải dữ liệu...</p></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light py-2">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <div id="attendancePageInfo" class="dataTables_info_wrapper text-muted mb-2 mb-md-0"></div>
+                <nav aria-label="Attendance table navigation"><ul class="pagination pagination-sm mb-0 justify-content-center justify-content-md-end" id="customPagination"><li class="page-item" id="attendanceFirstPage"><a class="page-link" href="#">&laquo;</a></li><li class="page-item" id="attendancePrevPage"><a class="page-link" href="#">&lt;</a></li><li class="page-item" id="attendanceNextPage"><a class="page-link" href="#">&gt;</a></li><li class="page-item" id="attendanceLastPage"><a class="page-link" href="#">&raquo;</a></li></ul></nav>
+            </div>
+        </div>
+    </div>
+</div>
+@* --- Hết container-fluid --- *@
+
+@* --- MODAL CHI TIẾT & CHỈNH SỬA --- *@
+<div class="modal fade" id="attendanceDetailModal" tabindex="-1" aria-labelledby="attendanceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            @* Đã được bo tròn bởi CSS *@
+            <div class="modal-header"><h5 class="modal-title" id="attendanceDetailModalLabel"><i class="bi bi-info-circle-fill me-2"></i>Chi tiết Chấm công & Duyệt lương</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body p-4">
+                <div id="modalContentLoading" class="text-center p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Đang tải...</span></div><p class="mt-2 text-muted">Đang tải dữ liệu...</p></div>
+                <form id="modalContentData" class="">
+                    <input type="hidden" id="modalAssignmentId">
+                    <h6 class="text-primary fw-semibold mb-3"><i class="bi bi-person-badge me-1"></i>Thông tin Nhân viên & Phân công</h6>
+                    <div class="row mb-3 readonly-info"><div class="col-md-6"><p><strong>Nhân viên:</strong> <span id="modalEmployeeName">N/A</span></p><p class="mb-md-0"><strong>Người phân công:</strong> <span id="modalAssignedBy">N/A</span></p></div><div class="col-md-6"><p><strong>Thời gian phân công:</strong> <span id="modalAssignmentCreatedAt">N/A</span></p></div></div>
+                    <hr class="my-3">
+                    <h6 class="text-primary fw-semibold mb-3"><i class="bi bi-calendar-week me-1"></i>Thông tin Ca làm & Ngày làm việc</h6>
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalWorkDateInput">Ngày làm việc:</label><input type="date" class="form-control form-control-sm edit-control" id="modalWorkDateInput"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalAssignedStartTimeInput">Giờ bắt đầu ca:</label><input type="time" class="form-control form-control-sm edit-control" id="modalAssignedStartTimeInput" step="300"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalAssignedEndTimeInput">Giờ kết thúc ca:</label><input type="time" class="form-control form-control-sm edit-control" id="modalAssignedEndTimeInput" step="300"></div></div>
+                    </div>
+                    <hr class="my-3">
+                    <h6 class="text-primary fw-semibold mb-3"><i class="bi bi-clock-history me-1"></i>Thông tin Chấm công Thực tế</h6>
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalActualClockInInput">Giờ vào thực tế:</label><input type="time" class="form-control form-control-sm edit-control" id="modalActualClockInInput" step="60"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalActualClockOutInput">Giờ ra thực tế:</label><input type="time" class="form-control form-control-sm edit-control" id="modalActualClockOutInput" step="60"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalAttendanceStatusSelect">Trạng thái chấm công:</label><select class="form-select form-select-sm edit-control" id="modalAttendanceStatusSelect"><option value="Chưa vào ca">Chưa vào ca</option><option value="Đúng giờ">Đúng giờ</option><option value="Vào trễ">Vào trễ</option><option value="Ra sớm">Ra sớm</option><option value="Vào trễ, Ra sớm">Vào trễ, Ra sớm</option><option value="Vắng mặt">Vắng mặt</option><option value="Khác">Khác</option></select></div></div>
+                    </div>
+                    <hr class="my-3">
+                    <h6 class="text-primary fw-semibold mb-3"><i class="bi bi-cash-coin me-1"></i>Thông tin Tính lương</h6>
+                    <div class="row mb-3 g-3">
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalWageRateSnapshotInput">Mức lương/giờ:</label><input type="number" step="100" min="0" class="form-control form-control-sm edit-control" id="modalWageRateSnapshotInput" placeholder="đ"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalWorkedHoursInput">Số giờ làm:</label><input type="number" step="0.01" min="0" class="form-control form-control-sm edit-control" id="modalWorkedHoursInput" placeholder="giờ"></div></div>
+                        <div class="col-md-4"><div class="form-label-group"><label for="modalFinalWageInput" class="fw-bold">Lương cuối cùng:</label><input type="number" step="100" min="0" class="form-control form-control-sm edit-control" id="modalFinalWageInput" placeholder="Nhập lương cuối cùng (đ)"></div></div>
+                    </div>
+                    <hr class="my-3">
+                    <h6 class="text-primary fw-semibold mb-3"><i class="bi bi-person-check me-1"></i>Thông tin Duyệt</h6>
+                    <div class="row mb-2 g-3">
+                        <div class="col-md-6 readonly-info"><p><strong>Trạng thái duyệt:</strong> <span id="modalApprovalStatusBadge"><span class="badge bg-secondary">N/A</span></span></p><p><strong>Người duyệt:</strong> <span id="modalApprovedBy">N/A</span></p><p class="mb-0"><strong>Thời gian duyệt:</strong> <span id="modalApprovedAt">N/A</span></p></div>
+                        <div class="col-md-6"><div class="form-label-group"><label for="modalApprovalNoteInput">Ghi chú:</label><textarea class="form-control form-control-sm edit-control" id="modalApprovalNoteInput" rows="4" placeholder="Ví dụ: Lễ X2 lương, OT, Lý do từ chối..."></textarea></div></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between"><button type="button" class="btn btn-secondary  " data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i> Đóng</button><div id="modalActionButtons" class="d-flex align-items-center"><span class="text-muted fst-italic">Vui lòng chờ tải dữ liệu...</span></div></div>
+        </div>
+    </div>
+</div>
+
+@* --- THÊM: MODAL CHỌN KHOẢNG NGÀY XUẤT EXCEL (ĐÃ SỬA ĐỂ GIỐNG MODAL EDIT) --- *@
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        @* Giữ kích thước mặc định, không phải modal-lg như modal edit *@
+        <div class="modal-content">
+            @* 1. Header: Thêm class modal-header-primary và đổi btn-close *@
+            <div class="modal-header modal-header-primary">
+                @* Hoặc bạn có thể thử bỏ class này nếu CSS gốc .modal-header đã ăn màu xanh *@
+                <h5 class="modal-title" id="exportExcelModalLabel"><i class="bi bi-calendar-range me-2"></i>Chọn khoảng thời gian xuất báo cáo lương</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> @* Nút close đã được style trắng bởi .modal-header-primary .btn-close trong CSS trên *@
+            </div>
+            @* 2. Body: Thêm class p-4 *@
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label">Chọn nhanh:</label>
+                    <div class="btn-group w-100" role="group" aria-label="Quick date ranges">
+                        <button type="button" class="btn   btn-outline-secondary quick-range-btn" data-range="thisWeek">Tuần này</button>
+                        <button type="button" class="btn   btn-outline-secondary quick-range-btn" data-range="thisMonth">Tháng này</button>
+                        <button type="button" class="btn   btn-outline-secondary quick-range-btn" data-range="thisYear">Năm nay</button>
+                    </div>
+                </div>
+                <hr>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="exportFromDate" class="form-label">Từ ngày:</label>
+                        <input type="text" class="form-control flatpickr-input-modal" id="exportFromDate" placeholder="dd/mm/yyyy">
+                    </div>
+                    <div class="col-6">
+                        <label for="exportToDate" class="form-label">Đến ngày:</label>
+                        <input type="text" class="form-control flatpickr-input-modal" id="exportToDate" placeholder="dd/mm/yyyy">
+                    </div>
+                </div>
+                <small id="exportDateError" class="text-danger mt-2 d-block"></small>
+            </div>
+            @* 3. Footer: Thêm class justify-content-between *@
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary  " data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i> Hủy</button> @* Thêm icon cho giống modal edit *@
+                <button type="button" class="btn btn-success  " id="confirmExportBtn">
+                    <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                    <i class="bi bi-download me-1"></i>Xuất báo cáo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* --- SECTION SCRIPTS --- *@
+@section Scripts {
+    @* JS cần thiết cho trang này *@
+    <script src="https://cdn.datatables.net/2.0.5/js/dataTables.bootstrap5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+    @* Layout đã có Notyf và SweetAlert2 *@
+
+    <script>
+        /* --- Các hàm tiện ích --- */
+        const formatDate = (date) => { if (!date || !(date instanceof Date)) return ''; const d = new Date(date); const month = ('0' + (d.getMonth() + 1)).slice(-2); const day = ('0' + d.getDate()).slice(-2); return [d.getFullYear(), month, day].join('-'); };
+        const formatTime = (date) => { if (!date || !(date instanceof Date)) return ''; const d = new Date(date); const hours = ('0' + d.getHours()).slice(-2); const minutes = ('0' + d.getMinutes()).slice(-2); return `${hours}:${minutes}`; };
+        const parseDate = (str) => { if (!str) return null; try { return new Date(str + 'T00:00:00'); } catch (e) { console.error("Lỗi phân tích chuỗi ngày:", str, e); return null; } };
+        const combineDateTime = (dateStr, timeStr) => { if (!dateStr || !timeStr) return null; try { const timeParts = timeStr.split(':'); if (timeParts.length < 2) return null; const hours = ('0' + timeParts[0]).slice(-2); const minutes = ('0' + timeParts[1]).slice(-2); const dateTimeString = `${dateStr}T${hours}:${minutes}:00`; return new Date(dateTimeString); } catch (e) { console.error("Lỗi kết hợp ngày giờ:", dateStr, timeStr, e); return null; } };
+        const parseCurrency = (str) => { if (!str) return 0; const cleaned = str.replace(/[^\d,.-]/g, '').replace(',', '.'); return parseFloat(cleaned) || 0; };
+        const calculateHours = (startTimeStr, endTimeStr) => { if (!startTimeStr || !endTimeStr) return 0; try { const startParts = startTimeStr.split(':').map(Number); const endParts = endTimeStr.split(':').map(Number); if (startParts.length < 2 || endParts.length < 2) return 0; const startDate = new Date(2000, 0, 1, startParts[0], startParts[1], 0); let endDate = new Date(2000, 0, 1, endParts[0], endParts[1], 0); if (endDate < startDate) { endDate.setDate(endDate.getDate() + 1); } const diffMillis = endDate - startDate; const diffHours = diffMillis / (1000 * 60 * 60); return parseFloat(diffHours.toFixed(2)); } catch (e) { console.error("Lỗi tính số giờ:", startTimeStr, endTimeStr, e); return null; } };
+        const debounce = (func, delay) => { let debounceTimer; return function () { const context = this; const args = arguments; clearTimeout(debounceTimer); debounceTimer = setTimeout(() => func.apply(context, args), delay); } }
+        function showSuccessToast(message) { if (typeof notyf !== 'undefined') { notyf.success(message || 'Thao tác thành công.'); } else { alert(message || 'Thao tác thành công.'); } }
+        function showErrorAlert(title, message) { if (typeof notyf !== 'undefined') { notyf.error((title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.')); } else { alert((title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.')); } }
+        function showLoading(selector = 'body', message = 'Đang xử lý...') { const $target = $(selector); if ($target.length && $target.find('.loading-overlay').length === 0) { let positionStyle = $target.is('body') ? 'fixed' : 'absolute'; if (positionStyle === 'absolute') { const currentPosition = $target.css('position'); if (!['relative', 'absolute', 'fixed'].includes(currentPosition)) { $target.css('position', 'relative'); } } const zIndex = (positionStyle === 'fixed') ? 1060 : ($target.css('z-index') === 'auto' ? 10 : parseInt($target.css('z-index')) + 1); $target.append(`<div class="loading-overlay" style="position:${positionStyle}; inset:0; z-index:${zIndex}; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.7); color:#333;"><div class="spinner-border text-primary spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div><span>${message}</span></div>`); } }
+        function hideLoading(selector = 'body') { setTimeout(() => { $(selector).find('.loading-overlay').fadeOut(150, function () { $(this).remove(); }); }, 50); }
+        function handleAjaxError(xhr, actionText) { hideLoading(); console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText); let errorMsg = `Không thể ${actionText.toLowerCase()}.`; try { const responseJson = JSON.parse(xhr.responseText); if (responseJson && responseJson.message) { errorMsg = responseJson.message; } else if (responseJson && responseJson.errors) { errorMsg = "Dữ liệu không hợp lệ:\n"; for (const key in responseJson.errors) { if (responseJson.errors.hasOwnProperty(key)) { errorMsg += `- ${responseJson.errors[key].join(', ')}\n`; } } } else if (xhr.statusText) { errorMsg = `Lỗi ${xhr.status}: ${xhr.statusText}`; } } catch (e) { if (xhr.status === 400) { errorMsg += ' Dữ liệu gửi lên không hợp lệ.'; } else if (xhr.status === 401 || xhr.status === 403) { errorMsg = 'Bạn không có quyền thực hiện thao tác này.'; } else if (xhr.status === 404) { errorMsg = 'Không tìm thấy tài nguyên được yêu cầu.'; } else if (xhr.status === 409) { errorMsg = 'Dữ liệu bị trùng lặp hoặc xung đột.'; } else if (xhr.status >= 500) { errorMsg += ' Lỗi máy chủ nội bộ.'; } } showErrorAlert('Lỗi hệ thống', errorMsg); }
+        function getThisWeekRange() { const now = new Date(); const dayOfWeek = now.getDay(); const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff); const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6); return { start: startOfWeek, end: endOfWeek }; }
+        function getThisMonthRange() { const now = new Date(); const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); return { start: startOfMonth, end: endOfMonth }; }
+        function getThisYearRange() { const now = new Date(); const startOfYear = new Date(now.getFullYear(), 0, 1); const endOfYear = new Date(now.getFullYear(), 11, 31); return { start: startOfYear, end: endOfYear }; }
+        function formatDateForFlatpickr(date) { if (!date) return ''; const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
+
+        /* --- Code Thực thi Chính --- */
+        $(document).ready(function () {
+            // --- Tham chiếu DOM ---
+            const attendanceDetailModalEl = document.getElementById('attendanceDetailModal');
+            const modalContentLoadingEl = document.getElementById('modalContentLoading'); const modalContentDataEl = document.getElementById('modalContentData'); const modalContentData = $('#modalContentData'); const modalActionButtonsContainer = $('#modalActionButtons'); const attendanceTableBody = $('#attendanceTableBody'); const customPaginationContainer = $('#customPagination'); const dataTablesInfoContainer = $('#attendancePageInfo'); const processingIndicator = $('.dataTables_processing'); const exportExcelModalEl = document.getElementById('exportExcelModal'); const confirmExportButton = $('#confirmExportBtn'); /* Nút export cũ trong card header không còn */ let dataTableInstance = null; let exportFromDateInstance = null; let exportToDateInstance = null;
+            console.log('[Attendance View] Trang đã tải xong, sẵn sàng khởi tạo.');
+
+            // --- Khởi tạo Flatpickr ---
+            flatpickr('.flatpickr-input', { dateFormat: 'd/m/Y', locale: 'vn', allowInput: true });
+            exportFromDateInstance = flatpickr(".flatpickr-input-modal#exportFromDate", { dateFormat: "d/m/Y", locale: "vn", allowInput: true });
+            exportToDateInstance = flatpickr(".flatpickr-input-modal#exportToDate", { dateFormat: "d/m/Y", locale: "vn", allowInput: true });
+
+            // --- Tải danh sách Ca làm ---
+            function loadShiftFilter() { const $shiftFilter = $('#shiftFilter'); $shiftFilter.prop('disabled', true).html('<option value="">Đang tải ca...</option>'); $.ajax({ url: '@Url.Action("GetShifts", "Attendance", new { area = "Admin" })', type: 'GET', dataType: 'json', success: function (shifts) { $shiftFilter.prop('disabled', false).html('<option value="" selected>Tất cả các ca</option>'); if (shifts && shifts.length > 0) { shifts.forEach(shift => { $shiftFilter.append(`<option value="${shift.shiftId}">${shift.name}</option>`); }); } }, error: function (xhr) { console.error("Lỗi tải danh sách ca làm:", xhr.responseText); showErrorAlert("Lỗi tải bộ lọc", "Không thể tải danh sách ca làm."); $shiftFilter.prop('disabled', false).html('<option value="" selected>Lỗi tải ca</option>'); } }); }
+            loadShiftFilter();
+
+            // --- Khởi tạo DataTable ---
+            try {
+                dataTableInstance = $('#attendanceDataTable').DataTable({
+                    language: { url: '//cdn.datatables.net/plug-ins/2.0.5/i18n/vi.json', processing: "" }, processing: true, serverSide: true, searching: false, lengthChange: false, paging: true, info: false,
+                    ajax: { url: '@Url.Action("GetAttendanceData", "Attendance", new { area = "Admin" })', type: 'POST', dataType: 'json', data: function (d) { d.fromDate = $('#fromDate').val(); d.toDate = $('#toDate').val(); d.approvalStatusFilter = $('#approvalStatusFilter').val(); d.attendanceStatusFilter = $('#attendanceStatusFilter').val(); d.shiftFilter = $('#shiftFilter').val(); d.search.value = $('#generalSearch').val(); if (d.order && d.order.length > 0) { const columnIndex = d.order[0].column; if (d.columns && d.columns[columnIndex]) { const columnName = d.columns[columnIndex].name; if (columnName) { d.columns[columnIndex].name = columnName; } else { console.warn("[DataTable] Không tìm thấy tên cột (name) cho index:", columnIndex); } } else { console.warn("[DataTable] Cấu hình cột không hợp lệ cho index:", columnIndex); } } return d; }, beforeSend: function () { processingIndicator.show(); }, complete: function () { processingIndicator.hide(); }, error: function (xhr, error, thrown) { console.error('[DataTable] Lỗi AJAX:', error, thrown, xhr.status, xhr.responseText); showErrorAlert('Lỗi tải dữ liệu', 'Không thể tải danh sách chấm công.'); $('#attendanceTableBody').html('<tr><td colspan="9" class="text-center text-danger p-4">Không thể tải dữ liệu. Lỗi: ' + (xhr.responseJSON?.message || error || 'Không xác định') + '</td></tr>'); processingIndicator.hide(); }, },
+                    columns: [{ data: 'workDateFormatted', name: 'WorkDate', orderable: true }, { data: 'employeeName', name: 'EmployeeName', orderable: true, className: 'td-employee-name' }, { data: 'shiftInfo', name: 'ShiftInfo', orderable: true }, { data: 'clockInFormatted', name: 'ClockIn', orderable: true, className: 'text-center', render: function (data, type, row) { return data ? data : '-'; } }, { data: 'clockOutFormatted', name: 'ClockOut', orderable: true, className: 'text-center', render: function (data, type, row) { return data ? data : '-'; } }, { data: 'attendanceStatus', name: 'AttendanceStatus', orderable: true, className: 'text-center', render: function (data, type, row) { let badgeClass = 'bg-secondary'; let icon = ''; switch (data) { case 'Đúng giờ': badgeClass = 'bg-success'; icon = '<i class="bi bi-check-lg me-1"></i>'; break; case 'Vào trễ': case 'Ra sớm': case 'Vào trễ, Ra sớm': badgeClass = 'bg-warning text-dark'; icon = '<i class="bi bi-exclamation-triangle-fill me-1"></i>'; break; case 'Vắng mặt': badgeClass = 'bg-danger'; icon = '<i class="bi bi-x-circle-fill me-1"></i>'; break; case 'Chưa vào ca': badgeClass = 'bg-light text-dark'; icon = '<i class="bi bi-clock me-1"></i>'; break; case 'Khác': badgeClass = 'bg-info text-dark'; icon = '<i class="bi bi-question-circle-fill me-1"></i>'; break; } return `<span class="badge ${badgeClass}" title="${data}">${icon}${data}</span>`; } }, { data: 'finalWageFormatted', name: 'FinalWage', orderable: true, className: 'text-end' }, { data: 'approvalStatus', name: 'ApprovalStatus', orderable: true, className: 'text-center', render: function (data, type, row) { let badgeClass = 'bg-secondary'; let icon = ''; switch (data) { case 'Chờ duyệt': badgeClass = 'bg-warning text-dark'; icon = '<i class="bi bi-hourglass-split me-1"></i>'; break; case 'Đã duyệt': badgeClass = 'bg-success'; icon = '<i class="bi bi-check-circle-fill me-1"></i>'; break; case 'Từ chối': badgeClass = 'bg-danger'; icon = '<i class="bi bi-x-octagon-fill me-1"></i>'; break; } return `<span class="badge ${badgeClass}">${icon}${data}</span>`; }, }, { data: 'assignmentId', name: 'Actions', orderable: false, searchable: false, className: 'text-center', render: function (data, type, row) { if (data === null || data === undefined) { return ''; } return `<button class='btn btn-outline-primary-custom   btn-show-detail' data-bs-toggle='modal' data-bs-target='#attendanceDetailModal' data-assignment-id='${data}' title='Chi tiết & Sửa'><i class='bi bi-pencil-square'></i></button>`; }, },],
+                    autoWidth: false, scrollX: true, dom: 'rt', pageLength: 5, order: [[0, 'desc']],
+                    drawCallback: function (settings) { updateCustomPagination(this.api(), '#customPagination', '#attendancePageInfo'); var tooltipTriggerList = [].slice.call(document.querySelectorAll('#attendanceDataTable [title]')); tooltipTriggerList.map(function (tooltipTriggerEl) { var oldTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl); if (oldTooltip) { oldTooltip.dispose(); } return new bootstrap.Tooltip(tooltipTriggerEl); }); },
+                });
+                console.log('[Attendance View] DataTable đã được khởi tạo thành công.');
+            } catch (e) { console.error('[Attendance View] Lỗi nghiêm trọng khi khởi tạo DataTable:', e); showErrorAlert("Lỗi nghiêm trọng", "Không thể khởi tạo bảng dữ liệu. Vui lòng kiểm tra Console (F12)."); }
+
+            // --- Gắn sự kiện cho Controls ---
+            $('#fromDate, #toDate, #approvalStatusFilter, #attendanceStatusFilter, #shiftFilter').on('change', function () { if (dataTableInstance) dataTableInstance.draw(); });
+            $('#generalSearch').on('input', debounce(function () { if (dataTableInstance) { dataTableInstance.search($(this).val()).draw(); } }, 500));
+            $('#customLengthSelect').on('change', function () { if (dataTableInstance) dataTableInstance.page.len($(this).val()).draw(); });
+
+            // --- Xử lý sự kiện mở Modal Chi tiết ---
+            attendanceTableBody.off('click', '.btn-show-detail').on('click', '.btn-show-detail', function (event) { const button = this; const assignmentIdAttr = $(button).data('assignment-id'); if (assignmentIdAttr === undefined || assignmentIdAttr === null) { showErrorAlert("Lỗi", "Không thể xác định ID bản ghi."); return; } const assignmentId = parseInt(assignmentIdAttr, 10); if (isNaN(assignmentId)) { showErrorAlert("Lỗi", "ID bản ghi không hợp lệ."); return; } const modalElement = document.getElementById('attendanceDetailModal'); const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement); if (!modalInstance) { showErrorAlert("Lỗi", "Không thể hiển thị chi tiết."); return; } if (modalContentLoadingEl) { modalContentLoadingEl.innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Đang tải...</span></div><p class="mt-2 text-muted">Đang tải dữ liệu...</p>'; modalContentLoadingEl.style.display = 'block'; } if (modalContentDataEl) { modalContentDataEl.style.display = 'none'; } modalActionButtonsContainer.html('<span class="text-muted fst-italic">Đang tải...</span>'); $('#modalAssignmentId').val(assignmentId); const detailUrl = `@Url.Action("GetAssignmentDetail", "Attendance", new { area = "Admin" })?id=${assignmentId}`; $.ajax({ url: detailUrl, type: 'GET', dataType: 'json', success: function (data) { if (data) { try { $('#modalEmployeeName').text(data.employeeName || 'N/A'); $('#modalAssignedBy').text(data.assignedByUserName || 'N/A'); $('#modalAssignmentCreatedAt').text(data.assignmentCreatedAtFormatted || 'N/A'); $('#modalWorkDateInput').val(data.workDate); $('#modalAssignedStartTimeInput').val(data.assignedStartTime); $('#modalAssignedEndTimeInput').val(data.assignedEndTime); $('#modalActualClockInInput').val(data.actualClockIn || ''); $('#modalActualClockOutInput').val(data.actualClockOut || ''); $('#modalAttendanceStatusSelect').val(data.attendanceStatus || ''); $('#modalWageRateSnapshotInput').val(data.wageRateSnapshot !== null ? data.wageRateSnapshot : ''); $('#modalWorkedHoursInput').val(data.workedHours !== null ? data.workedHours : ''); $('#modalFinalWageInput').val(data.finalWage !== null ? data.finalWage : ''); $('#modalApprovedBy').text(data.approvedByUserName || 'Chưa duyệt'); $('#modalApprovedAt').text(data.approvedAtFormatted || 'Chưa duyệt'); $('#modalApprovalNoteInput').val(data.approvalNote || ''); const statusBadge = $('#modalApprovalStatusBadge'); let badgeClass = 'bg-secondary'; let badgeText = data.approvalStatus || 'Chưa xác định'; let icon = ''; switch (data.approvalStatus) { case 'Chờ duyệt': badgeClass = 'bg-warning text-dark'; icon = '<i class="bi bi-hourglass-split me-1"></i>'; break; case 'Đã duyệt': badgeClass = 'bg-success'; icon = '<i class="bi bi-check-circle-fill me-1"></i>'; break; case 'Từ chối': badgeClass = 'bg-danger'; icon = '<i class="bi bi-x-octagon-fill me-1"></i>'; break; } statusBadge.html(`<span class="badge ${badgeClass}">${icon}${badgeText}</span>`); modalActionButtonsContainer.empty(); modalActionButtonsContainer.append(`<button type="button" class="btn btn-danger  " id="btnReject"><i class="bi bi-hand-thumbs-down-fill me-1"></i> Từ chối</button> <button type="button" class="btn btn-primary-custom  " id="btnApprove"><i class="bi bi-check-circle-fill me-1"></i> Duyệt & Lưu</button>`); $('#btnApprove').off('click').on('click', handleApprove); $('#btnReject').off('click').on('click', handleReject); modalContentData.find('.edit-control').prop('disabled', false); if (modalContentLoadingEl) modalContentLoadingEl.style.display = 'none'; if (modalContentDataEl) modalContentDataEl.style.display = 'block'; console.log("[Attendance View] Đã điền dữ liệu và hiển thị modal content."); } catch (e) { console.error("[Attendance View] Lỗi khi xử lý dữ liệu thành công:", e); showErrorAlert("Lỗi hiển thị", "Có lỗi xảy ra khi hiển thị chi tiết."); if (modalContentLoadingEl) { modalContentLoadingEl.innerHTML = `<p class="text-danger fw-bold">Lỗi xử lý dữ liệu: ${e.message}</p>`; modalContentLoadingEl.style.display = 'block'; } if (modalContentDataEl) modalContentDataEl.style.display = 'none'; modalActionButtonsContainer.html(''); } } else { console.error("[Attendance View] Dữ liệu chi tiết trả về không hợp lệ."); showErrorAlert("Lỗi dữ liệu", "Không nhận được dữ liệu chi tiết hợp lệ."); if (modalContentLoadingEl) { modalContentLoadingEl.innerHTML = '<p class="text-danger fw-bold">Không nhận được dữ liệu chi tiết.</p>'; modalContentLoadingEl.style.display = 'block'; } modalActionButtonsContainer.html(''); if (modalContentDataEl) modalContentDataEl.style.display = 'none'; } }, error: function (xhr, status, error) { console.error("[Attendance View] Lỗi AJAX GetAssignmentDetail:", status, error, xhr.status, xhr.responseText); handleAjaxError(xhr, "tải chi tiết chấm công"); if (modalContentLoadingEl) { modalContentLoadingEl.innerHTML = `<p class="text-danger fw-bold">Lỗi ${xhr.status} khi tải chi tiết: ${xhr.statusText || error}</p>`; modalContentLoadingEl.style.display = 'block'; } modalActionButtonsContainer.html(''); if (modalContentDataEl) modalContentDataEl.style.display = 'none'; }, complete: function () { hideLoading('#attendanceDetailModal .modal-body'); } }); modalInstance.show(); });
+            console.log('[Attendance View] Đã gắn listener click xong.');
+
+            // --- Các hàm xử lý Approve/Reject, getModalData (Tích hợp Swal) ---
+            function handleApprove() { const dataToSend = getModalData(); if (dataToSend === null) return; dataToSend.actionType = "approve"; sendUpdateAjax(dataToSend); }
+            function handleReject() { const note = $('#modalApprovalNoteInput').val()?.trim(); if (!note) { Swal.fire({ title: 'Thiếu thông tin', text: 'Vui lòng nhập lý do từ chối vào Ghi chú của quản lý.', icon: 'warning', confirmButtonText: 'Đã hiểu', customClass: { popup: 'custom-swal-popup', confirmButton: 'btn btn-warning  ' } }).then(() => $('#modalApprovalNoteInput').focus()); return; } const dataToSend = getModalData(); if (dataToSend === null) return; dataToSend.actionType = "reject"; Swal.fire({ title: 'Xác nhận từ chối?', text: "Bạn có chắc chắn muốn từ chối bản ghi chấm công này?", icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="bi bi-hand-thumbs-down-fill me-1"></i> Vẫn từ chối', cancelButtonText: '<i class="bi bi-x me-1"></i> Hủy bỏ', reverseButtons: true, customClass: { popup: 'custom-swal-popup', confirmButton: 'btn btn-danger   ms-2', cancelButton: 'btn btn-secondary   me-2' }, buttonsStyling: false }).then((result) => { if (result.isConfirmed) { sendUpdateAjax(dataToSend); } }); }
+            function getModalData() { const assignmentId = $('#modalAssignmentId').val(); const workDateStr = $('#modalWorkDateInput').val(); if (!workDateStr) { Swal.fire('Thiếu thông tin', 'Ngày làm việc không được để trống.', 'warning').then(() => $('#modalWorkDateInput').focus()); return null; } const data = { assignmentId: parseInt(assignmentId, 10), workDate: workDateStr, assignedStartTime: $('#modalAssignedStartTimeInput').val() || null, assignedEndTime: $('#modalAssignedEndTimeInput').val() || null, actualClockIn: $('#modalActualClockInInput').val() || null, actualClockOut: $('#modalActualClockOutInput').val() || null, attendanceStatus: $('#modalAttendanceStatusSelect').val(), wageRateSnapshot: parseNumberInput('#modalWageRateSnapshotInput'), workedHours: parseNumberInput('#modalWorkedHoursInput'), finalWage: parseNumberInput('#modalFinalWageInput'), approvalNote: $('#modalApprovalNoteInput').val()?.trim() || null }; return data; }
+            function parseNumberInput(selector) { const value = $(selector).val(); if (value === null || value.trim() === '') return null; const number = parseFloat(value); return isNaN(number) ? null : number; }
+            function sendUpdateAjax(dataToSend) { const approveButton = $('#btnApprove'); const rejectButton = $('#btnReject'); const originalApproveText = approveButton.html(); const originalRejectText = rejectButton.html(); approveButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang lưu...'); rejectButton.prop('disabled', true); showLoading('#attendanceDetailModal .modal-content'); $.ajax({ url: '@Url.Action("UpdateAttendance", "Attendance", new { area = "Admin" })', type: 'POST', contentType: 'application/json', data: JSON.stringify(dataToSend), success: function (response) { hideLoading('#attendanceDetailModal .modal-content'); if (response.success) { bootstrap.Modal.getInstance(attendanceDetailModalEl).hide(); showSuccessToast(response.message || "Cập nhật thành công!"); dataTableInstance.draw(false); } else { showErrorAlert("Cập nhật thất bại", response.message || "Có lỗi xảy ra."); approveButton.prop('disabled', false).html(originalApproveText); rejectButton.prop('disabled', false); } }, error: function (xhr, status, error) { hideLoading('#attendanceDetailModal .modal-content'); handleAjaxError(xhr, "cập nhật chấm công"); approveButton.prop('disabled', false).html(originalApproveText); rejectButton.prop('disabled', false); } }); }
+
+            // --- Hàm vẽ Phân trang Tùy chỉnh ---
+            function updateCustomPagination(tableInstance, paginationListSelector, pageInfoSelector) { if (!tableInstance) return; const pageInfo = tableInstance.page.info(); const $paginationList = $(paginationListSelector); const $pageInfoSpan = $(pageInfoSelector); const $paginationNav = $paginationList.parent('nav'); $paginationList.find('.page-item.page-number').remove(); $pageInfoSpan.hide().empty(); $paginationNav.hide(); if (pageInfo.recordsDisplay > 0) { $paginationNav.show(); const startRecord = pageInfo.start + 1; const endRecord = pageInfo.end; const totalRecords = pageInfo.recordsDisplay; $pageInfoSpan.text(`Hiện ${startRecord}-${endRecord} / ${totalRecords.toLocaleString('vi-VN')} mục`).show(); if (pageInfo.pages > 1) { $paginationList.find('.page-item').removeClass('disabled'); const currentPage = pageInfo.page; const totalPages = pageInfo.pages; const maxPagesToShow = 5; let startPage, endPage; if (totalPages <= maxPagesToShow) { startPage = 0; endPage = totalPages - 1; } else { const pagesBefore = Math.floor((maxPagesToShow - 1) / 2); const pagesAfter = Math.ceil((maxPagesToShow - 1) / 2); if (currentPage <= pagesBefore) { startPage = 0; endPage = maxPagesToShow - 1; } else if (currentPage + pagesAfter >= totalPages - 1) { startPage = totalPages - maxPagesToShow; endPage = totalPages - 1; } else { startPage = currentPage - pagesBefore; endPage = currentPage + pagesAfter; } } const prevButton = $paginationList.find('#attendancePrevPage'); const nextButton = $paginationList.find('#attendanceNextPage'); if (startPage > 0) { prevButton.after('<li class="page-item disabled page-number"><span class="page-link">...</span></li>'); } for (let i = startPage; i <= endPage; i++) { const pageNum = i + 1; const $pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`); $pageItem.insertBefore(nextButton).find('a').on('click', function (e) { e.preventDefault(); if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) { tableInstance.page(i).draw('page'); } }); } if (endPage < totalPages - 1) { nextButton.before('<li class="page-item disabled page-number"><span class="page-link">...</span></li>'); } $paginationList.find('#attendanceFirstPage').toggleClass('disabled', currentPage === 0); prevButton.toggleClass('disabled', currentPage === 0); nextButton.toggleClass('disabled', currentPage >= totalPages - 1); $paginationList.find('#attendanceLastPage').toggleClass('disabled', currentPage >= totalPages - 1); } else { $paginationList.find('.page-item').addClass('disabled'); } } else { $pageInfoSpan.text("(Không có mục nào)").show(); $paginationNav.hide(); } }
+
+            // --- Hàm gắn sự kiện cho phân trang tùy chỉnh ---
+            function setupCustomPaginationEvents(tableInstance, paginationListSelector) { const $paginationNav = $(paginationListSelector).parent(); $paginationNav.off('click').on('click', 'a.page-link', function (e) { e.preventDefault(); const $parentLi = $(this).closest('.page-item'); if ($parentLi.hasClass('disabled') || $parentLi.hasClass('active') || !tableInstance) { return; } const parentId = $parentLi.attr('id'); if (parentId === 'attendanceFirstPage') { tableInstance.page('first').draw('page'); } else if (parentId === 'attendancePrevPage') { tableInstance.page('previous').draw('page'); } else if (parentId === 'attendanceNextPage') { tableInstance.page('next').draw('page'); } else if (parentId === 'attendanceLastPage') { tableInstance.page('last').draw('page'); } }); }
+
+            // Khởi tạo phân trang tùy chỉnh
+            setupCustomPaginationEvents(dataTableInstance, '#customPagination');
+
+            // --- Xử lý Export Excel ---
+            const exportModalInstance = new bootstrap.Modal(exportExcelModalEl);
+            // Sự kiện click nút export mới (trên hàng control) đã được xử lý bằng data-bs-toggle, chỉ cần xử lý logic modal
+            $('.quick-range-btn').on('click', function () { const rangeType = $(this).data('range'); let startDate, endDate; switch (rangeType) { case 'thisWeek': const rangeWeek = getThisWeekRange(); startDate = rangeWeek.start; endDate = rangeWeek.end; break; case 'thisMonth': const rangeMonth = getThisMonthRange(); startDate = rangeMonth.start; endDate = rangeMonth.end; break; case 'thisYear': const rangeYear = getThisYearRange(); startDate = rangeYear.start; endDate = rangeYear.end; break; } if (startDate && endDate && exportFromDateInstance && exportToDateInstance) { exportFromDateInstance.setDate(startDate, true, "d/m/Y"); exportToDateInstance.setDate(endDate, true, "d/m/Y"); $('#exportDateError').text(''); } });
+            confirmExportButton.on('click', function () {
+                const fromDateVal = $('#exportFromDate').val();
+                const toDateVal = $('#exportToDate').val();
+                const $button = $(this);
+                const $spinner = $button.find('.spinner-border');
+                const $icon = $button.find('i');
+                const $errorMsg = $('#exportDateError');
+
+                $errorMsg.text(''); // Xóa thông báo lỗi cũ
+
+                if (!fromDateVal || !toDateVal) {
+                    $errorMsg.text('Vui lòng chọn ngày bắt đầu và kết thúc.');
+                    return;
+                }
+
+                // --- Bắt đầu xử lý AJAX ---
+                const checkUrl = `@Url.Action("ExportPayrollExcel", "Attendance", new { area = "Admin" })?fromDate=${encodeURIComponent(fromDateVal)}&toDate=${encodeURIComponent(toDateVal)}&checkOnly=true`; // Thêm checkOnly=true
+
+                console.log("[Attendance View] Bắt đầu kiểm tra dữ liệu Excel:", checkUrl);
+                $spinner.removeClass('d-none'); // Hiện spinner
+                $icon.addClass('d-none');       // Ẩn icon
+                $button.prop('disabled', true); // Vô hiệu hóa nút
+
+                $.ajax({
+                    url: checkUrl,
+                    type: 'GET', // Hoặc 'POST' nếu bạn thích, nhưng GET hợp lý hơn cho việc kiểm tra
+                    dataType: 'json',
+                    success: function (response) {
+                        // Luôn ẩn spinner và kích hoạt lại nút khi AJAX xong (dù thành công hay không ở bước check)
+                        // Việc tải file thực sự sẽ do trình duyệt xử lý riêng
+                        $spinner.addClass('d-none');
+                        $icon.removeClass('d-none');
+                        $button.prop('disabled', false);
+
+                        if (response && response.success) {
+                            console.log("[Attendance View] Kiểm tra thành công, bắt đầu tải file.");
+                            showSuccessToast("Đang chuẩn bị file Excel để tải xuống..."); // Thông báo cho người dùng
+
+                            // Tạo URL để tải file thực sự (không có checkOnly=true)
+                            const downloadUrl = `@Url.Action("ExportPayrollExcel", "Attendance", new { area = "Admin" })?fromDate=${encodeURIComponent(fromDateVal)}&toDate=${encodeURIComponent(toDateVal)}`;
+
+                            // Dùng window.location.href để trình duyệt xử lý việc tải file
+                            window.location.href = downloadUrl;
+
+                            // Đóng modal sau một khoảng thời gian ngắn
+                            setTimeout(() => {
+                                if (bootstrap.Modal.getInstance(exportExcelModalEl)) {
+                                    bootstrap.Modal.getInstance(exportExcelModalEl).hide();
+                                }
+                            }, 1500); // Chờ 1.5 giây
+
+                        } else {
+                            // Trường hợp server trả về success = false (ví dụ: NotFound đã được xử lý)
+                            console.warn("[Attendance View] Kiểm tra không thành công hoặc không có dữ liệu:", response?.message);
+                            showErrorAlert('Không thể xuất file', response?.message || 'Không có dữ liệu hoặc có lỗi xảy ra.');
+                            // Không đóng modal để người dùng thấy lỗi
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("[Attendance View] Lỗi AJAX khi kiểm tra dữ liệu Excel:", status, error, xhr.status, xhr.responseText);
+                        $spinner.addClass('d-none');
+                        $icon.removeClass('d-none');
+                        $button.prop('disabled', false);
+                        // Sử dụng hàm handleAjaxError hoặc hiển thị thông báo lỗi trực tiếp
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            showErrorAlert(`Lỗi ${xhr.status}`, errorData?.message || 'Lỗi không xác định khi kiểm tra dữ liệu.');
+                        } catch (e) {
+                            showErrorAlert(`Lỗi ${xhr.status}`, 'Không thể kết nối đến máy chủ hoặc có lỗi xảy ra.');
+                        }
+                        // Không đóng modal
+                    }
+                });
+                // --- Kết thúc xử lý AJAX ---
+            });
+        }); // --- Kết thúc $(document).ready() ---
+    </script>
+}
+@* --- Kết thúc @section Scripts --- *@

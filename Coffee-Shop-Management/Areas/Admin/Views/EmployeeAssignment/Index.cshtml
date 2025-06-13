@@ -1,0 +1,1101 @@
+﻿@* File: Areas/Admin/Views/EmployeeAssignment/Index.cshtml *@
+@{
+    ViewData["Title"] = "Phân Công Ca Làm Việc";
+}
+
+@* Thêm AntiForgeryToken *@
+@Html.AntiForgeryToken()
+
+<div class="container-fluid mt-3">
+    @* <h1 class="mb-4 text-center h3">@ViewData["Title"]</h1> *@
+    <div class="row">
+        <div class="col-12">
+            <div class="schedule-container">
+                <div class="week-navigation">
+                    <div class="nav-buttons">
+                        <button id="prev-week" class="btn btn-outline-secondary btn-circle" title="Tuần trước"><i class="fas fa-chevron-left"></i></button>
+                        <button id="today-week-btn" class="btn btn-outline-secondary  " title="Tuần này">Tuần này</button>
+                        <button id="next-week" class="btn btn-outline-secondary btn-circle" title="Tuần sau"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <h5 id="week-display" class="mb-0"></h5>
+                    @* === KHU VỰC NÚT HÀNH ĐỘNG === *@
+                    <div class="action-buttons ms-auto d-flex gap-2">
+                        @* Bọc các nút action vào div *@
+                        @* NÚT CHỈNH SỬA CA (MỚI) *@
+                        <button id="edit-shifts-btn" class="btn btn-warning  " title="Chỉnh sửa giờ làm việc các ca">
+                            <i class="fas fa-clock me-1"></i> Chỉnh sửa Ca
+                        </button>
+                        @* NÚT XUẤT EXCEL *@
+                        <button id="export-excel-btn" class="btn btn-success  " title="Xuất lịch tuần này ra Excel">
+                            <i class="fas fa-file-excel me-1"></i> Xuất Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="schedule-grid-wrapper">
+                    <div class="schedule-grid" id="schedule-grid">
+                        @* Header Row *@
+                        <div class="row g-2 mb-2" id="grid-header-row">
+                            <div class="col"></div> @* Cột trống cho Time Label *@
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Hai</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Ba</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Tư</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Năm</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Sáu</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Thứ Bảy</span><span class="day-date"></span></div></div>
+                            <div class="col"><div class="grid-header"><span class="day-name">Chủ Nhật</span><span class="day-date"></span></div></div>
+                        </div>
+
+                        @* Morning Row *@
+                        <div class="row g-2 mb-2 align-items-stretch">
+                            <div class="col"><div class="time-label">Sáng</div></div>
+                            <div class="col"><div class="schedule-cell" id="monday-morning" data-shift-id="@((int)1)" data-day="monday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="tuesday-morning" data-shift-id="@((int)1)" data-day="tuesday">     <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="wednesday-morning" data-shift-id="@((int)1)" data-day="wednesday"> <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="thursday-morning" data-shift-id="@((int)1)" data-day="thursday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="friday-morning" data-shift-id="@((int)1)" data-day="friday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="saturday-morning" data-shift-id="@((int)1)" data-day="saturday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="sunday-morning" data-shift-id="@((int)1)" data-day="sunday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                        </div>
+
+                        @* Afternoon Row *@
+                        <div class="row g-2 mb-2 align-items-stretch">
+                            <div class="col"><div class="time-label">Chiều</div></div>
+                            <div class="col"><div class="schedule-cell" id="monday-afternoon" data-shift-id="@((int)2)" data-day="monday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="tuesday-afternoon" data-shift-id="@((int)2)" data-day="tuesday">   <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="wednesday-afternoon" data-shift-id="@((int)2)" data-day="wednesday"><div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="thursday-afternoon" data-shift-id="@((int)2)" data-day="thursday"> <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="friday-afternoon" data-shift-id="@((int)2)" data-day="friday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="saturday-afternoon" data-shift-id="@((int)2)" data-day="saturday"> <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="sunday-afternoon" data-shift-id="@((int)2)" data-day="sunday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                        </div>
+
+                        @* Evening Row *@
+                        <div class="row g-2 align-items-stretch">
+                            <div class="col"><div class="time-label">Tối</div></div>
+                            <div class="col"><div class="schedule-cell" id="monday-evening" data-shift-id="@((int)3)" data-day="monday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="tuesday-evening" data-shift-id="@((int)3)" data-day="tuesday">     <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="wednesday-evening" data-shift-id="@((int)3)" data-day="wednesday"> <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="thursday-evening" data-shift-id="@((int)3)" data-day="thursday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="friday-evening" data-shift-id="@((int)3)" data-day="friday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="saturday-evening" data-shift-id="@((int)3)" data-day="saturday">    <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                            <div class="col"><div class="schedule-cell" id="sunday-evening" data-shift-id="@((int)3)" data-day="sunday">      <div class="add-employee-placeholder" title="Thêm NV"><i class="fas fa-plus"></i></div></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal Add Employee *@
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="addEmployeeModalLabel">Chọn nhân viên để thêm</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="search" id="modalSearchInput" class="form-control mb-3" placeholder="Tìm kiếm tên nhân viên...">
+                <div id="modalEmployeeListContainer">
+                    <div id="modalLoadingIndicator" class="text-center p-3" style="display: none;">
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div> Đang tìm...
+                    </div>
+                    <div id="modalEmployeeList">
+                        <div class="list-group">
+                            @* Employee list will be populated by JS *@
+                        </div>
+                        <div id="modalNoResults" class="text-center text-muted p-3" style="display: none;">
+                            Không tìm thấy nhân viên nào.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* === MODAL CHỈNH SỬA CA LÀM VIỆC (MỚI) === *@
+<div class="modal fade" id="editShiftsModal" tabindex="-1" aria-labelledby="editShiftsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editShiftsModalLabel">Chỉnh sửa Giờ làm việc</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editShiftsModalBody">
+                @* Nội dung các ca sẽ được load bằng JS *@
+                <div class="text-center p-3" id="editShiftsLoadingIndicator">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div> Đang tải thông tin ca...
+                </div>
+                <div id="editShiftsFormContainer" style="display: none;">
+                    @* Form inputs will be generated here *@
+                </div>
+                <div id="editShiftsErrorContainer" class="text-danger mt-2 small"></div> @* Thêm class small cho lỗi *@
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary  " data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary  " id="save-shift-changes-btn">
+                    <span class="spinner-border spinner-border-sm visually-hidden me-1" role="status" aria-hidden="true"></span>
+                    Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@* === KẾT THÚC MODAL CHỈNH SỬA CA === *@
+
+@section Styles {
+    @* Link CSS của Notyf (Nếu dùng Notyf) *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    @* Google Font: Có thể chuyển vào Layout nếu dùng chung *@
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .schedule-container {
+            background-color: #ffffff;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* -- START: Styles for Week Navigation -- */
+        .week-navigation {
+            display: flex;
+            justify-content: space-between; /* Căn chỉnh các nhóm */
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap; /* Cho phép xuống dòng */
+            gap: 0.75rem; /* Khoảng cách giữa các nhóm */
+        }
+
+            .week-navigation .nav-buttons {
+                display: flex;
+                gap: 0.5rem;
+                order: 1; /* Nhóm nút điều hướng tuần đầu tiên */
+            }
+
+                .week-navigation .nav-buttons button {
+                    flex-shrink: 0;
+                }
+
+                .week-navigation .nav-buttons .btn-circle {
+                    border-radius: 50%;
+                    width: 35px;
+                    height: 35px;
+                    padding: 0;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+        #week-display {
+            font-weight: 500;
+            font-size: 1rem;
+            text-align: center;
+            flex-grow: 1; /* Cho phép chiếm không gian */
+            margin: 0 0.5rem;
+            order: 2; /* Hiển thị tuần ở giữa */
+        }
+
+        .week-navigation .action-buttons {
+            display: flex;
+            gap: 0.5rem; /* Khoảng cách giữa các nút action */
+            order: 3; /* Nhóm nút action sau cùng */
+            margin-left: auto; /* Đẩy nhóm này về cuối nếu có không gian */
+        }
+
+            .week-navigation .action-buttons button {
+                flex-shrink: 0;
+            }
+
+        /* Responsive cho Week Navigation */
+        @@media (max-width: 767.98px) {
+            .week-navigation {
+                justify-content: center;
+            }
+            /* Căn giữa khi xuống dòng */
+            #week-display {
+                order: 1;
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .week-navigation .nav-buttons {
+                order: 2;
+                width: auto;
+            }
+            /* Ko chiếm full width */
+            .week-navigation .action-buttons {
+                order: 3;
+                width: auto;
+                margin-left: 0;
+            }
+        }
+
+        @@media (max-width: 575.98px) {
+            /* Có thể cần thêm điều chỉnh cho màn hình rất nhỏ */
+            .week-navigation .nav-buttons, .week-navigation .action-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        /* -- END: Styles for Week Navigation -- */
+
+
+        /* Grid Styles */
+        .grid-header {
+            font-weight: bold;
+            text-align: center;
+            padding: 8px 5px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 4px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            min-height: 50px;
+            overflow: hidden;
+            white-space: normal;
+        }
+
+            .grid-header .day-name {
+                font-weight: bold;
+            }
+
+            .grid-header .day-date {
+                font-size: 0.7rem;
+                font-weight: normal;
+            }
+
+        .time-label {
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 0.85rem;
+        }
+
+        .schedule-cell {
+            border: 1px dashed #adb5bd;
+            min-height: 110px;
+            padding: 6px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+            .schedule-cell.drag-over {
+                background-color: #cfe2ff;
+                border-color: #0d6efd;
+            }
+
+        .schedule-grid .row {
+            align-items: stretch;
+            flex-wrap: nowrap;
+        }
+
+            .schedule-grid .row > .col {
+                padding-left: 3px;
+                padding-right: 3px;
+                flex: 1 1 0;
+                min-width: 0;
+            }
+
+        .schedule-grid-wrapper {
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-left: -4px;
+            margin-right: -4px;
+        }
+
+        .schedule-grid {
+            min-width: 750px;
+        }
+
+
+        /* Assigned Employee Styles */
+        .assigned-employee {
+            background-color: #cfe2ff;
+            border: 1px solid #9ec5fe;
+            color: #052c65;
+            padding: 4px 6px;
+            margin-top: 3px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: grab;
+            width: 100%;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+            order: 1;
+            min-height: 28px;
+            position: relative;
+            display: flex;
+        }
+
+            .assigned-employee.dragging {
+                opacity: 0.4;
+            }
+
+            .assigned-employee .assignment-avatar,
+            .assigned-employee .assignment-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                margin-right: 6px;
+                flex-shrink: 0;
+                object-fit: cover;
+                vertical-align: middle;
+            }
+
+            .assigned-employee .assignment-icon {
+                font-size: 14px;
+                background-color: #6c757d;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .assigned-employee .name-wrapper {
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 3;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                text-align: left;
+            }
+
+                .assigned-employee .name-wrapper i.fa-user {
+                    margin-right: 5px;
+                    float: left;
+                    line-height: 1.3;
+                }
+
+            .assigned-employee .remove-assignment {
+                display: none;
+                position: absolute;
+                top: 50%;
+                right: 4px;
+                transform: translateY(-50%);
+                cursor: pointer;
+                color: #dc3545;
+                font-size: 0.8rem;
+                padding: 2px;
+                background-color: rgba(207, 226, 255, 0.8);
+                border-radius: 3px;
+                line-height: 1;
+                transition: background-color 0.2s ease;
+                z-index: 5;
+            }
+
+            .assigned-employee:hover .remove-assignment {
+                display: inline-block;
+            }
+
+            .assigned-employee .remove-assignment:hover {
+                background-color: rgba(207, 226, 255, 1);
+            }
+
+
+        /* Add Employee Placeholder */
+        .add-employee-placeholder {
+            background-color: transparent;
+            border: 1px solid transparent;
+            padding: 4px 6px;
+            margin-top: 3px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            width: 100%;
+            color: #adb5bd;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            order: 2;
+            min-height: 28px;
+        }
+
+            .add-employee-placeholder:hover {
+                background-color: #a6cffc;
+                border-color: #6ea8fe;
+                color: #031633;
+                border-style: solid;
+            }
+
+        .schedule-cell > *:first-child {
+            margin-top: 5px;
+        }
+
+
+        /* Modal Employee List */
+        #modalEmployeeList .list-group {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #modalEmployeeList .list-group-item {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+            #modalEmployeeList .list-group-item i {
+                margin-right: 8px;
+            }
+
+            #modalEmployeeList .list-group-item:hover {
+                background-color: #f1f1f1;
+            }
+
+            #modalEmployeeList .list-group-item.hidden {
+                display: none;
+            }
+
+        #modalLoadingIndicator {
+            color: #6c757d;
+        }
+
+        /* Modal Avatar/Icon */
+        .modal-list-avatar, .modal-list-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+            object-fit: cover;
+            vertical-align: middle;
+        }
+
+        /* === START: Styles for Edit Shifts Modal (ĐÃ ĐIỀU CHỈNH) === */
+        .shift-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Giữ khoảng cách */
+            margin-bottom: 1rem; /* Tăng khoảng cách dưới */
+            /* Bỏ border-bottom nếu không cần thiết nữa */
+            /* border-bottom: 1px solid #eee; */
+        }
+            /* .shift-edit-row:last-child {
+             margin-bottom: 0;
+             border-bottom: none;
+         } */
+            .shift-edit-row label.shift-name-label {
+                font-weight: 500;
+                /* Bỏ width cố định, cho phép nó tự co giãn hoặc đặt min-width nếu cần */
+                /* width: 60px; */
+                min-width: 50px; /* Giữ một khoảng tối thiểu */
+                text-align: right;
+                flex-shrink: 0;
+                /* Có thể tăng margin-right nếu muốn cách xa input hơn */
+                /* margin-right: 5px; */
+            }
+
+            .shift-edit-row input[type="time"] {
+                flex-grow: 1; /* Cho phép input co giãn */
+                /* Bỏ các thuộc tính làm nhỏ input */
+                /* max-width: 120px; */
+                /* width: 110px; */
+                /* padding: 0.25rem 0.5rem; */ /* Sử dụng padding mặc định của Bootstrap */
+                /* font-size: 0.875rem; */ /* Sử dụng font-size mặc định */
+            }
+
+        .time-separator {
+            font-weight: bold;
+            margin: 0 5px;
+            flex-shrink: 0;
+        }
+        /* === END: Styles for Edit Shifts Modal === */
+
+
+        /* Media Queries chung */
+        @@media (max-width: 991.98px) {
+            .week-navigation .nav-buttons .btn-circle {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @@media (max-width: 767.98px) {
+            body {
+                padding-top: 0.5rem;
+            }
+
+            .schedule-container {
+                padding: 0.75rem;
+            }
+
+            .grid-header {
+                font-size: 0.75rem;
+                min-height: 45px;
+            }
+
+                .grid-header .day-date {
+                    font-size: 0.65rem;
+                }
+
+            .time-label {
+                font-size: 0.75rem;
+            }
+
+            .schedule-cell {
+                min-height: 100px;
+            }
+
+            .assigned-employee, .add-employee-placeholder {
+                font-size: 0.75rem;
+            }
+
+                .assigned-employee .remove-assignment {
+                    font-size: 0.75rem;
+                    right: 3px;
+                }
+
+            .add-employee-placeholder {
+                min-height: 26px;
+            }
+
+            .assigned-employee .name-wrapper {
+                -webkit-line-clamp: 4;
+            }
+        }
+
+    </style>
+}
+
+@section Scripts {
+    @* === THƯ VIỆN CẦN THIẾT === *@
+    @* Link JS của Bootstrap (nếu Layout chưa có) *@
+    @* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> *@
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    @* <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> *@
+
+    <script>
+        $(document).ready(function () {
+
+            // --- Initialize Notyf ---
+            const notyf = new Notyf({
+                duration: 3500,
+                position: { x: 'right', y: 'top' },
+                types: [
+                    { type: 'success', background: '#28a745' },
+                    { type: 'error', background: '#dc3545' },
+                    { type: 'warning', background: '#ffc107', icon: { className: 'fas fa-exclamation-triangle', tagName: 'i', color: '#000' } }
+                ]
+            });
+            // --- DOM Elements ---
+            const scheduleGrid = $('#schedule-grid');
+            const weekDisplay = $('#week-display');
+            const prevWeekBtn = $('#prev-week');
+            const nextWeekBtn = $('#next-week');
+            const todayWeekBtn = $('#today-week-btn');
+            const exportExcelBtn = $('#export-excel-btn');
+            // === START: Elements for Edit Shift ===
+            const editShiftsBtn = $('#edit-shifts-btn');
+            const editShiftsModalEl = document.getElementById('editShiftsModal');
+            const editShiftsModal = new bootstrap.Modal(editShiftsModalEl);
+            const editShiftsModalBody = $('#editShiftsModalBody');
+            const editShiftsLoadingIndicator = $('#editShiftsLoadingIndicator');
+            const editShiftsFormContainer = $('#editShiftsFormContainer');
+            const editShiftsErrorContainer = $('#editShiftsErrorContainer');
+            const saveShiftChangesBtn = $('#save-shift-changes-btn');
+            // === END: Elements for Edit Shift ===
+            const addEmployeeModalEl = document.getElementById('addEmployeeModal');
+            const addEmployeeModal = new bootstrap.Modal(addEmployeeModalEl);
+            const modalEmployeeList = $('#modalEmployeeList .list-group');
+            const modalSearchInput = $('#modalSearchInput');
+            const modalLoadingIndicator = $('#modalLoadingIndicator');
+            const modalNoResults = $('#modalNoResults');
+            const gridHeaderRow = $('#grid-header-row');
+
+
+            // --- URLs ---
+            const getAssignmentsUrl = '@Url.Action("GetAssignments", "EmployeeAssignment", new { Area = "Admin" })';
+            const getEmployeesUrl = '@Url.Action("GetEmployees", "EmployeeAssignment", new { Area = "Admin" })';
+            const addAssignmentUrl = '@Url.Action("AddAssignment", "EmployeeAssignment", new { Area = "Admin" })';
+            const removeAssignmentUrl = '@Url.Action("RemoveAssignment", "EmployeeAssignment", new { Area = "Admin" })';
+            const moveAssignmentUrl = '@Url.Action("MoveAssignment", "EmployeeAssignment", new { Area = "Admin" })';
+            const exportExcelUrl = '@Url.Action("ExportWeekScheduleToExcel", "EmployeeAssignment", new { Area = "Admin" })';
+            // === START: URLs for Edit Shift ===
+            const getShiftsUrl = '@Url.Action("GetShiftsForEditing", "EmployeeAssignment", new { Area = "Admin" })';
+            const updateShiftsUrl = '@Url.Action("UpdateShiftTimes", "EmployeeAssignment", new { Area = "Admin" })';
+            // === END: URLs for Edit Shift ===
+
+            // --- Anti-Forgery Token ---
+            function getAntiForgeryToken() { return $('input[name="__RequestVerificationToken"]').val(); }
+
+            // --- State ---
+            let currentMonday = getMonday(new Date());
+            let draggedElement = null;
+            let targetCellElementForModal = null;
+            let debounceTimeout = null;
+
+            // --- Constants ---
+            const DAY_NAMES = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+            const DAY_IDS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+            const SHIFT_IDS = { "morning": 1, "afternoon": 2, "evening": 3 };
+            const SEARCH_DEBOUNCE_DELAY = 400;
+            const DEFAULT_AVATAR_PATH = '/images/avatar/default-avatar.png'; // <<< THAY ĐƯỜNG DẪN NẾU CẦN
+
+            // --- Helpers ---
+            function formatDate(date, format = 'yyyy-mm-dd') { const d = String(date.getDate()).padStart(2, '0'); const m = String(date.getMonth() + 1).padStart(2, '0'); const y = date.getFullYear(); if (format === 'dd/mm') return `${d}/${m}`; if (format === 'dd/mm/yyyy') return `${d}/${m}/${y}`; return `${y}-${m}-${d}`; }
+            function getMonday(d) { d = new Date(d); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); d.setHours(0, 0, 0, 0); return new Date(d.setDate(diff)); }
+            function getSunday(d) { const m = getMonday(d); const s = new Date(m); s.setDate(m.getDate() + 6); return s; }
+            function getCellId(workDate, shiftId) { const date = new Date(workDate); const dayId = DAY_IDS[date.getDay()]; let shiftName = Object.keys(SHIFT_IDS).find(name => SHIFT_IDS[name] === shiftId); if (!dayId || !shiftName) return null; return `${dayId}-${shiftName}`; }
+            function getCellData(cellElement) { if (!cellElement) return null; const shiftId = parseInt($(cellElement).data('shift-id'), 10); const dayId = $(cellElement).data('day'); if (!shiftId || !dayId) return null; const dayIndex = DAY_IDS.indexOf(dayId); if (dayIndex === -1) return null; const workDate = new Date(currentMonday); workDate.setDate(currentMonday.getDate() + (dayIndex === 0 ? 6 : dayIndex - 1)); return { shiftId: shiftId, workDate: formatDate(workDate) }; }
+
+            // --- Update Week Display ---
+            function updateWeekDates() { const m = currentMonday; const s = getSunday(m); weekDisplay.text(`Tuần: ${formatDate(m, 'dd/mm/yyyy')} - ${formatDate(s, 'dd/mm/yyyy')}`); const h = gridHeaderRow.find('.grid-header'); let cD = new Date(m); h.each(function () { const hdr = $(this); hdr.find('.day-name').text(DAY_NAMES[cD.getDay()]); hdr.find('.day-date').text(formatDate(cD, 'dd/mm')); cD.setDate(cD.getDate() + 1); }); }
+
+            // --- Clear & Load Assignments ---
+            function clearAssignmentsVisuals() { scheduleGrid.find('.assigned-employee').remove(); console.log("Visual assignments cleared."); }
+            function loadAssignmentsForWeek(date) {
+                clearAssignmentsVisuals();
+                const start = formatDate(date);
+                console.log(`Loading assignments: ${start}`);
+                $.ajax({
+                    url: getAssignmentsUrl,
+                    method: 'GET',
+                    data: { startDate: start },
+                    success: function (data) {
+                        console.log("Assignments data received:", data);
+                        if (Array.isArray(data)) {
+                            data.forEach(a => {
+                                const cId = getCellId(a.workDate, a.shiftId);
+                                if (cId) {
+                                    const cEl = document.getElementById(cId);
+                                    if (cEl) {
+                                        createAssignmentElement(a.assignmentId, a.employeeId, a.employeeName, a.employeeAvatar, cEl, false);
+                                    } else { console.warn(`Cell not found: ${cId}`); }
+                                } else { console.warn(`Cannot get cell ID:`, a); }
+                            });
+                        }
+                    },
+                    error: function (xhr) { console.error("Error loading assignments:", xhr); notyf.error('Lỗi tải phân công.'); }
+                });
+            }
+
+            // --- Change Week & Go to Today ---
+            function changeWeek(offset) { currentMonday.setDate(currentMonday.getDate() + offset * 7); updateWeekDates(); loadAssignmentsForWeek(currentMonday); }
+            function goToTodayWeek() { currentMonday = getMonday(new Date()); updateWeekDates(); loadAssignmentsForWeek(currentMonday); }
+
+            // --- Create Assignment Element ---
+            function createAssignmentElement(assignmentId, employeeId, employeeName, employeeAvatarUrl, targetCellEl, triggerNotification = false) {
+                if (!assignmentId || !employeeId || !targetCellEl) { console.error("Create Err: Invalid ID/Cell"); return null; }
+                const empName = employeeName || "N/A";
+                const cellId = targetCellEl.id;
+                if ($(targetCellEl).find(`.assigned-employee[data-employee-id="${employeeId}"]`).length > 0) { console.warn(`Duplicate visual add: ${employeeId} in ${cellId}`); return null; }
+
+                const assignmentEl = $('<div>', {
+                    'class': 'assigned-employee', 'draggable': true,
+                    'data-assignment-id': assignmentId, 'data-employee-id': employeeId,
+                    'data-cell-id': cellId, 'data-employee-name': empName
+                }).css('cursor', 'grab');
+
+                // Avatar hoặc Icon
+                let avatarOrIcon;
+                if (employeeAvatarUrl && employeeAvatarUrl.trim() !== '') {
+                    avatarOrIcon = $('<img>', { src: employeeAvatarUrl, 'class': 'assignment-avatar', alt: empName, onerror: `this.onerror=null; this.src='${DEFAULT_AVATAR_PATH}';` });
+                } else {
+                    avatarOrIcon = $('<i>', { 'class': 'fas fa-user assignment-icon' });
+                }
+                assignmentEl.append(avatarOrIcon);
+
+                // Tên
+                const nameWrapper = $('<span>', { 'class': 'name-wrapper' });
+                nameWrapper.append(document.createTextNode(`${empName}`));
+                assignmentEl.append(nameWrapper);
+
+                // Nút xóa
+                const removeBtn = $('<span>', { 'class': 'remove-assignment', 'title': 'Xóa phân công' }).html('<i class="fas fa-times-circle"></i>')
+                    .on('click', function (e) {
+                        e.stopPropagation(); const $div = $(this).closest('.assigned-employee'); const id = $div.data('assignment-id'); const name = $div.data('employee-name');
+                        // SweetAlert2 Confirm
+                        Swal.fire({ title: 'Xác nhận xóa', text: `Xóa phân công của "${name}"?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d', confirmButtonText: 'Đồng ý xóa!', cancelButtonText: 'Hủy bỏ' })
+                            .then((result) => { if (result.isConfirmed) { removeAssignmentFromServer(id, $div); } });
+                    });
+                assignmentEl.append(removeBtn);
+
+                // Sự kiện kéo thả
+                assignmentEl[0].addEventListener('dragstart', handleDragStart);
+                assignmentEl[0].addEventListener('dragend', handleDragEnd);
+
+                // Chèn vào DOM
+                const placeholder = $(targetCellEl).find('.add-employee-placeholder'); if (placeholder.length > 0) { assignmentEl.insertBefore(placeholder); } else { $(targetCellEl).append(assignmentEl); }
+                // console.log(`Created visual: ${assignmentId} for ${employeeId} in ${cellId}`);
+                return assignmentEl;
+            }
+
+            // --- Drag and Drop Logic ---
+            function handleDragStart(e) {
+                if (!e.target.classList.contains('assigned-employee')) { e.preventDefault(); return; }
+                draggedElement = e.target; const aId = draggedElement.dataset.assignmentId; const eId = draggedElement.dataset.employeeId; const eName = draggedElement.dataset.employeeName || 'N/A';
+                e.dataTransfer.setData('text/plain', aId); e.dataTransfer.setData('employeeId', eId); e.dataTransfer.setData('employeeName', eName); e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => { if (draggedElement) draggedElement.classList.add('dragging'); }, 0); console.log(`Dragging started: ID ${aId}, Name "${eName}"`);
+            }
+
+            function handleDragEnd(e) {
+                if (draggedElement && draggedElement.classList.contains('dragging')) { draggedElement.classList.remove('dragging'); }
+                $('.schedule-cell.drag-over').removeClass('drag-over'); console.log(`Dragging ended`);
+            }
+
+            scheduleGrid.on('dragover', '.schedule-cell', function (e) { e.preventDefault(); e.originalEvent.dataTransfer.dropEffect = 'move'; if (!$(this).hasClass('drag-over')) { $('.schedule-cell.drag-over').removeClass('drag-over'); $(this).addClass('drag-over'); } });
+            scheduleGrid.on('dragleave', '.schedule-cell', function (e) { const r = this.getBoundingClientRect(); const rel = e.relatedTarget || e.originalEvent.relatedTarget; if (!rel || (rel !== this && !this.contains(rel))) { $(this).removeClass('drag-over'); } });
+
+            // ----- DROP HANDLER -----
+            scheduleGrid.on('drop', '.schedule-cell', function (e) {
+                e.preventDefault(); const targetCell = this; $(targetCell).removeClass('drag-over');
+                if (!draggedElement) { console.error("Drop Err: No draggedElement"); return; }
+                const originCell = $(draggedElement).closest('.schedule-cell')[0];
+                // Dọn dẹp nếu thả vào ô cũ
+                if (targetCell === originCell) { console.log("Drop on same cell."); if (draggedElement && draggedElement.classList.contains('dragging')) { draggedElement.classList.remove('dragging'); } draggedElement = null; return; }
+
+                const assignmentId = parseInt(e.originalEvent.dataTransfer.getData('text/plain'), 10);
+                const employeeId = e.originalEvent.dataTransfer.getData('employeeId');
+                const employeeName = e.originalEvent.dataTransfer.getData('employeeName');
+                console.log("Drop data:", { assignmentId, employeeId, employeeName });
+                // Dọn dẹp nếu thiếu dữ liệu
+                if (!assignmentId || !employeeId) { console.error("Drop Err: Missing data."); if (draggedElement && draggedElement.classList.contains('dragging')) { draggedElement.classList.remove('dragging'); } draggedElement = null; return; }
+                const targetCellData = getCellData(targetCell);
+                // Dọn dẹp nếu không lấy được dữ liệu ô đích
+                if (!targetCellData) { console.error("Drop Err: Cannot get target cell data."); notyf.error('Lỗi ô đích.'); if (draggedElement && draggedElement.classList.contains('dragging')) { draggedElement.classList.remove('dragging'); } draggedElement = null; return; }
+
+                // --- KIỂM TRA TRÙNG LẶP KHI DROP ---
+                const selector = `.assigned-employee[data-employee-id='${employeeId}']`;
+                const existingAssignmentsInTarget = $(targetCell).find(selector);
+                console.log(`Checking duplicate drop: Cell ${targetCell.id}, Emp ${employeeId}, Found ${existingAssignmentsInTarget.length}`);
+
+                if (existingAssignmentsInTarget.length > 0) {
+                    console.log("Duplicate detected on drop! Showing warning.");
+                    notyf.open({ type: 'warning', message: `Nhân viên ${employeeName || 'này'} đã có trong ca đích.` });
+                    // Dọn dẹp trạng thái kéo thả
+                    if (draggedElement && draggedElement.classList.contains('dragging')) { draggedElement.classList.remove('dragging'); }
+                    draggedElement = null;
+                    return; // Dừng lại
+                }
+                // --- KẾT THÚC KIỂM TRA ---
+
+                console.log(`No duplicate drop. Attempting move AJAX: ${assignmentId}`);
+                const elementToMove = draggedElement; // Giữ tham chiếu
+
+                $.ajax({
+                    url: moveAssignmentUrl, method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() }, data: { assignmentId: assignmentId, targetShiftId: targetCellData.shiftId, targetWorkDateStr: targetCellData.workDate },
+                    success: function (response) {
+                        console.log("AJAX Move Response:", response);
+                        if (response.success) {
+                            notyf.success(response.message || "Đã di chuyển.");
+                            console.log("AJAX Success. Visually moving element.");
+                            if (elementToMove && targetCell) { const p = $(targetCell).find('.add-employee-placeholder'); if (p.length > 0) { $(elementToMove).insertBefore(p); } else { $(targetCell).append(elementToMove); } $(elementToMove).attr('data-cell-id', targetCell.id); console.log("DOM element moved."); }
+                            else { console.error("Move Err: element/target invalid in success."); notyf.error('Lỗi UI. Tải lại trang.'); loadAssignmentsForWeek(currentMonday); }
+                        } else {
+                            notyf.error(response.message || "Lỗi di chuyển."); console.warn("Server responded success=false.");
+                        }
+                    },
+                    error: function (xhr) { console.error("AJAX Error moving:", xhr); let msg = "Lỗi máy chủ."; if (xhr.responseJSON && xhr.responseJSON.message) { msg = xhr.responseJSON.message; } else if (xhr.status === 400) { msg = "Dữ liệu lỗi/trùng lặp."; } else if (xhr.status === 404) { msg = "Không tìm thấy."; } notyf.error(msg); },
+                    complete: function () { draggedElement = null; console.log("AJAX complete. draggedElement reset."); $('.assigned-employee.dragging').removeClass('dragging'); }
+                });
+            });
+
+            // --- Modal Logic ---
+            scheduleGrid.on('click', '.add-employee-placeholder', function () { targetCellElementForModal = $(this).closest('.schedule-cell')[0]; console.log(`Add clicked: ${targetCellElementForModal.id}`); modalSearchInput.val(''); modalNoResults.hide(); populateModalEmployeeList(); addEmployeeModal.show(); });
+
+            function populateModalEmployeeList(searchTerm = '') {
+                modalLoadingIndicator.show(); modalEmployeeList.hide().empty(); modalNoResults.hide(); console.log("Fetching employees:", searchTerm);
+                $.ajax({
+                    url: getEmployeesUrl, method: 'GET', data: { searchTerm: searchTerm },
+                    success: function (emps) {
+                        modalLoadingIndicator.hide();
+                        if (emps && emps.length > 0) {
+                            emps.forEach(emp => {
+                                const listItem = $('<a>', { href: '#', 'class': 'list-group-item list-group-item-action', 'data-employee-id': emp.id });
+                                let avatarOrIconModal;
+                                if (emp.avatarUrl && emp.avatarUrl.trim() !== '') { avatarOrIconModal = $('<img>', { src: emp.avatarUrl, 'class': 'modal-list-avatar', alt: emp.name, onerror: `this.onerror=null; this.src='${DEFAULT_AVATAR_PATH}';` }); }
+                                else { avatarOrIconModal = $('<i>', { 'class': 'fas fa-user modal-list-icon' }); }
+                                listItem.append(avatarOrIconModal);
+                                listItem.append(document.createTextNode(` ${emp.name || 'N/A'}`));
+                                listItem.on('click', function (e) { e.preventDefault(); handleAddEmployeeFromModal(emp.id, emp.name); });
+                                modalEmployeeList.append(listItem);
+                            });
+                            modalEmployeeList.show();
+                        } else { modalNoResults.show(); }
+                    },
+                    error: function (xhr) { console.error("Err fetch employees:", xhr); modalLoadingIndicator.hide(); modalEmployeeList.show(); modalEmployeeList.append('<p class="text-danger text-center">Lỗi tải NV.</p>') }
+                });
+            }
+
+            modalSearchInput.on('input', function () { clearTimeout(debounceTimeout); modalLoadingIndicator.show(); modalEmployeeList.hide(); modalNoResults.hide(); debounceTimeout = setTimeout(() => { populateModalEmployeeList(modalSearchInput.val()); }, SEARCH_DEBOUNCE_DELAY); });
+            addEmployeeModalEl.addEventListener('hidden.bs.modal', () => { modalSearchInput.val(''); modalEmployeeList.empty().show(); modalLoadingIndicator.hide(); modalNoResults.hide(); targetCellElementForModal = null; });
+
+            function handleAddEmployeeFromModal(selectedEmployeeId, selectedEmployeeName) {
+                if (!targetCellElementForModal) { console.error("Add Err: No target cell!"); notyf.error('Lỗi ô đích.'); addEmployeeModal.hide(); return; }
+
+                // --- FIX: KIỂM TRA TRÙNG LẶP KHI THÊM TỪ MODAL ---
+                const selector = `.assigned-employee[data-employee-id="${selectedEmployeeId}"]`;
+                const existingAssignment = $(targetCellElementForModal).find(selector);
+                console.log(`Checking duplicate add: Cell ${targetCellElementForModal.id}, Emp ${selectedEmployeeId}, Found ${existingAssignment.length}`);
+
+                if (existingAssignment.length > 0) {
+                    console.log("Duplicate detected on add! Showing warning.");
+                    // *** FIX: SỬ DỤNG notyf.open() CHO TYPE 'warning' ***
+                    notyf.open({
+                        type: 'warning',
+                        message: `Nhân viên ${selectedEmployeeName || 'này'} đã được phân công trong ca này.`
+                    });
+                    // Không ẩn modal, chỉ dừng lại
+                    return; // Dừng thực thi hàm
+                }
+                // --- KẾT THÚC KIỂM TRA ---
+
+                console.log(`No duplicate add. Proceeding AJAX.`);
+                const cellData = getCellData(targetCellElementForModal);
+                if (!cellData) { console.error("Add Err: Cannot get cell data"); notyf.error('Lỗi lấy thông tin ca.'); addEmployeeModal.hide(); return; }
+                console.log(`Adding ${selectedEmployeeId} to ${targetCellElementForModal.id}`);
+                $.ajax({
+                    url: addAssignmentUrl, method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() }, data: { employeeId: selectedEmployeeId, shiftId: cellData.shiftId, workDateStr: cellData.workDate },
+                    success: function (res) {
+                        if (res.success && res.assignment) {
+                            notyf.success(res.message || "Đã thêm.");
+                            // Truyền cả avatar URL khi tạo element mới
+                            createAssignmentElement(res.assignment.assignmentId, res.assignment.employeeId, res.assignment.employeeName, res.assignment.employeeAvatar, targetCellElementForModal, false);
+                            addEmployeeModal.hide();
+                        } else { notyf.error(res.message || "Lỗi thêm."); }
+                    },
+                    error: function (xhr) { console.error("Err add assign:", xhr); let msg = "Lỗi server."; if (xhr.responseJSON && xhr.responseJSON.message) { msg = xhr.responseJSON.message; } else if (xhr.status === 400) { msg = "Dữ liệu lỗi/trùng lặp."; } notyf.error(msg); }
+                });
+            }
+
+            // --- Remove Assignment ---
+            function removeAssignmentFromServer(assignmentId, elementToRemove) {
+                console.log(`Removing ID: ${assignmentId}`);
+                $.ajax({
+                    url: removeAssignmentUrl, method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() }, data: { assignmentId: assignmentId },
+                    success: function (res) { if (res.success) { notyf.success(res.message || "Đã xóa."); elementToRemove.fadeOut(300, function () { $(this).remove(); }); } else { notyf.error(res.message || "Lỗi xóa."); } },
+                    error: function (xhr) { console.error("Err remove assign:", xhr); notyf.error('Lỗi server khi xóa.'); }
+                });
+            }
+            // === START: LOGIC CHỈNH SỬA CA ===
+            editShiftsBtn.on('click', function () {
+                editShiftsLoadingIndicator.show();
+                editShiftsFormContainer.hide().empty();
+                editShiftsErrorContainer.hide().empty();
+                editShiftsModal.show();
+
+                $.ajax({
+                    url: getShiftsUrl,
+                    method: 'GET',
+                    success: function (shifts) {
+                        editShiftsLoadingIndicator.hide();
+                        if (shifts && shifts.length > 0) {
+                            shifts.forEach(shift => {
+                                const shiftHtml = `
+                                            <div class="shift-edit-row" data-shift-id="${shift.shiftId}">
+                                                <label for="shift-start-${shift.shiftId}" class="form-label shift-name-label">${shift.name}:</label>
+                                                <input type="time" class="form-control form-control shift-start-time" id="shift-start-${shift.shiftId}" value="${shift.startTime}" required>
+                                                <span class="time-separator">-</span>
+                                                <input type="time" class="form-control form-control shift-end-time" id="shift-end-${shift.shiftId}" value="${shift.endTime}" required>
+                                                <input type="hidden" class="shift-id" value="${shift.shiftId}">
+                                            </div>
+                                        `;
+                                editShiftsFormContainer.append(shiftHtml);
+                            });
+                            editShiftsFormContainer.show();
+                        } else {
+                            editShiftsErrorContainer.text('Không tìm thấy thông tin ca làm việc.').show();
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error("Error loading shifts:", xhr);
+                        editShiftsLoadingIndicator.hide();
+                        let msg = "Lỗi tải thông tin ca.";
+                        if (xhr.responseJSON && xhr.responseJSON.message) { msg = xhr.responseJSON.message; }
+                        editShiftsErrorContainer.text(msg).show();
+                    }
+                });
+            });
+
+            saveShiftChangesBtn.on('click', function () {
+                const button = $(this);
+                const originalButtonHtml = button.html();
+                button.prop('disabled', true).find('.spinner-border').removeClass('visually-hidden');
+                editShiftsErrorContainer.hide().empty();
+
+                let updatedShiftsData = [];
+                let isValid = true;
+
+                editShiftsFormContainer.find('.shift-edit-row').each(function () {
+                    const row = $(this);
+                    const shiftId = parseInt(row.find('.shift-id').val(), 10);
+                    const startTime = row.find('.shift-start-time').val();
+                    const endTime = row.find('.shift-end-time').val();
+
+                    if (!startTime || !endTime) {
+                        editShiftsErrorContainer.append(`<div>Vui lòng nhập đủ giờ cho ca ${row.find('label').text().replace(':', '').trim()}.</div>`).show();
+                        isValid = false;
+                    }
+                    // Add more specific time validation if needed here
+
+                    if (!isNaN(shiftId)) {
+                        updatedShiftsData.push({
+                            ShiftId: shiftId,
+                            StartTime: startTime,
+                            EndTime: endTime
+                        });
+                    }
+                });
+
+                if (!isValid) {
+                    button.prop('disabled', false).html(originalButtonHtml);
+                    return;
+                }
+
+                $.ajax({
+                    url: updateShiftsUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+                    data: JSON.stringify(updatedShiftsData),
+                    success: function (response) {
+                        if (response.success) {
+                            notyf.success(response.message || "Cập nhật thành công!");
+                            editShiftsModal.hide();
+                        } else {
+                            let errorMsg = response.message || "Có lỗi xảy ra.";
+                            if (response.errors && response.errors.length > 0) { errorMsg += '<br/>' + response.errors.join('<br/>'); }
+                            editShiftsErrorContainer.html(errorMsg).show();
+                            notyf.error("Cập nhật thất bại. Vui lòng kiểm tra lỗi trong modal.");
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error("Error updating shifts:", xhr);
+                        let msg = "Lỗi máy chủ khi cập nhật.";
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                            if (xhr.responseJSON.errors && xhr.responseJSON.errors.length > 0) { msg += '<br/>' + xhr.responseJSON.errors.join('<br/>'); }
+                        } else if (xhr.status === 400) { msg = "Dữ liệu gửi lên không hợp lệ."; }
+                        editShiftsErrorContainer.html(msg).show();
+                        notyf.error("Cập nhật thất bại. Vui lòng kiểm tra lỗi trong modal.");
+                    },
+                    complete: function () {
+                        button.prop('disabled', false).html(originalButtonHtml);
+                    }
+                });
+            });
+            // === END: LOGIC CHỈNH SỬA CA ===
+
+            // --- EXCEL EXPORT LOGIC ---
+            exportExcelBtn.on('click', function () {
+                const button = $(this);
+                const originalHtml = button.html(); // Lưu lại nội dung gốc của nút
+                button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...'); // Hiển thị trạng thái loading
+
+                const startDate = formatDate(currentMonday, 'yyyy-MM-dd');
+                const finalExportUrl = `${exportExcelUrl}?startDate=${startDate}`;
+                console.log(`Exporting Excel for week starting: ${startDate}`);
+
+                fetch(finalExportUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            // Nếu server trả về lỗi (vd: 4xx, 5xx)
+                            // Thử đọc lỗi dạng JSON mà ta đã quy ước trả về từ controller
+                            return response.json().catch(() => {
+                                // Nếu không parse được JSON (vd: lỗi 500 không trả JSON)
+                                throw new Error(`Lỗi ${response.status}: Không thể tải file.`);
+                            }).then(errorData => {
+                                // Nếu parse được JSON lỗi
+                                throw new Error(errorData.message || `Lỗi ${response.status} không rõ.`);
+                            });
+                        }
+
+                        // Kiểm tra header để chắc chắn là file Excel
+                        const contentType = response.headers.get('Content-Type');
+                        if (!contentType || !contentType.includes('spreadsheetml.sheet')) {
+                            throw new Error('Server không trả về file Excel.');
+                        }
+
+                        // Lấy tên file từ header Content-Disposition
+                        const disposition = response.headers.get('Content-Disposition');
+                        let filename = `LichLamViec_Tuan_${startDate}.xlsx`; // Tên mặc định
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            const matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                                // Decode URI component nếu tên file chứa ký tự đặc biệt đã được mã hóa
+                                filename = decodeURIComponent(filename);
+                            }
+                        }
+
+                        // Trả về blob và filename để xử lý tiếp
+                        return response.blob().then(blob => ({ blob, filename }));
+                    })
+                    .then(({ blob, filename }) => {
+                        // Tạo link ẩn để tải file
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename; // Sử dụng tên file đã lấy hoặc mặc định
+                        document.body.appendChild(a);
+                        a.click(); // Tự động click link để tải
+
+                        // Dọn dẹp
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+
+                        notyf.success('Xuất file Excel thành công!');
+                    })
+                    .catch(error => {
+                        console.error("Excel Export Error:", error);
+                        notyf.error(`Lỗi xuất Excel: ${error.message}`);
+                    })
+                    .finally(() => {
+                        // Khôi phục lại trạng thái ban đầu của nút sau khi hoàn tất (thành công hoặc lỗi)
+                        button.prop('disabled', false).html(originalHtml);
+                    });
+            });
+            // --- END EXCEL EXPORT LOGIC ---
+
+            // --- Initial Setup ---
+            updateWeekDates();
+            loadAssignmentsForWeek(currentMonday);
+
+            // --- Nav Listeners ---
+            prevWeekBtn.on('click', () => changeWeek(-1));
+            nextWeekBtn.on('click', () => changeWeek(1));
+            todayWeekBtn.on('click', goToTodayWeek);
+
+        }); // End document ready
+    </script>
+}

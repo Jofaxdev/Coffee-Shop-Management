@@ -1,0 +1,1593 @@
+﻿@* File: Areas/Admin/Views/Product/Index.cshtml *@
+@{
+    ViewData["Title"] = "Danh sách sản phẩm";
+}
+
+@* --- Phần đầu (Nút Thêm, Bộ lọc) --- *@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between mb-3 flex-wrap">
+        <div>
+            <button id="showAddProductModalBtn" class="btn btn-primary shadow-sm me-2 mb-1">
+                @* Đổi ID để rõ ràng hơn *@
+                <i class="fas fa-plus"></i> Thêm sản phẩm
+            </button>
+            <button id="toggleFilterBtn" class="btn btn-outline-secondary shadow-sm mb-1" type="button" aria-controls="filterContainer" aria-expanded="false">
+                <i class="fas fa-filter"></i> Bộ lọc
+            </button>
+        </div>
+    </div>
+
+    @* --- START: Filter Container (Ẩn/hiện) --- *@
+    <div id="filterContainer" style="display: none;">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body" style="padding-block: 0.5rem;">
+                @* Hàng bộ lọc 1 *@
+                <div class="form-group row">
+                    <div class="col-md-3 col-lg-2">
+                        <label for="customPageLength" class="col-form-label">Hiển thị:</label>
+                        <select id="customPageLength" class="form-select">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <label for="filterIsShow" class="col-form-label">Trạng thái:</label>
+                        <select id="filterIsShow" class="form-select">
+                            <option value="All">Tất cả</option>
+                            <option value="true">Còn hàng</option>
+                            <option value="false">Hết hàng</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="filterUnitPriceFrom" class="col-form-label">Đơn giá:</label> @* Đổi ID để rõ ràng hơn *@
+                        <div class="input-group">
+                            <input type="text" id="filterUnitPriceFrom" class="form-control price-filter-input" placeholder="Từ" inputmode="numeric" pattern="[0-9,.]*">
+                            <input type="text" id="filterUnitPriceTo" class="form-control price-filter-input" placeholder="Đến" inputmode="numeric" pattern="[0-9,.]*">
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="filterCostPriceFrom" class="col-form-label">Giá vốn:</label> @* Đổi ID để rõ ràng hơn *@
+                        <div class="input-group">
+                            <input type="text" id="filterCostPriceFrom" class="form-control price-filter-input" placeholder="Từ" inputmode="numeric" pattern="[0-9,.]*">
+                            <input type="text" id="filterCostPriceTo" class="form-control price-filter-input" placeholder="Đến" inputmode="numeric" pattern="[0-9,.]*">
+                        </div>
+                    </div>
+                </div>
+                @* Hàng bộ lọc 2 *@
+                <div class="form-group row mb-3">
+                    <div class="col-md-3">
+                        <label for="filterCategory" class="col-form-label">Loại SP:</label>
+                        <select id="filterCategory" class="form-select" multiple="multiple"> </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterUnit" class="col-form-label">Đơn vị tính:</label>
+                        <select id="filterUnit" class="form-select" multiple="multiple"> </select>
+                    </div>
+                    <div class="col-md-3 col-lg-4">
+                        <label for="filterCreatedDateFrom" class="col-form-label">Ngày tạo:</label> @* Đổi ID để rõ ràng hơn *@
+                        <div class="input-group">
+                            <input type="date" id="filterCreatedDateFrom" class="form-control date-filter-input">
+                            <input type="date" id="filterCreatedDateTo" class="form-control date-filter-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* --- END: Filter Container --- *@
+
+
+    @* --- Hàng bộ lọc 3 (Tìm kiếm và Đặt lại) --- *@
+    <div class="form-group row justify-content-end align-items-end">
+        <div class="col-md-6 col-lg-6 mb-2 search-container">
+            <div class="input-group">
+                <span class="input-group-text" id="searchIcon"><i class="bi bi-search"></i></span>
+                <input type="text" id="customSearch" class="form-control" placeholder="Tìm tên, loại, ĐVT, giá, ngày (dd/MM/yyyy)..." aria-label="Tìm kiếm" aria-describedby="searchIcon">
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-auto mb-2">
+            <button id="resetFilterBtn" class="btn btn-outline-danger w-100"> <i class="fas fa-undo"></i> Xóa bộ lọc </button>
+        </div>
+    </div>
+
+    @* --- Bảng DataTable --- *@
+    <div class="card shadow-sm">
+        <div class="card-header bg-light text-dark">
+            <h4 class="card-title mb-0">Danh sách sản phẩm</h4>
+        </div>
+        @* *** THÊM class="position-relative" vào div chứa table để loading overlay hiển thị đúng chỗ *** *@
+        <div class="table-responsive rounded-0 position-relative" id="productTableContainer">
+            <table id="productTable" class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Loại SP</th>
+                        <th>ĐVT</th>
+                        <th>Đơn giá</th>
+                        <th>Giá vốn</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        @* --- Phân trang tùy chỉnh --- *@
+        <div class="card-footer" style="padding-block: 0px">
+            <div class="pagination-container d-flex justify-content-center align-items-center py-2">
+                <ul class="pagination mb-0">
+                    <li class="page-item" id="customFirst"><a class="page-link" href="#">&laquo;</a></li>
+                    <li class="page-item" id="customPrevious"><a class="page-link" href="#">&lt;</a></li>
+                    @* Số trang được chèn bởi JS *@
+                    <li class="page-item" id="customNext"><a class="page-link" href="#">&gt;</a></li>
+                    <li class="page-item" id="customLast"><a class="page-link" href="#">&raquo;</a></li>
+                </ul>
+                <span id="customPageInfo" class="ms-3 text-muted" style="display: none;"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --- Modal Thêm/Sửa Sản phẩm --- *@
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    @* Đổi ID để rõ ràng hơn *@
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light text-dark">
+                <h4 class="modal-title" id="productModalLabel">Thêm sản phẩm mới</h4> @* Tiêu đề sẽ được cập nhật bằng JS *@
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm" enctype="multipart/form-data" novalidate>
+                    @* Đổi ID để rõ ràng hơn *@
+                    <input type="hidden" id="editProductId" name="editProductId" value="" />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalNameProduct" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label> @* Đổi ID để rõ ràng hơn *@
+                            <input type="text" class="form-control" id="modalNameProduct" name="nameProduct" required>
+                            <div class="invalid-feedback">Vui lòng nhập tên sản phẩm.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalIdCategory" class="form-label">Loại sản phẩm <span class="text-danger">*</span></label> @* Đổi ID để rõ ràng hơn *@
+                            <select class="form-select" id="modalIdCategory" name="IdCategory" required>
+                                <option value="" disabled selected>Chọn loại sản phẩm</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng chọn loại sản phẩm.</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalUnitInput" class="form-label">Đơn vị tính <span class="text-danger">*</span></label> @* Đổi ID để rõ ràng hơn *@
+                            <select class="form-select" id="modalUnitInput" name="Unit" required>
+                                <option value="" disabled selected>Chọn hoặc nhập ĐVT</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng nhập hoặc chọn đơn vị tính.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalOriginalPrice" class="form-label">Giá vốn <span class="text-danger">*</span></label> @* Đổi ID để rõ ràng hơn *@
+                            <input type="text" class="form-control price-input" id="modalOriginalPrice" name="OriginalPrice" inputmode="numeric" required>
+                            <div class="invalid-feedback">Vui lòng nhập giá vốn hợp lệ (chỉ nhập số).</div>
+                            <div id="modalOriginalPriceSuggestions" class="price-suggestions mt-1" style="display: none;"></div> @* Đổi ID để rõ ràng hơn *@
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalPrice" class="form-label">Đơn giá <span class="text-danger">*</span></label> @* Đổi ID để rõ ràng hơn *@
+                            <input type="text" class="form-control price-input" id="modalPrice" name="Price" inputmode="numeric" required>
+                            <div class="invalid-feedback">Vui lòng nhập đơn giá hợp lệ (chỉ nhập số).</div>
+                            <div id="modalPriceSuggestions" class="price-suggestions mt-1" style="display: none;"></div> @* Đổi ID để rõ ràng hơn *@
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalImageProduct" class="form-label"> Hình ảnh <span id="imageRequiredIndicator" class="text-danger">*</span> </label> @* Đổi ID để rõ ràng hơn *@
+                            @* Thuộc tính required sẽ được thêm/xóa bằng JS *@
+                            <input type="file" class="form-control" id="modalImageProduct" name="ImageProduct" accept="image/*">
+                            <div class="invalid-feedback" id="imageInvalidFeedback">Vui lòng chọn hình ảnh.</div>
+                            <div id="currentImagePreviewContainer" class="mt-2" style="display: none;">
+                                <label class="form-label small text-muted">Ảnh hiện tại:</label><br />
+                                <img id="currentImagePreview" src="#" alt="Ảnh hiện tại" style="max-height: 70px; max-width: 100px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;" />
+                                <span class="ms-2 small text-muted">(Chọn file mới để thay thế)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="modalDescription" class="form-label">Mô tả</label> @* Đổi ID để rõ ràng hơn *@
+                            <textarea class="form-control" id="modalDescription" name="Description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Trạng thái <span class="text-danger">*</span></label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="InStock" id="modalInStockTrue" value="true" required checked> @* Đổi ID để rõ ràng hơn *@
+                                <label class="form-check-label" for="modalInStockTrue">Còn hàng</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="InStock" id="modalInStockFalse" value="false" required> @* Đổi ID để rõ ràng hơn *@
+                                <label class="form-check-label" for="modalInStockFalse">Hết hàng</label>
+                            </div>
+                            <div class="invalid-feedback" id="inStockError" style="display: none;">Vui lòng chọn trạng thái hàng.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">Lưu</button> @* Nút này giữ nguyên ID vì dùng chung *@
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Styles {
+    @* --- CSS --- *@
+    @* DataTables Bootstrap 5 *@
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    @* Select2 *@
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    @* Font Awesome & Bootstrap Icons *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    @* Notyf *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    @* SweetAlert2 *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* --- CSS Tùy chỉnh --- */
+        .custom-swal-popup {
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .15);
+        }
+
+            .custom-swal-popup .swal2-title {
+                font-size: 1.4em;
+            }
+
+            .custom-swal-popup .swal2-html-container {
+                font-size: 1.1em;
+                color: #555;
+            }
+
+        .custom-confirm-btn {
+            background-color: #28a745 !important;
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: .5em 1.5em;
+            border: none;
+        }
+
+            .custom-confirm-btn:hover {
+                background-color: #218838 !important;
+            }
+
+        .custom-cancel-btn {
+            background-color: #6c757d !important;
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: .5em 1.5em;
+            border: none;
+        }
+
+            .custom-cancel-btn:hover {
+                background-color: #5a6268 !important;
+            }
+
+        .custom-delete-btn {
+            background-color: #dc3545 !important;
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: .5em 1.5em;
+            border: none;
+        }
+
+            .custom-delete-btn:hover {
+                background-color: #c82333 !important;
+            }
+
+        .product-name-cell {
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            cursor: default;
+        }
+
+        #productTable {
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            #productTable td,
+            #productTable th {
+                text-align: center;
+                vertical-align: middle;
+                border-bottom: 1px solid #eee;
+                white-space: nowrap;
+            }
+
+                #productTable td:first-child,
+                #productTable th:first-child {
+                    text-align: center;
+                }
+
+                #productTable td:last-child,
+                #productTable th:last-child {
+                    text-align: center;
+                    white-space: nowrap;
+                }
+
+            #productTable thead {
+                background-color: #f8f9fa;
+                color: #495057;
+                border-top: 1px solid #dee2e6;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+                #productTable thead th {
+                    white-space: nowrap;
+                    font-weight: 600;
+                    border-bottom-width: 0;
+                    /* Mũi tên sắp xếp được xử lý bởi CSS của DataTables */
+                }
+
+            #productTable tbody tr:last-child td {
+                border-bottom-width: 0;
+            }
+
+            #productTable tbody tr:hover {
+                background-color: #f1f1f1;
+            }
+
+            #productTable .product-image {
+                height: 45px;
+                width: 45px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #eee;
+            }
+
+        .badge {
+            padding: .4em .6em;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .pagination-container {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pagination .page-item .page-link {
+            border-radius: .25rem;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+            color: #0d6efd;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+            z-index: 3;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            background-color: #fff;
+            border-color: #dee2e6;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        #customPageInfo {
+            margin-top: 0.5rem;
+            margin-left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        @@media (max-width: 380px) {
+            .pagination .page-item .page-link {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Ẩn các phần tử mặc định của DataTables */
+        .dataTables_filter,
+        .dataTables_info,
+        .dataTables_length,
+        .dataTables_paginate {
+            display: none !important;
+        }
+
+        .price-suggestions {
+            z-index: 1056; /* Cao hơn z-index mặc định của modal (1055) */
+            position: relative; /* Cần thiết cho z-index */
+        }
+
+        .suggestion-btn {
+            display: inline-block;
+            margin: 2px;
+            padding: 3px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            font-size: .85em;
+            color: #333;
+        }
+
+            .suggestion-btn:hover {
+                background-color: #e9ecef;
+                border-color: #bbb;
+            }
+
+        /* Điều chỉnh kiểu Select2 */
+        .select2-container--bootstrap-5 .select2-selection__placeholder,
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-search,
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered .select2-selection__choice,
+        .select2-container--bootstrap-5 .select2-dropdown .select2-results__options .select2-results__option,
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-search .select2-search__field {
+            font-family: var(--bs-body-font-family);
+            font-size: var(--bs-body-font-size);
+            font-weight: var(--bs-body-font-weight);
+            color: #6c757d;
+        }
+
+            .select2-container--bootstrap-5 .select2-dropdown .select2-results__options .select2-results__option.select2-results__option--selected,
+            .select2-container--bootstrap-5 .select2-dropdown .select2-results__options .select2-results__option[aria-selected=true]:not(.select2-results__option--highlighted),
+            .select2-container--bootstrap-5 .select2-dropdown .select2-results__options .select2-results__option.select2-results__option--highlighted {
+                color: #fff;
+                background-color: #0d6efd;
+            }
+
+        /* Kiểu validation Select2 */
+        .was-validated .form-select.is-invalid ~ .select2-container--bootstrap-5 .select2-selection,
+        .form-select.is-invalid ~ .select2-container--bootstrap-5 .select2-selection {
+            border-color: #dc3545 !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection.is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .is-valid + .select2-container--bootstrap-5 .select2-selection,
+        .was-validated select:valid + .select2-container--bootstrap-5 .select2-selection {
+            border-color: #198754;
+        }
+
+        #toggleFilterBtn i {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #filterContainer {
+            overflow: hidden;
+        }
+
+        /* Lớp phủ Loading */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 10; /* Giảm z-index để không che modal */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+        /* Lớp phủ Loading cho toàn trang (khi xóa,...) */
+        body > .loading-overlay {
+            position: fixed; /* Fixed để che toàn màn hình */
+            z-index: 1060; /* Cao hơn modal */
+        }
+    </style>
+}
+
+@section Scripts {
+    @* --- Thư viện JS --- *@
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function ($) { // Hàm bao bọc jQuery để tránh xung đột
+            "use strict";
+
+            // =========================================================================
+            // NHÓM TIỆN ÍCH (Notifications, Formatting, Loading)
+            // =========================================================================
+
+            // --- Khởi tạo Notyf ---
+            const notyf = new Notyf({
+                duration: 3000,
+                position: { x: 'right', y: 'top' },
+                types: [
+                    { type: 'success', background: '#28a745', icon: { className: 'fas fa-check-circle', tagName: 'i', color: 'white' } },
+                    { type: 'error', background: '#dc3545', icon: { className: 'fas fa-times-circle', tagName: 'i', color: 'white' } },
+                    { type: 'warning', background: '#ffc107', icon: { className: 'fas fa-exclamation-triangle', tagName: 'i', color: 'white' }, duration: 5000 },
+                    { type: 'info', background: '#0d6efd', icon: { className: 'fas fa-info-circle', tagName: 'i', color: 'white' }, duration: 4000 }
+                ],
+                dismissible: true
+            });
+
+            // --- Hàm Thông báo ---
+            function showSuccessToast(message) {
+                notyf.success(message || 'Thao tác thành công.');
+            }
+
+            function showErrorAlert(title, message, errors = []) {
+                let combinedMessage = (title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.');
+                if (errors && errors.length > 0) {
+                    console.error("Chi tiết lỗi:", errors);
+                }
+                notyf.error(combinedMessage);
+            }
+
+            // --- Hàm Định dạng ---
+            function formatCurrencyVND(value) {
+                if (value === null || value === undefined || value === '') return '';
+                const number = Number(String(value).replace(/,/g, ''));
+                if (isNaN(number)) return '';
+                try {
+                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(number);
+                } catch (e) {
+                    console.error("Lỗi định dạng tiền tệ:", value, e);
+                    return number.toLocaleString('vi-VN') + ' ₫';
+                }
+            }
+
+            function parseCurrencyVND(value) {
+                if (typeof value !== 'string' || !value) return "";
+                const cleaned = value.replace(/[^\d]/g, '');
+                return cleaned === "" ? "" : cleaned;
+            }
+
+            // --- Hàm Chỉ báo Loading ---
+            function showLoading(elementSelector = 'body', message = 'Đang xử lý...') {
+                const target = $(elementSelector);
+                if (target.length && target.find('.loading-overlay').length === 0) {
+                    const positionStyle = (elementSelector === 'body' || target.css('position') === 'fixed') ? 'fixed' : 'absolute';
+                    if (positionStyle === 'absolute' && !['relative', 'absolute', 'fixed'].includes(target.css('position'))) {
+                        target.css('position', 'relative');
+                    }
+                    const zIndex = (elementSelector === 'body') ? 1060 : 10;
+                    target.append(`
+                                 <div class="loading-overlay" style="position: ${positionStyle}; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: ${zIndex}; display: flex; justify-content: center; align-items: center; color: #333;">
+                                     <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                     <span class="ms-2">${message}</span>
+                                 </div>
+                             `);
+                }
+            }
+
+            function hideLoading(elementSelector = 'body') {
+                $(elementSelector).find('.loading-overlay').fadeOut(100, function () {
+                    $(this).remove();
+                });
+            }
+
+            // =========================================================================
+            // NHÓM SELECT2 & DROPDOWN DATA
+            // =========================================================================
+
+            function initializeSelect2(selector, placeholder, options = {}) {
+                const isMultiple = $(selector).prop('multiple');
+                const defaults = {
+                    theme: "bootstrap-5",
+                    width: '100%',
+                    placeholder: placeholder,
+                    allowClear: !isMultiple,
+                    language: { noResults: () => "Không tìm thấy", searching: () => "Đang tìm..." },
+                    closeOnSelect: !isMultiple
+                };
+                if (options.allowClearMultiple !== undefined) {
+                    defaults.allowClear = options.allowClearMultiple;
+                    delete options.allowClearMultiple;
+                }
+                const config = $.extend({}, defaults, options);
+                if ($(selector).data('select2')) $(selector).select2('destroy');
+                $(selector).select2(config);
+            }
+
+            function setupAllSelect2() {
+                // Bộ lọc
+                initializeSelect2('#filterCategory', 'Chọn loại SP', { allowClearMultiple: true });
+                initializeSelect2('#filterUnit', 'Chọn ĐVT', { allowClearMultiple: true });
+                // Modal
+                initializeSelect2('#modalIdCategory', 'Chọn loại SP', { dropdownParent: $('#productModal'), allowClear: false });
+                initializeSelect2('#modalUnitInput', 'Chọn hoặc nhập ĐVT', { dropdownParent: $('#productModal'), tags: true, allowClear: false });
+
+                // --- Sửa lỗi bỏ chọn của Select2 multi-select ---
+                const multiSelectFilters = $('#filterCategory, #filterUnit');
+                let blockDropdownOpening = false;
+                multiSelectFilters.on('select2:unselecting', function (e) {
+                    if (e.params.args?.originalEvent?.target?.classList.contains('select2-selection__choice__remove')) {
+                        blockDropdownOpening = true;
+                        setTimeout(() => { blockDropdownOpening = false; }, 150);
+                    }
+                });
+                multiSelectFilters.on('select2:opening', function (e) {
+                    if (blockDropdownOpening) {
+                        blockDropdownOpening = false;
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            function loadDropdownData(url, selector, valueField, textField, callback) {
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: data => {
+                        const dropdown = $(selector);
+                        const selectedValue = dropdown.val();
+                        const placeholderOption = dropdown.find('option:first:disabled');
+                        dropdown.find('option:not(:disabled)').remove();
+
+                        if (Array.isArray(data) && data.length > 0) {
+                            if (typeof data[0] === 'string') {
+                                $.each(data, (index, item) => {
+                                    if (dropdown.find(`option[value="${item}"]`).length === 0) {
+                                        dropdown.append($('<option>', { value: item, text: item }));
+                                    }
+                                });
+                            } else if (typeof data[0] === 'object' && data[0] !== null && data[0].hasOwnProperty(valueField) && data[0].hasOwnProperty(textField)) {
+                                $.each(data, (index, item) => {
+                                    dropdown.append($('<option>', { value: item[valueField], text: item[textField] }));
+                                });
+                            }
+                        }
+
+                        if (selectedValue) {
+                            if (Array.isArray(selectedValue)) {
+                                const existingValues = selectedValue.filter(val => dropdown.find(`option[value="${val}"]`).length > 0);
+                                dropdown.val(existingValues);
+                            } else if (dropdown.find(`option[value="${selectedValue}"]`).length > 0) {
+                                dropdown.val(selectedValue);
+                            } else {
+                                dropdown.val(placeholderOption.val() || null);
+                            }
+                        } else {
+                            dropdown.val(placeholderOption.val() || null);
+                        }
+                        dropdown.trigger('change.select2');
+                        if (typeof callback === 'function') callback();
+                    },
+                    error: (xhr, status) => {
+                        console.error(`Lỗi tải ${selector}:`, status);
+                        showErrorAlert('Lỗi Tải Dữ Liệu', `Không thể tải danh sách cho ${$(selector).prev('label').text() || selector}.`);
+                    }
+                });
+            }
+
+            function loadAllDropdowns(callback) {
+                let completionCounter = 0;
+                const totalDropdowns = 4;
+                const categoryUrl = '/Admin/Product/GetCategories';
+                const unitUrl = '/Admin/Product/GetUnits';
+
+                function checkCompletion() {
+                    completionCounter++;
+                    if (completionCounter === totalDropdowns && typeof callback === 'function') callback();
+                }
+
+                loadDropdownData(categoryUrl, '#filterCategory', 'id', 'nameCategory', checkCompletion);
+                loadDropdownData(unitUrl, '#filterUnit', null, null, checkCompletion);
+                loadDropdownData(categoryUrl, '#modalIdCategory', 'id', 'nameCategory', checkCompletion);
+                loadDropdownData(unitUrl, '#modalUnitInput', null, null, checkCompletion);
+            }
+            // Hàm để tải lại chỉ dropdown đơn vị tính (sau khi thêm/sửa/xóa)
+            function reloadUnitDropdowns() {
+                const unitUrl = '/Admin/Product/GetUnits';
+                loadDropdownData(unitUrl, '#filterUnit', null, null);
+                loadDropdownData(unitUrl, '#modalUnitInput', null, null);
+            }
+
+
+            // =========================================================================
+            // NHÓM GỢI Ý GIÁ (Price Suggestions)
+            // =========================================================================
+            const priceSuggestionModule = (function () {
+                const STATIC_SUGGESTIONS = [5000, 10000, 15000, 20000, 25000, 30000, 35000, 50000];
+                const MAX_SUGGEST_VALUE = 50000000000n; // 50 tỷ
+                const MIN_SUGGEST_OUTPUT = 1000n;
+                let blurTimeout; // Chỉ cần 1 timeout cho tất cả
+
+                function updateSuggestions(inputElement, suggestionContainer) {
+                    const isVisible = suggestionContainer.is(':visible');
+                    suggestionContainer.empty().hide();
+                    const rawValue = inputElement.val().trim();
+                    const cleanedValue = parseCurrencyVND(rawValue);
+                    const suggestions = new Set();
+
+                    if (cleanedValue === '' || cleanedValue === '0') {
+                        STATIC_SUGGESTIONS.forEach(value => {
+                            if (value >= 1000 && BigInt(value) <= MAX_SUGGEST_VALUE) {
+                                try { suggestions.add(BigInt(value)); } catch (e) { console.error("BigInt static error:", value, e); }
+                            }
+                        });
+                    } else {
+                        try {
+                            const baseValue = BigInt(cleanedValue);
+                            if (baseValue > 0n) {
+                                let initialMultiplier = 1n;
+                                if ((baseValue * 1n) % 1000n !== 0n) {
+                                    if ((baseValue * 10n) % 1000n === 0n) initialMultiplier = 10n;
+                                    else if ((baseValue * 100n) % 1000n === 0n) initialMultiplier = 100n;
+                                    else initialMultiplier = 1000n;
+                                }
+                                const firstSuggest = baseValue * initialMultiplier;
+
+                                if (firstSuggest >= MIN_SUGGEST_OUTPUT && firstSuggest <= MAX_SUGGEST_VALUE) {
+                                    suggestions.add(firstSuggest);
+                                    const subsequentMultipliers = [10n, 100n, 1000n, 10000n, 100000n, 1000000n];
+                                    subsequentMultipliers.forEach(multiplier => {
+                                        try {
+                                            const result = firstSuggest * multiplier;
+                                            if (result > 0n && result <= MAX_SUGGEST_VALUE) suggestions.add(result);
+                                            if (result > MAX_SUGGEST_VALUE / 10n) return false;
+                                        } catch (e) { console.error(`BigInt multiply error: ${firstSuggest} * ${multiplier}`, e); return false; }
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            console.error("BigInt suggest error:", cleanedValue, e);
+                            STATIC_SUGGESTIONS.forEach(v => { if (v >= 1000 && BigInt(v) <= MAX_SUGGEST_VALUE) try { suggestions.add(BigInt(v)); } catch { } });
+                        }
+                    }
+
+                    const sortedSuggestions = Array.from(suggestions)
+                        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+                        .slice(0, 8);
+
+                    sortedSuggestions.forEach(valueBigInt => {
+                        const valueString = valueBigInt.toString();
+                        const formattedValue = formatCurrencyVND(valueString);
+                        if (formattedValue) {
+                            $('<button type="button"></button>')
+                                .addClass('suggestion-btn btn btn-sm btn-outline-secondary')
+                                .text(formattedValue)
+                                .data('value', valueString)
+                                .appendTo(suggestionContainer);
+                        }
+                    });
+
+                    if (sortedSuggestions.length > 0) {
+                        if (!isVisible) suggestionContainer.slideDown(150);
+                        else suggestionContainer.show();
+                    }
+                }
+
+                function setupInput(inputId, containerId) {
+                    const input = $(`#${inputId}`);
+                    const container = $(`#${containerId}`);
+                    const modalPriceInputsSelector = '#productForm .price-input'; // Selector cục bộ
+                    const allSuggestionsSelector = '.price-suggestions';       // Selector cục bộ
+                    const suggestionBtnSelector = '.suggestion-btn';          // Selector cục bộ
+
+
+                    input.on('focus input', function () {
+                        clearTimeout(blurTimeout);
+                        // Ẩn gợi ý của input giá khác trong modal
+                        $(modalPriceInputsSelector).not(this).each(function () {
+                            const otherInputId = $(this).attr('id');
+                            const otherContainerId = otherInputId === 'modalOriginalPrice' ? '#modalOriginalPriceSuggestions' : '#modalPriceSuggestions';
+                            $(otherContainerId).slideUp(100);
+                        });
+                        updateSuggestions(input, container);
+                    });
+
+                    input.on('blur', function () {
+                        clearTimeout(blurTimeout);
+                        blurTimeout = setTimeout(() => {
+                            const $activeElement = $(document.activeElement);
+                            // Chỉ ẩn nếu focus KHÔNG nằm trong bất kỳ input giá hoặc hộp gợi ý nào của modal
+                            if (!$activeElement.closest(modalPriceInputsSelector).length &&
+                                !$activeElement.closest(allSuggestionsSelector).length) {
+                                container.slideUp(100);
+                            }
+                            // Định dạng giá trị sau khi blur (được xử lý ở setupAll)
+                        }, 150);
+                    });
+
+                    container.on('mousedown', suggestionBtnSelector, function (e) {
+                        e.preventDefault();
+                        clearTimeout(blurTimeout);
+                        const suggestedValue = $(this).data('value');
+                        input.val(suggestedValue).trigger('input');
+                        setTimeout(() => {
+                            input.blur(); // Gọi blur sau khi đặt giá trị
+                            // container.slideUp(100); // Không cần ẩn ở đây, blur sẽ xử lý hoặc input khác focus
+                        }, 0);
+                    });
+                }
+
+                function setupAll() {
+                    // Selectors cục bộ cho setupAll
+                    const modalPriceInputsSelector = '#productForm .price-input';
+                    const allSuggestionsSelector = '.price-suggestions';
+
+                    // Khởi tạo cho 2 input giá trong modal
+                    setupInput('modalOriginalPrice', 'modalOriginalPriceSuggestions');
+                    setupInput('modalPrice', 'modalPriceSuggestions');
+
+                    // Ẩn gợi ý nếu click ra ngoài input giá và hộp gợi ý
+                    $(document).on('mousedown', function (e) {
+                        if (!$(e.target).closest(modalPriceInputsSelector).length &&
+                            !$(e.target).closest(allSuggestionsSelector).length) {
+                            $(allSuggestionsSelector).slideUp(100);
+                        }
+                    });
+
+                    // Định dạng khi blur
+                    $(modalPriceInputsSelector).on('blur', function () {
+                        const input = $(this);
+                        // Delay formatting slightly longer than suggestion blur timeout
+                        setTimeout(() => {
+                            if (!input.is(':focus')) { // Only format if not focused
+                                const parsedValue = parseCurrencyVND(input.val());
+                                input.val(formatCurrencyVND(parsedValue));
+                                // Re-validate if needed
+                                try { if (typeof input.valid === 'function') input.valid(); } catch (err) { /* Ignore */ }
+                            }
+                        }, 160);
+                    });
+
+                    // Xóa định dạng khi focus
+                    $(modalPriceInputsSelector).on('focus', function () {
+                        const input = $(this);
+                        const parsedValue = parseCurrencyVND(input.val());
+                        if (parsedValue !== "") input.val(parsedValue);
+                    });
+                }
+
+                // Trả về hàm public
+                return { setup: setupAll };
+            })();
+
+
+            // =========================================================================
+            // NHÓM DATATABLE & PHÂN TRANG
+            // =========================================================================
+            const dataTableModule = (function () {
+                let tableInstance = null;
+                let isInitialized = false;
+                let processingTimeoutId = null;
+                const tableSelector = '#productTable';
+                const containerSelector = '#productTableContainer';
+                const defaultImageUrl = '/images/default-product.png'; // Cục bộ
+
+                function updatePagination(api) {
+                    if (!isInitialized || !api) return;
+                    const pageInfo = api.page.info();
+                    const paginationList = $('.pagination'); // Selector cục bộ
+                    const pageInfoSpan = $('#customPageInfo');   // Selector cục bộ
+                    const paginationContainer = $('.pagination-container'); // Selector cục bộ
+
+                    paginationList.find('.page-item.page-number').remove();
+                    pageInfoSpan.hide().empty();
+
+                    if (pageInfo.pages <= 1) {
+                        paginationContainer.hide(); return;
+                    } else {
+                        paginationContainer.show();
+                    }
+
+                    const recordsDisplayed = pageInfo.recordsDisplay;
+                    const recordsTotal = pageInfo.recordsTotal;
+                    let infoText = "";
+                    if (recordsDisplayed === 0) {
+                        infoText = "(Không có sản phẩm nào)";
+                        paginationList.find('.page-item').addClass('disabled');
+                    } else {
+                        const startRecord = pageInfo.start + 1;
+                        const endRecord = pageInfo.end;
+                        infoText = `Hiện ${startRecord}-${endRecord} / ${recordsDisplayed.toLocaleString('vi-VN')} sản phẩm`;
+                        if (recordsDisplayed < recordsTotal) infoText += ` (lọc từ ${recordsTotal.toLocaleString('vi-VN')})`;
+                        paginationList.find('.page-item').removeClass('disabled');
+                    }
+                    pageInfoSpan.text(infoText).show();
+
+                    if (pageInfo.pages > 1) {
+                        const currentPage = pageInfo.page;
+                        const totalPages = pageInfo.pages;
+                        const maxPagesToShow = 5;
+                        let startPage, endPage;
+
+                        if (totalPages <= maxPagesToShow) { startPage = 0; endPage = totalPages - 1; }
+                        else {
+                            const pagesBefore = Math.floor(maxPagesToShow / 2);
+                            const pagesAfter = Math.ceil(maxPagesToShow / 2) - 1;
+                            if (currentPage <= pagesBefore) { startPage = 0; endPage = maxPagesToShow - 1; }
+                            else if (currentPage + pagesAfter >= totalPages - 1) { startPage = totalPages - maxPagesToShow; endPage = totalPages - 1; }
+                            else { startPage = currentPage - pagesBefore; endPage = currentPage + pagesAfter; }
+                        }
+
+                        if (startPage > 0) $('#customPrevious').after('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+
+                        for (let i = startPage; i <= endPage; i++) {
+                            const pageNum = i + 1;
+                            const pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`);
+                            pageItem.insertBefore($('#customNext')).find('a').on('click', function (e) {
+                                e.preventDefault();
+                                if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) api.page(i).draw('page');
+                            });
+                        }
+
+                        if (endPage < totalPages - 1) $('#customNext').before('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+
+                        $('#customFirst').toggleClass('disabled', currentPage === 0);
+                        $('#customPrevious').toggleClass('disabled', currentPage === 0);
+                        $('#customNext').toggleClass('disabled', currentPage >= totalPages - 1);
+                        $('#customLast').toggleClass('disabled', currentPage >= totalPages - 1);
+                    } else {
+                        $('#customFirst, #customPrevious, #customNext, #customLast').addClass('disabled');
+                    }
+                }
+
+                function setupPaginationEvents() {
+                    const container = $('.pagination-container'); // Selector cục bộ
+                    container.on('click', '#customPrevious a', function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled') && isInitialized) tableInstance.page('previous').draw('page'); });
+                    container.on('click', '#customNext a', function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled') && isInitialized) tableInstance.page('next').draw('page'); });
+                    container.on('click', '#customFirst a', function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled') && isInitialized) tableInstance.page('first').draw('page'); });
+                    container.on('click', '#customLast a', function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled') && isInitialized) tableInstance.page('last').draw('page'); });
+                }
+
+                function init() {
+                    if (isInitialized) return tableInstance;
+
+                    // Selectors cục bộ cho init
+                    const pageLengthSelector = '#customPageLength';
+                    const statusFilterSelector = '#filterIsShow';
+                    const unitPriceFromSelector = '#filterUnitPriceFrom';
+                    const unitPriceToSelector = '#filterUnitPriceTo';
+                    const categoryFilterSelector = '#filterCategory';
+                    const unitFilterSelector = '#filterUnit';
+                    const costPriceFromSelector = '#filterCostPriceFrom';
+                    const costPriceToSelector = '#filterCostPriceTo';
+                    const dateFromSelector = '#filterCreatedDateFrom';
+                    const dateToSelector = '#filterCreatedDateTo';
+
+
+                    tableInstance = $(tableSelector).DataTable({
+                        serverSide: true,
+                        autoWidth: false,
+                        ajax: {
+                            url: '/Admin/Product/GetData', // URL trực tiếp
+                            type: 'POST',
+                            data: function (d) {
+                                // Sử dụng selectors cục bộ đã khai báo
+                                d.isActive = $(statusFilterSelector).val();
+                                d.unitPriceFrom = parseCurrencyVND($(unitPriceFromSelector).val()) || null;
+                                d.unitPriceTo = parseCurrencyVND($(unitPriceToSelector).val()) || null;
+                                d.categoryIds = $(categoryFilterSelector).val() || [];
+                                d.unitOfMeasures = $(unitFilterSelector).val() || [];
+                                d.costPriceFrom = parseCurrencyVND($(costPriceFromSelector).val()) || null;
+                                d.costPriceTo = parseCurrencyVND($(costPriceToSelector).val()) || null;
+                                d.createdDateFrom = $(dateFromSelector).val() || null;
+                                d.createdDateTo = $(dateToSelector).val() || null;
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                console.error("Lỗi AJAX DataTable:", textStatus, errorThrown);
+                                showErrorAlert('Lỗi Tải Dữ Liệu', `Không thể tải danh sách sản phẩm. Lỗi: ${textStatus}`);
+                                $('.pagination-container').hide();
+                            },
+                            dataSrc: function (json) {
+                                if (json.error) {
+                                    console.error("Lỗi Server:", json.error);
+                                    showErrorAlert('Lỗi Dữ Liệu Từ Server', json.error);
+                                    $('.pagination-container').hide();
+                                    return [];
+                                }
+                                if (!isInitialized) isInitialized = true;
+                                return json.data;
+                            }
+                        },
+                        columns: [
+                            { data: null, title: 'STT', orderable: false, searchable: false, width: '30px', className: 'text-center align-middle', render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart },
+                            { data: 'imageProduct', title: 'Ảnh', orderable: false, searchable: false, width: '60px', className: 'text-center align-middle', render: (data, type, row) => `<img src="${data && data !== 'default-product.png' ? `/product/${data}` : defaultImageUrl}" class="product-image" alt="${row.nameProduct || 'Ảnh SP'}" loading="lazy" onerror="this.onerror=null; this.src='${defaultImageUrl}';"/>` },
+                            { data: 'nameProduct', title: 'Tên SP', orderable: true, className: 'product-name-cell align-middle', render: (data) => `<div data-bs-toggle="tooltip" data-bs-placement="top" title="${data ? $('<div>').text(data).html() : ''}">${data || 'N/A'}</div>` },
+                            { data: 'category', title: 'Loại', orderable: true, className: 'align-middle' },
+                            { data: 'unitOfMeasure', title: 'ĐVT', orderable: true, className: 'align-middle' },
+                            { data: 'unitPrice', title: 'Đơn giá', orderable: true, className: 'text-end align-middle', render: data => formatCurrencyVND(data) },
+                            { data: 'costPrice', title: 'Giá vốn', orderable: true, className: 'text-end align-middle', render: data => formatCurrencyVND(data) },
+                            { data: 'createdAt', title: 'Ngày tạo', orderable: true, className: 'text-center align-middle', render: data => { try { const date = new Date(data); return (isNaN(date.getTime()) || date.getFullYear() <= 1) ? 'N/A' : date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch { return 'N/A'; } } },
+                            { data: 'isActive', title: 'Trạng thái', orderable: true, className: 'text-center align-middle', render: data => data ? '<span class="badge bg-success-subtle text-success-emphasis rounded-pill">Còn hàng</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Hết hàng</span>' },
+                            { data: 'productId', title: 'H.Động', orderable: false, searchable: false, width: '80px', className: 'text-center align-middle', render: (data, type, row) => `<button type="button" class="btn btn-sm btn-outline-warning me-1 px-1 py-0 edit-product-btn" data-product-id="${data}" title="Chỉnh sửa"><i class="fas fa-edit small"></i></button>` + `<button type="button" onclick="deleteProduct(${data}, '${row.nameProduct ? String(row.nameProduct).replace(/'/g, "\\'").replace(/"/g, '&quot;') : 'sản phẩm này'}')" class="btn btn-sm btn-outline-danger px-1 py-0" title="Xóa"><i class="fas fa-trash small"></i></button>` }
+                        ],
+                        pageLength: parseInt($(pageLengthSelector).val()) || 5,
+                        lengthMenu: [5, 10, 15, 20, 25, 50, 100],
+                        responsive: true,
+                        language: { "sEmptyTable": "Không có dữ liệu", "sInfo": "Hiện _START_-_END_ / _TOTAL_", "sInfoEmpty": "Hiện 0-0 / 0", "sInfoFiltered": "(lọc từ _MAX_)", "sLoadingRecords": "Đang tải...", "sZeroRecords": "Không tìm thấy kết quả phù hợp.", "sProcessing": "", "oPaginate": { "sFirst": "<<", "sLast": ">>", "sNext": ">", "sPrevious": "<" } },
+                        searching: true, lengthChange: false, info: false, paging: true, dom: 'rt', order: [[7, 'desc']],
+                        drawCallback: function (settings) {
+                            updatePagination(settings.oInstance.api());
+                            // Khởi tạo tooltip
+                            const tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [data-bs-toggle="tooltip"]`));
+                            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                let existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (existingTooltip) existingTooltip.dispose();
+                                return new bootstrap.Tooltip(tooltipTriggerEl);
+                            });
+                        }
+                    });
+
+                    // --- Sự kiện loading ---
+                    tableInstance.on('processing.dt', function (e, settings, processing) {
+                        const $container = $(containerSelector);
+                        const delay = 300; // Cục bộ
+                        if (processing) {
+                            clearTimeout(processingTimeoutId);
+                            processingTimeoutId = setTimeout(() => showLoading(containerSelector, 'Đang tải...'), delay);
+                        } else {
+                            clearTimeout(processingTimeoutId);
+                            hideLoading(containerSelector);
+                        }
+                    });
+
+                    // --- Sự kiện click nút sửa (Ủy quyền) ---
+                    $(`${tableSelector} tbody`).on('click', '.edit-product-btn', function (e) {
+                        e.preventDefault();
+                        const productId = $(this).data('productId');
+                        if (productId) {
+                            // Gọi hàm global (cần thiết vì nút sửa được render động)
+                            window.showEditProductModal(productId);
+                        } else {
+                            console.error("Không tìm thấy ID sản phẩm trên nút sửa");
+                            showErrorAlert('Lỗi', 'Không thể xác định sản phẩm cần sửa.');
+                        }
+                    });
+
+
+                    setupPaginationEvents(); // Thiết lập sự kiện phân trang sau khi table init
+                    isInitialized = true;
+                    return tableInstance;
+                }
+
+                // Hàm public để reload bảng từ bên ngoài
+                function reload(resetPaging = false) {
+                    if (tableInstance && isInitialized) {
+                        tableInstance.ajax.reload(null, resetPaging); // giữ nguyên trang hiện tại nếu resetPaging=false
+                    }
+                }
+                // Hàm public để tìm kiếm
+                function search(value) {
+                    if (tableInstance && isInitialized) {
+                        tableInstance.search(value).draw();
+                    }
+                }
+                // Hàm public để đổi số dòng/trang
+                function setPageLength(length) {
+                    if (tableInstance && isInitialized) {
+                        tableInstance.page.len(length).draw();
+                    }
+                }
+
+                // Trả về các hàm/biến cần truy cập từ bên ngoài
+                return {
+                    init: init,
+                    reload: reload,
+                    search: search,
+                    setPageLength: setPageLength,
+                    getInstance: () => tableInstance, // Cách lấy instance nếu cần
+                    isInitialized: () => isInitialized
+                };
+            })();
+
+
+            // =========================================================================
+            // NHÓM BỘ LỌC & TÌM KIẾM (Filter & Search)
+            // =========================================================================
+            const filterSearchModule = (function () {
+                let searchTimeout;
+                let priceFilterTimeout;
+
+                function setup() {
+                    // Selectors cục bộ
+                    const searchInputSelector = '#customSearch';
+                    const priceFilterInputsSelector = '.price-filter-input';
+                    const dateFilterInputsSelector = '.date-filter-input';
+                    const statusFilterSelector = '#filterIsShow';
+                    const categoryFilterSelector = '#filterCategory';
+                    const unitFilterSelector = '#filterUnit';
+                    const pageLengthSelector = '#customPageLength';
+                    const toggleFilterBtnSelector = '#toggleFilterBtn';
+                    const filterContainerSelector = '#filterContainer';
+                    const resetFilterBtnSelector = '#resetFilterBtn';
+                    const searchDebounce = 400; // Cục bộ
+                    const priceDebounce = 500;  // Cục bộ
+                    const slideToggleDuration = 350; // Cục bộ
+
+
+                    // --- Tìm kiếm ---
+                    $(searchInputSelector).on('keyup', function () {
+                        const searchValue = $(this).val();
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            if (dataTableModule.isInitialized()) {
+                                dataTableModule.search(searchValue); // Gọi hàm search của dataTableModule
+                            }
+                        }, searchDebounce);
+                    });
+
+                    // --- Lọc giá ---
+                    $(priceFilterInputsSelector).on('keyup', function () {
+                        clearTimeout(priceFilterTimeout);
+                        priceFilterTimeout = setTimeout(() => {
+                            if (dataTableModule.isInitialized()) {
+                                dataTableModule.reload(); // Gọi hàm reload
+                            }
+                        }, priceDebounce);
+                    });
+                    $(priceFilterInputsSelector).on('blur', function () {
+                        const input = $(this);
+                        setTimeout(() => input.val(formatCurrencyVND(parseCurrencyVND(input.val()))), 100);
+                    });
+                    $(priceFilterInputsSelector).on('focus', function () {
+                        const input = $(this);
+                        const parsedValue = parseCurrencyVND(input.val());
+                        if (parsedValue !== "") input.val(parsedValue);
+                    });
+
+                    // --- Lọc Dropdown (Trạng thái, Loại, ĐVT) ---
+                    $(statusFilterSelector + ', ' + categoryFilterSelector + ', ' + unitFilterSelector).on('change', () => {
+                        if (dataTableModule.isInitialized()) {
+                            dataTableModule.reload();
+                        }
+                    });
+
+                    // --- Lọc Ngày ---
+                    $(dateFilterInputsSelector).on('change', () => {
+                        if (dataTableModule.isInitialized()) {
+                            const dateFrom = $('#filterCreatedDateFrom').val(); // Dùng ID trực tiếp
+                            const dateTo = $('#filterCreatedDateTo').val();     // Dùng ID trực tiếp
+                            if ((!dateFrom && !dateTo) || (dateFrom && dateTo && dateTo >= dateFrom) || (dateFrom && !dateTo) || (!dateFrom && dateTo)) {
+                                dataTableModule.reload();
+                            } else {
+                                console.warn("Khoảng ngày lọc không hợp lệ.");
+                            }
+                        }
+                    });
+
+                    // --- Đổi số dòng / trang ---
+                    $(pageLengthSelector).on('change', function () {
+                        if (dataTableModule.isInitialized()) {
+                            const length = parseInt($(this).val()) || 5;
+                            dataTableModule.setPageLength(length); // Gọi hàm của dataTableModule
+                        }
+                    });
+
+                    // --- Bật/tắt bộ lọc ---
+                    $(toggleFilterBtnSelector).on('click', function () {
+                        const $button = $(this);
+                        $(filterContainerSelector).slideToggle(slideToggleDuration, () => {
+                            const isExpanded = $(filterContainerSelector).is(':visible');
+                            $button.attr('aria-expanded', isExpanded);
+                            if (isExpanded) setupAllSelect2(); // Re-init select2 khi mở lại
+                        });
+                        $button.find('i').toggleClass('fa-rotate-180');
+                    });
+
+                    // --- Reset bộ lọc ---
+                    $(resetFilterBtnSelector).on('click', () => {
+                        $(searchInputSelector).val('');
+                        $(priceFilterInputsSelector).val('');
+                        $(dateFilterInputsSelector).val('');
+                        $(statusFilterSelector).val('All');
+                        $(categoryFilterSelector).val(null).trigger('change.select2');
+                        $(unitFilterSelector).val(null).trigger('change.select2');
+                        $(pageLengthSelector).val('5'); // Reset về giá trị mặc định
+
+                        if (dataTableModule.isInitialized()) {
+                            dataTableModule.search('');      // Reset search
+                            dataTableModule.setPageLength(5); // Reset length
+                            dataTableModule.reload(true);     // Reload và về trang 1
+                        }
+                    });
+                }
+
+                return { setup: setup };
+            })();
+
+            // =========================================================================
+            // NHÓM MODAL THÊM/SỬA SẢN PHẨM (Add/Edit Modal)
+            // =========================================================================
+            const productModalModule = (function () {
+                const defaultImageUrl = '/images/default-product.png'; // Cục bộ
+                // Selectors cục bộ
+                const modalSelector = '#productModal';
+                const formSelector = '#productForm';
+                const saveBtnSelector = '#saveProductBtn';
+                const editIdInputSelector = '#editProductId';
+                const nameInputSelector = '#modalNameProduct';
+                const categoryInputSelector = '#modalIdCategory';
+                const unitInputSelector = '#modalUnitInput';
+                const originalPriceInputSelector = '#modalOriginalPrice';
+                const priceInputSelector = '#modalPrice';
+                const descriptionInputSelector = '#modalDescription';
+                const imageInputSelector = '#modalImageProduct';
+                const imageRequiredIndicatorSelector = '#imageRequiredIndicator';
+                const imageInvalidFeedbackSelector = '#imageInvalidFeedback';
+                const currentImageContainerSelector = '#currentImagePreviewContainer';
+                const currentImagePreviewSelector = '#currentImagePreview';
+                const statusTrueSelector = '#modalInStockTrue';
+                const statusFalseSelector = '#modalInStockFalse';
+                const statusErrorSelector = '#inStockError';
+                const modalTitleSelector = '#productModalLabel';
+
+                function resetForm() {
+                    const $form = $(formSelector);
+                    $form[0].reset();
+                    $form.removeClass('was-validated');
+                    $form.find('.is-invalid').removeClass('is-invalid');
+                    $form.find('.select2-container .select2-selection').removeClass('is-invalid border-danger');
+                    $form.find('.invalid-feedback').hide();
+                    $(statusErrorSelector).hide();
+
+                    $(categoryInputSelector).val(null).trigger('change.select2');
+                    $(unitInputSelector).val(null).trigger('change.select2');
+
+                    const $imageInput = $(imageInputSelector);
+                    $imageInput.val('');
+                    $imageInput.removeClass('is-invalid').removeAttr('required'); // Luôn xóa required
+                    $(currentImageContainerSelector).hide();
+                    $(currentImagePreviewSelector).attr('src', '#');
+                    $(imageRequiredIndicatorSelector).show(); // Mặc định hiển thị '*'
+                    $(imageInvalidFeedbackSelector).text('Vui lòng chọn hình ảnh.').hide();
+
+                    $(statusTrueSelector).prop('checked', true);
+                    $(editIdInputSelector).val('');
+                    $('.price-suggestions').empty().hide(); // Selector chung cho gợi ý giá
+
+                    $(modalTitleSelector).text('Thêm sản phẩm mới');
+                    $(saveBtnSelector).text('Lưu').removeClass('btn-warning').addClass('btn-primary');
+                }
+
+                function validateForm() {
+                    const $form = $(formSelector);
+                    const isEditMode = !!$(editIdInputSelector).val();
+                    let isValid = true;
+
+                    $form.removeClass('was-validated');
+                    $form.find('.is-invalid').removeClass('is-invalid');
+                    $form.find('.select2-container .select2-selection').removeClass('is-invalid border-danger');
+                    $form.find('.invalid-feedback').hide();
+                    $(statusErrorSelector).hide();
+
+                    $form.find('input[required], select[required], textarea[required]').each(function () {
+                        const $input = $(this);
+                        let fieldValid = true;
+                        const inputId = $input.attr('id');
+
+                        if ($input.is(':radio')) {
+                            const radioName = $input.attr('name');
+                            if ($form.find(`input[name="${radioName}"]:checked`).length === 0) {
+                                fieldValid = false;
+                                if (!$(statusErrorSelector).is(':visible')) {
+                                    $(statusErrorSelector).show();
+                                    $form.find(`input[name="${radioName}"]`).addClass('is-invalid');
+                                }
+                            } else {
+                                $form.find(`input[name="${radioName}"]`).removeClass('is-invalid');
+                            }
+                        } else if ($input.is('select')) {
+                            if (!$input.val()) fieldValid = false;
+                        } else {
+                            if (!$input.val() || !$input.val().trim()) fieldValid = false;
+                        }
+
+                        if ($input.hasClass('price-input')) {
+                            const parsedPrice = parseCurrencyVND($input.val());
+                            if (parsedPrice === "" || isNaN(Number(parsedPrice)) || Number(parsedPrice) < 0) fieldValid = false;
+                        }
+
+                        // Validation required ảnh chỉ khi thêm mới
+                        if (inputId === imageInputSelector.substring(1) && !isEditMode) {
+                            if ($input.is('[required]') && (!$input[0].files || $input[0].files.length === 0)) {
+                                fieldValid = false;
+                                // Đặt lại text cho trường hợp required bị thiếu
+                                $(imageInvalidFeedbackSelector).text('Vui lòng chọn hình ảnh.');
+                            }
+                        }
+
+                        if (!fieldValid) {
+                            isValid = false;
+                            if (!$input.is(':radio')) {
+                                $input.addClass('is-invalid');
+                                $input.siblings('.invalid-feedback').show();
+                                if ($input.is('select') && $input.data('select2')) {
+                                    $input.siblings('.select2-container').find('.select2-selection').addClass('is-invalid border-danger');
+                                }
+                            }
+                        } else {
+                            if (!$input.is(':radio')) {
+                                $input.removeClass('is-invalid');
+                                $input.siblings('.invalid-feedback').hide();
+                                if ($input.is('select') && $input.data('select2')) {
+                                    $input.siblings('.select2-container').find('.select2-selection').removeClass('is-invalid border-danger');
+                                }
+                            }
+                        }
+                    });
+
+                    // Validation loại file/kích thước ảnh (nếu có file)
+                    const $imageInput = $(imageInputSelector);
+                    if ($imageInput[0].files && $imageInput[0].files.length > 0) {
+                        const file = $imageInput[0].files[0];
+                        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                        const maxSize = 5 * 1024 * 1024; // 5MB
+                        const $feedback = $(imageInvalidFeedbackSelector);
+
+                        if (!allowedTypes.includes(file.type)) {
+                            isValid = false;
+                            $imageInput.addClass('is-invalid');
+                            $feedback.text('Chỉ chấp nhận file ảnh (jpg, png, gif, webp).').show();
+                        } else if (file.size > maxSize) {
+                            isValid = false;
+                            $imageInput.addClass('is-invalid');
+                            $feedback.text('Kích thước file không được vượt quá 5MB.').show();
+                        }
+                    }
+
+
+                    if (!isValid) {
+                        $form.addClass('was-validated');
+                        const $firstInvalid = $form.find('.is-invalid, .select2-selection.is-invalid.border-danger').first();
+                        if ($firstInvalid.length > 0) {
+                            if ($firstInvalid.hasClass('select2-selection')) $firstInvalid.closest('.select2-container').siblings('select.is-invalid').select2('open');
+                            else if ($firstInvalid.is(':radio')) $form.find(`input[name="${$firstInvalid.attr('name')}"].is-invalid`).first().focus();
+                            else $firstInvalid.focus();
+                        }
+                    }
+                    return isValid;
+                }
+
+                function handleSave() {
+                    if (!validateForm()) return;
+
+                    const $form = $(formSelector);
+                    const formData = new FormData($form[0]);
+                    const $saveButton = $(saveBtnSelector);
+                    const productId = $(editIdInputSelector).val();
+                    const isEditMode = !!productId;
+                    const url = isEditMode ? `/Admin/Product/Edit/${productId}` : '/Admin/Product/Create'; // URL trực tiếp
+                    const actionText = isEditMode ? 'Cập nhật' : 'Thêm';
+                    const savingText = isEditMode ? 'Đang cập nhật...' : 'Đang lưu...';
+
+                    formData.set('OriginalPrice', parseCurrencyVND(formData.get('OriginalPrice')) || '0');
+                    formData.set('Price', parseCurrencyVND(formData.get('Price')) || '0');
+
+                    $saveButton.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ${savingText}`);
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (response) {
+                            if (response.success) {
+                                $(modalSelector).modal('hide');
+                                showSuccessToast(response.message || `${actionText} sản phẩm thành công.`);
+                                if (dataTableModule.isInitialized()) {
+                                    dataTableModule.reload(); // Gọi hàm reload của module
+                                }
+                                reloadUnitDropdowns(); // Tải lại dropdown đơn vị
+                            } else {
+                                showErrorAlert(`${actionText} thất bại`, response.message, response.errors);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error(`Lỗi ${actionText} sản phẩm:`, status, error, xhr.responseText);
+                            let errorMessage = `Không thể ${actionText.toLowerCase()} sản phẩm.`;
+                            if (xhr.status === 404 && isEditMode) errorMessage = `Không tìm thấy SP (ID: ${productId}).`;
+                            else if (xhr.responseJSON?.message) errorMessage = xhr.responseJSON.message;
+                            showErrorAlert('Lỗi Hệ Thống', errorMessage);
+                            if (xhr.responseJSON?.errors) console.error("Lỗi Backend:", xhr.responseJSON.errors);
+                        },
+                        complete: function () {
+                            const buttonText = isEditMode ? 'Cập nhật' : 'Lưu';
+                            const buttonClass = isEditMode ? 'btn-warning' : 'btn-primary';
+                            $saveButton.prop('disabled', false).html(buttonText).removeClass('btn-primary btn-warning').addClass(buttonClass);
+                        }
+                    });
+                }
+
+                // Hàm public để mở modal Thêm
+                function showAddModal() {
+                    resetForm();
+                    $(imageInputSelector).attr('required', true); // Thêm required cho ảnh
+                    $(imageRequiredIndicatorSelector).show();
+                    $(imageInvalidFeedbackSelector).text('Vui lòng chọn hình ảnh.');
+                    $(modalSelector).modal('show');
+                }
+
+                // Hàm public (global) để mở modal Sửa
+                window.showEditProductModal = function (productId) { // Phải là global
+                    if (!productId) return;
+                    resetForm();
+                    showLoading(modalSelector + ' .modal-body', 'Đang tải...');
+
+                    $.ajax({
+                        url: `/Admin/Product/GetProductDetails/${productId}`, // URL trực tiếp
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data && data.productId) {
+                                $(editIdInputSelector).val(data.productId);
+                                $(nameInputSelector).val(data.nameProduct);
+                                $(categoryInputSelector).val(data.idCategory).trigger('change.select2');
+
+                                const unitValue = data.unit;
+                                if (unitValue) {
+                                    const $unitDropdown = $(unitInputSelector);
+                                    if ($unitDropdown.find(`option[value="${unitValue}"]`).length) $unitDropdown.val(unitValue).trigger('change.select2');
+                                    else $unitDropdown.append(new Option(unitValue, unitValue, true, true)).trigger('change.select2');
+                                } else {
+                                    $(unitInputSelector).val(null).trigger('change.select2');
+                                }
+
+                                $(originalPriceInputSelector).val(formatCurrencyVND(data.originalPrice));
+                                $(priceInputSelector).val(formatCurrencyVND(data.price));
+                                $(descriptionInputSelector).val(data.description);
+                                $(data.inStock ? statusTrueSelector : statusFalseSelector).prop('checked', true);
+
+                                const $imageInput = $(imageInputSelector);
+                                $imageInput.removeAttr('required').removeClass('is-invalid'); // Xóa required
+                                $(imageRequiredIndicatorSelector).hide(); // Ẩn '*'
+                                $(imageInvalidFeedbackSelector).text('Chọn file mới nếu muốn thay đổi ảnh.').hide();
+                                if (data.imageUrl && data.imageUrl !== 'default-product.png') {
+                                    $(currentImagePreviewSelector).attr('src', `/product/${data.imageUrl}`);
+                                    $(currentImageContainerSelector).show();
+                                } else {
+                                    $(currentImageContainerSelector).hide();
+                                }
+
+                                $(modalTitleSelector).text('Chỉnh sửa SP: ' + data.nameProduct);
+                                $(saveBtnSelector).text('Cập nhật').removeClass('btn-primary').addClass('btn-warning');
+
+                                hideLoading(modalSelector + ' .modal-body');
+                                $(modalSelector).modal('show');
+                            } else {
+                                hideLoading(modalSelector + ' .modal-body');
+                                showErrorAlert('Lỗi', 'Không nhận được dữ liệu sản phẩm hợp lệ.');
+                            }
+                        },
+                        error: function (jqXHR, textStatus) {
+                            hideLoading(modalSelector + ' .modal-body');
+                            const message = jqXHR.responseJSON?.message || `Lỗi tải chi tiết SP (Lỗi: ${textStatus}).`;
+                            showErrorAlert('Lỗi Hệ Thống', message);
+                        }
+                    });
+                };
+
+                function setupEvents() {
+                    $('#showAddProductModalBtn').on('click', showAddModal); // Nút Thêm mới
+                    $(saveBtnSelector).on('click', handleSave);
+                    $(modalSelector).on('hidden.bs.modal', resetForm);
+
+                    // Xử lý chọn ảnh (để ẩn/hiện preview khi cần)
+                    $(imageInputSelector).on('change', function () {
+                        const isEditMode = !!$(editIdInputSelector).val();
+                        if (this.files && this.files[0]) {
+                            $(currentImageContainerSelector).hide();
+                            $(this).removeClass('is-invalid');
+                            $(imageInvalidFeedbackSelector).hide();
+                        } else {
+                            if (isEditMode && $(currentImagePreviewSelector).attr('src') !== '#') {
+                                $(currentImageContainerSelector).show();
+                            }
+                        }
+                    });
+                }
+
+                return { setup: setupEvents };
+            })();
+
+
+            // =========================================================================
+            // NHÓM XÓA SẢN PHẨM (Delete Product)
+            // =========================================================================
+            // Hàm global để gọi từ onclick
+            window.deleteProduct = function (id, name) {
+                const safeName = name ? $('<div>').text(name).html() : 'sản phẩm này';
+                // Selectors cục bộ
+                const swalPopupClass = 'custom-swal-popup';
+                const deleteBtnClass = 'custom-delete-btn btn ms-2';
+                const cancelBtnClass = 'custom-cancel-btn btn me-2';
+
+                Swal.fire({
+                    title: 'Xác nhận xóa',
+                    html: `Bạn chắc chắn muốn xóa <strong>${safeName}</strong>?<br/><small class='text-danger'>Hành động này không thể hoàn tác!</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-trash-alt me-1"></i>Xóa',
+                    cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
+                    reverseButtons: true,
+                    customClass: { popup: swalPopupClass, confirmButton: deleteBtnClass, cancelButton: cancelBtnClass },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        showLoading('body', 'Đang xóa...');
+                        $.ajax({
+                            url: `/Admin/Product/Delete/${id}`, // URL trực tiếp
+                            type: 'POST',
+                            success: function (response) {
+                                if (response.success) {
+                                    showSuccessToast(response.message || 'Đã xóa sản phẩm.');
+                                    if (dataTableModule.isInitialized()) {
+                                        dataTableModule.reload();
+                                    }
+                                    reloadUnitDropdowns(); // Tải lại dropdown đơn vị
+                                } else {
+                                    showErrorAlert('Xóa thất bại', response.message || 'Không thể xóa sản phẩm.');
+                                }
+                            },
+                            error: function (xhr, status) {
+                                let errorMessage = 'Lỗi không mong muốn khi xóa.';
+                                if (xhr.responseJSON?.message) errorMessage = xhr.responseJSON.message;
+                                else if (xhr.status === 404) errorMessage = 'Không tìm thấy SP để xóa.';
+                                else if (xhr.status === 400) errorMessage = 'Không thể xóa, SP có thể đang được sử dụng.';
+                                showErrorAlert('Lỗi Hệ Thống', errorMessage);
+                            },
+                            complete: function () {
+                                hideLoading('body');
+                            }
+                        });
+                    }
+                });
+            };
+
+            // =========================================================================
+            // KHỞI TẠO KHI TRANG SẴN SÀNG (Document Ready)
+            // =========================================================================
+            $(document).ready(function () {
+                // 1. Khởi tạo Select2
+                setupAllSelect2();
+
+                // 2. Tải dữ liệu dropdown, sau đó khởi tạo các phần còn lại
+                loadAllDropdowns(() => {
+                    // 3. Khởi tạo DataTable
+                    dataTableModule.init();
+
+                    // 4. Thiết lập bộ lọc và tìm kiếm
+                    filterSearchModule.setup();
+
+                    // 5. Thiết lập gợi ý giá
+                    priceSuggestionModule.setup();
+
+                    // 6. Thiết lập sự kiện cho modal
+                    productModalModule.setup();
+
+                    console.log("Trang sản phẩm đã được khởi tạo (đã tái cấu trúc).");
+                });
+            });
+
+        })(jQuery); // Kết thúc hàm bao bọc jQuery
+    </script>
+}

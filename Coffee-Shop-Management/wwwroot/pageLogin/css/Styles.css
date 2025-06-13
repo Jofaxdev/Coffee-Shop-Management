@@ -1,0 +1,238 @@
+﻿body {
+    font-family: "Poppins", sans-serif;
+    background-color: #f8f9fa; /* Màu nền sáng */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    /* Thêm background */
+    background-image: url("/pageLogin/image/background-2.png");
+    background-size: cover; /* Đảm bảo hình nền phủ toàn bộ màn hình */
+    background-position: center; /* Căn giữa hình nền */
+}
+
+.login-container {
+    background-color: #ffffff; /* Màu nền của container đăng nhập */
+    border-radius: 10px; /* Góc bo tròn */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+    max-width: 1100px; /* Độ rộng tối đa của container */
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch; /* Để các cột có chiều cao bằng nhau */
+}
+
+.left-side {
+    flex: 1; /* Chiếm không gian bằng nhau */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+    /* background-color: #f0f0f0; */
+    /* Thêm background */
+    background-image: url( "/pageLogin/image/FRONT.png" ); /* Thay đổi URL hình ảnh nếu cần */ 
+    background-size: cover; /* Đảm bảo hình nền phủ toàn bộ màn hình */
+    background-position: center; /* Căn giữa hình nền */
+    border-radius: 10px 0 0 10px;
+}
+
+    .left-side img {
+        max-width: 100%; /* Đảm bảo ảnh không vượt quá chiều rộng của container */
+        height: auto; /* Duy trì tỷ lệ khung hình */
+        margin-bottom: 20px;
+    }
+
+    .left-side h2 {
+        font-weight: bold;
+        font-size: 24px;
+        color: #343a40; /* Màu tiêu đề */
+        margin-bottom: 10px;
+    }
+
+    .left-side p {
+        font-size: 16px;
+        color: #6c757d; /* Màu chữ mô tả */
+    }
+
+.right-side {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Căn giữa nội dung theo chiều dọc */
+    align-items: stretch; /* Kéo dãn các phần tử con để lấp đầy chiều cao */
+    /* Thêm background */
+    background-image: url( "/pageLogin/image/Tone.png" ); /* Thay đổi URL hình ảnh nếu cần */ background-size: cover; /* Đảm bảo hình nền phủ toàn bộ màn hình */
+    background-position: center; /* Căn giữa hình nền */
+    border-radius: 0px 10px 10px 0px;
+}
+
+    .right-side h2 {
+        font-size: 24px;
+        color: #343a40;
+        font-weight: bold;
+        margin-bottom: 15px;
+        text-align: center;
+        /* white-space: nowrap; */
+    }
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+    .form-group label {
+        font-size: 16px;
+        color: #343a40;
+        margin-bottom: 8px;
+        display: block; /* Đảm bảo label chiếm toàn bộ chiều rộng */
+    }
+
+.form-control {
+    border-radius: 5px;
+    border: 1px solid #ddd; /* Viền nhạt hơn */
+    padding: 12px;
+    font-size: 16px;
+    width: 100%; /* Đảm bảo input chiếm toàn bộ chiều rộng của container cha */
+    box-sizing: border-box; /* Bao gồm padding và border trong tổng chiều rộng */
+}
+
+    .form-control:focus {
+        border-color: #8b4513; /* Màu viền khi focus */
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1); /* Hiệu ứng đổ bóng khi focus */
+        outline: none; /* Loại bỏ viền mặc định của trình duyệt */
+    }
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #8b4513;
+}
+
+.btn-primary {
+    background-color: #8b4513;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 18px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+    .btn-primary:hover {
+        background-color: #836a58;
+    }
+
+.forgot-password {
+    text-align: right;
+    margin-top: 10px;
+}
+
+    .forgot-password a {
+        font-size: 14px;
+        color: #8b4513;
+        text-decoration: none;
+    }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+.form-check-input:checked {
+    background-color: #8b4513;
+}
+
+
+/* Ẩn nút tiết lộ mật khẩu mặc định của trình duyệt Edge/IE */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Một số trình duyệt dựa trên WebKit (như Chrome) cũng có thể thêm các nút tự động điền khác,
+   mặc dù không phải là nút con mắt, bạn cũng có thể muốn ẩn nếu chúng gây phiền nhiễu */
+input[type="password"]::-webkit-reveal,
+input[type="password"]::-webkit-clear-button {
+    display: none !important; /* Sử dụng !important nếu cần để ghi đè */
+    -webkit-appearance: none;
+}
+
+
+@media (max-width: 900px) {
+    .right-side h2 {
+        margin-top: 60px;
+    }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    /* Cho màn hình nhỏ hơn 768px (ví dụ: điện thoại) */
+    .login-container {
+        flex-direction: column; /* Chuyển sang bố cục cột */
+        max-width: 100%; /* Chiếm toàn bộ chiều rộng */
+    }
+
+    .left-side {
+        border-radius: 0; /* Loại bỏ bo tròn góc */
+        padding: 20px;
+    }
+
+    /* Tôi bổ sung start*/
+    .left-side {
+        display: none;
+    }
+
+    /* .right-side h2 {
+                    white-space: wrap;
+                } */
+
+    /* Tôi bổ sung end */
+
+    .right-side {
+        border-radius: 0;
+        padding: 20px;
+    }
+
+    .left-side img {
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 576px) {
+    .left-side h2 {
+        font-size: 20px;
+    }
+
+    .left-side p {
+        font-size: 14px;
+    }
+
+    .form-control {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .btn-primary {
+        font-size: 16px;
+        padding: 10px 20px;
+    }
+
+    .forgot-password a {
+        font-size: 12px;
+    }
+}

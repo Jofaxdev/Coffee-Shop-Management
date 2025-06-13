@@ -1,0 +1,1141 @@
+﻿@* File: Areas/Admin/Views/Category/Index.cshtml *@
+@{
+    ViewData["Title"] = "Quản lý Loại Sản phẩm";
+}
+
+<div class="container-fluid">
+
+    @* --- Tabs Navigation --- *@
+    <nav>
+        <div class="nav nav-tabs mb-3" id="nav-tab" role="tablist">
+            <button class="nav-link active" id="nav-active-tab" data-bs-toggle="tab" data-bs-target="#nav-active" type="button" role="tab" aria-controls="nav-active" aria-selected="true">
+                <i class="fas fa-list me-1"></i> Danh sách chính
+            </button>
+            <button class="nav-link" id="nav-deleted-tab" data-bs-toggle="tab" data-bs-target="#nav-deleted" type="button" role="tab" aria-controls="nav-deleted" aria-selected="false">
+                <i class="fas fa-trash-alt me-1"></i> Đã xóa
+            </button>
+        </div>
+    </nav>
+
+    @* --- Tab Content --- *@
+    <div class="tab-content" id="nav-tabContent">
+
+        @* --- Tab Pane: Danh sách chính (Active/Inactive) --- *@
+        <div class="tab-pane fade show active" id="nav-active" role="tabpanel" aria-labelledby="nav-active-tab" tabindex="0">
+            @* --- Hàng điều khiển cho Tab Danh sách chính --- *@
+            <div class="row mb-3 gy-2 align-items-center">
+                @* Nút Thêm mới (chỉ hiển thị ở tab này) *@
+                <div class="col-12 col-sm-auto mb-2 mb-md-0">
+                    <button id="showAddCategoryModalBtn" class="btn btn-primary shadow-sm me-2">
+                        <i class="fas fa-plus"></i> Thêm loại SP
+                    </button>
+                    @* Nút Export Excel (Ví dụ, có thể thêm sau)
+                    <button id="exportActiveExcelBtn" class="btn btn-outline-success shadow-sm">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                    </button>
+                    *@
+                </div>
+
+                @* Bộ lọc cho Tab Danh sách chính *@
+                <div class="col-12 col-sm">
+                    <div class="row gx-2 gy-2 justify-content-end">
+                        <div class="col-12 col-md-5 col-lg-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="activeCategorySearch" class="form-control" placeholder="Tìm theo tên loại...">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <select id="activeCategoryStatusFilter" class="form-select">
+                                <option value="all" selected>Tất cả trạng thái</option>
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Không hoạt động</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">Hiện</span>
+                                <select id="activeCategoryPageLength" class="form-select" style="max-width: 80px;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button id="resetActiveCategoryFilterBtn" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-undo"></i> Xóa bộ lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Bảng DataTable cho Tab Danh sách chính --- *@
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2">
+                    <h5 class="mb-0 card-title">Danh sách Loại sản phẩm</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive position-relative" id="activeCategoryTableContainer">
+                        <table id="activeCategoryTable" class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 5%;">STT</th>
+                                    <th style="width: 35%;" data-name="NameCategory">Tên loại sản phẩm</th>
+                                    <th style="width: 15%;" data-name="IsActive">Trạng thái</th>
+                                    <th style="width: 15%;" data-name="CreatedAt">Ngày tạo</th>
+                                    <th style="width: 15%;" data-name="UpdatedAt">Ngày sửa</th>
+                                    <th style="width: 15%;" data-orderable="false">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                @* --- Phân trang & Thông tin cho Tab Danh sách chính --- *@
+                <div class="card-footer bg-light py-2">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                        <span id="activeCategoryPageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
+                        <nav aria-label="Active category table navigation" class="mt-2 mt-md-0">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center" id="activeCategoryPagination">
+                                <li class="page-item" id="activeCategoryFirst"><a class="page-link" href="#">&laquo;</a></li>
+                                <li class="page-item" id="activeCategoryPrevious"><a class="page-link" href="#">&lt;</a></li>
+                                @* Các số trang sẽ được chèn vào đây *@
+                                <li class="page-item" id="activeCategoryNext"><a class="page-link" href="#">&gt;</a></li>
+                                <li class="page-item" id="activeCategoryLast"><a class="page-link" href="#">&raquo;</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div> @* --- Hết Tab Pane: Danh sách chính --- *@
+
+
+        @* --- Tab Pane: Đã xóa (Deleted) --- *@
+        <div class="tab-pane fade" id="nav-deleted" role="tabpanel" aria-labelledby="nav-deleted-tab" tabindex="0">
+            @* --- Hàng điều khiển cho Tab Đã xóa --- *@
+            <div class="row mb-3 gy-2 align-items-center">
+                @* Bộ lọc cho Tab Đã xóa (đơn giản hơn) *@
+                <div class="col-12 col-sm">
+                    <div class="row gx-2 gy-2 justify-content-end">
+                        <div class="col-12 col-md-5 col-lg-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="deletedCategorySearch" class="form-control" placeholder="Tìm theo tên loại đã xóa...">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            @* Có thể thêm nút xóa bộ lọc tìm kiếm nếu muốn *@
+                            @*<button id="resetDeletedCategoryFilterBtn" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times"></i> Xóa tìm kiếm
+                            </button>*@
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">Hiện</span>
+                                <select id="deletedCategoryPageLength" class="form-select" style="max-width: 80px;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Bảng DataTable cho Tab Đã xóa --- *@
+            <div class="card shadow-sm border-danger">
+                @* Thêm border-danger để phân biệt *@
+                <div class="card-header bg-light py-2">
+                    <h5 class="mb-0 card-title">Loại sản phẩm đã xóa</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive position-relative" id="deletedCategoryTableContainer">
+                        <table id="deletedCategoryTable" class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 5%;">STT</th>
+                                    <th style="width: 45%;" data-name="NameCategory">Tên loại sản phẩm</th>
+                                    <th style="width: 20%;" data-name="CreatedAt">Ngày tạo gốc</th>
+                                    <th style="width: 20%;" data-name="UpdatedAt">Ngày xóa</th> @* UpdatedAt là ngày xóa *@
+                                    <th style="width: 10%;" data-orderable="false">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                @* --- Phân trang & Thông tin cho Tab Đã xóa --- *@
+                <div class="card-footer bg-light py-2">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                        <span id="deletedCategoryPageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
+                        <nav aria-label="Deleted category table navigation" class="mt-2 mt-md-0">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center" id="deletedCategoryPagination">
+                                <li class="page-item" id="deletedCategoryFirst"><a class="page-link" href="#">&laquo;</a></li>
+                                <li class="page-item" id="deletedCategoryPrevious"><a class="page-link" href="#">&lt;</a></li>
+                                @* Các số trang sẽ được chèn vào đây *@
+                                <li class="page-item" id="deletedCategoryNext"><a class="page-link" href="#">&gt;</a></li>
+                                <li class="page-item" id="deletedCategoryLast"><a class="page-link" href="#">&raquo;</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div> @* --- Hết Tab Pane: Đã xóa --- *@
+
+    </div> @* --- Hết Tab Content --- *@
+
+</div> @* --- Hết container-fluid --- *@
+
+
+@* --- Modal Thêm/Sửa Loại Sản phẩm (Giữ nguyên vị trí và cấu trúc) --- *@
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light text-dark">
+                <h5 class="modal-title" id="categoryModalLabel">Thêm loại sản phẩm mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="categoryFormContainer">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editCategoryId" name="Id" value="" />
+                    <div class="mb-3">
+                        <label for="modalNameCategory" class="form-label">Tên loại SP <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalNameCategory" name="NameCategory" required maxlength="100" autocomplete="off">
+                        <div class="invalid-feedback">Vui lòng nhập tên loại sản phẩm.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Trạng thái <span class="text-danger">*</span></label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="IsActive" id="modalIsActiveTrue" value="true" required checked>
+                            <label class="form-check-label" for="modalIsActiveTrue">Hoạt động</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="IsActive" id="modalIsActiveFalse" value="false" required>
+                            <label class="form-check-label" for="modalIsActiveFalse">Không hoạt động</label>
+                        </div>
+                        <div id="isActiveError" style="display: none; width: 100%; margin-top: .25rem; font-size: .875em; color: var(--bs-form-invalid-color);">Vui lòng chọn trạng thái.</div>
+                    </div>
+                    <div class="mb-3" id="createdAtDisplayContainer" style="display: none;">
+                        <label class="form-label">Ngày tạo:</label>
+                        <p id="modalCreatedAtDisplay" class="form-control-plaintext mb-0"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Styles {
+    @* --- CSS (Giữ nguyên hoặc điều chỉnh nếu cần) --- *@
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        /* --- CSS Tùy chỉnh (Giữ nguyên phần lớn) --- */
+        .custom-swal-popup {
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .15);
+        }
+
+            .custom-swal-popup .swal2-title {
+                font-size: 1.4em;
+            }
+
+            .custom-swal-popup .swal2-html-container {
+                font-size: 1.1em;
+                color: #555;
+            }
+
+        .custom-confirm-btn, .custom-cancel-btn, .custom-delete-btn, .custom-restore-btn {
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: .5em 1.5em;
+            border: none;
+        }
+
+        .custom-confirm-btn {
+            background-color: #28a745 !important;
+        }
+
+            .custom-confirm-btn:hover {
+                background-color: #218838 !important;
+            }
+
+        .custom-cancel-btn {
+            background-color: #6c757d !important;
+        }
+
+            .custom-cancel-btn:hover {
+                background-color: #5a6268 !important;
+            }
+
+        .custom-delete-btn {
+            background-color: #dc3545 !important;
+        }
+
+            .custom-delete-btn:hover {
+                background-color: #c82333 !important;
+            }
+
+        .custom-restore-btn {
+            background-color: #198754 !important;
+        }
+
+            .custom-restore-btn:hover {
+                background-color: #157347 !important;
+            }
+
+        #activeCategoryTable td, #activeCategoryTable th,
+        #deletedCategoryTable td, #deletedCategoryTable th {
+            vertical-align: middle;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+            /* Cột tên loại căn trái, cho phép xuống dòng */
+            #activeCategoryTable th[data-name="NameCategory"], #activeCategoryTable td:nth-child(2),
+            #deletedCategoryTable th[data-name="NameCategory"], #deletedCategoryTable td:nth-child(2) {
+                text-align: left;
+            }
+
+        .badge {
+            padding: .4em .6em;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        body > .loading-overlay {
+            position: fixed;
+            z-index: 1060;
+        }
+
+        .pagination .page-item .page-link {
+            border-radius: .25rem;
+            margin: 0 2px;
+        }
+
+        .dataTables_processing {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 11;
+        }
+
+        .page-item.disabled .page-link {
+            pointer-events: none;
+            cursor: default;
+            color: #6c757d;
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+
+        @@media (max-width: 767.98px) {
+            .card-footer .d-flex {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #activeCategoryPageInfo, #deletedCategoryPageInfo {
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        #categoryFormContainer .form-check-input.is-invalid ~ .form-check-label {
+            color: var(--bs-form-invalid-color);
+        }
+
+        #categoryFormContainer .form-check-input.is-invalid {
+            border-color: #dee2e6;
+            background-image: none;
+        }
+
+            #categoryFormContainer .form-check-input.is-invalid:focus {
+                box-shadow: none;
+            }
+
+        #isActiveError {
+            display: none;
+            width: 100%;
+            margin-top: .25rem;
+            font-size: .875em;
+            color: var(--bs-form-invalid-color);
+        }
+
+        #categoryFormContainer.was-validated .form-check-input[name="IsActive"].is-invalid ~ #isActiveError {
+            display: block !important;
+        }
+        /* Fix nút sửa/xóa/khôi phục nhỏ hơn */
+        .edit-category-btn, .delete-category-btn, .restore-category-btn {
+            padding: 0.15rem 0.4rem;
+            font-size: 0.8rem;
+            line-height: 1;
+        }
+
+            .edit-category-btn i, .delete-category-btn i, .restore-category-btn i {
+                vertical-align: middle;
+            }
+        /* Làm nổi bật tab đang active */
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            /* background-color: #e9ecef; */ /* Tùy chọn màu nền */
+            /* border-bottom-color: #dee2e6; */
+        }
+    </style>
+}
+
+@section Scripts {
+    @* --- Thư viện JS --- *@
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function ($) {
+            "use strict";
+
+            // =========================================================================
+            // BIẾN TRẠNG THÁI CHUNG & TIỆN ÍCH
+            // =========================================================================
+            let csrfToken = $('input[name="__RequestVerificationToken"]').val();
+            const notyf = new Notyf({
+                duration: 3000,
+                position: { x: 'right', y: 'top' },
+                types: [
+                    { type: 'success', background: '#28a745', icon: { className: 'fas fa-check-circle', tagName: 'i', color: 'white' } },
+                    { type: 'error', background: '#dc3545', icon: { className: 'fas fa-times-circle', tagName: 'i', color: 'white' } },
+                    { type: 'warning', background: '#ffc107', icon: { className: 'fas fa-exclamation-triangle', tagName: 'i', color: 'white' }, duration: 5000 },
+                    { type: 'info', background: '#0d6efd', icon: { className: 'fas fa-info-circle', tagName: 'i', color: 'white' }, duration: 4000 }
+                ],
+                dismissible: true
+            });
+
+            function showSuccessToast(message) { notyf.success(message || 'Thao tác thành công.'); }
+            function showErrorAlert(title, message) { notyf.error((title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.')); }
+            function showInfo(message) { notyf.open({ type: 'info', message: message }); }
+
+            function showLoading(selector = 'body', message = 'Đang xử lý...') {
+                const $target = $(selector);
+                if ($target.length && $target.find('.loading-overlay').length === 0) {
+                    let positionStyle = 'absolute';
+                    if (selector === 'body' || $target.is('body')) {
+                        positionStyle = 'fixed';
+                    } else {
+                        const currentPosition = $target.css('position');
+                        if (!['relative', 'absolute', 'fixed'].includes(currentPosition)) {
+                            $target.css('position', 'relative');
+                        }
+                    }
+                    const zIndex = (positionStyle === 'fixed') ? 1060 : ($target.css('z-index') === 'auto' ? 10 : parseInt($target.css('z-index')) + 1);
+                    $target.append(`<div class="loading-overlay" style="position:${positionStyle}; top:0; left:0; width:100%; height:100%; z-index:${zIndex}; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.7); color:#333;">
+                                                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>
+                                                <span>${message}</span>
+                                            </div>`);
+                }
+            }
+
+            function hideLoading(selector = 'body') {
+                setTimeout(() => {
+                    $(selector).find('.loading-overlay').fadeOut(150, function () { $(this).remove(); });
+                }, 50);
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                try {
+                    const date = new Date(dateString);
+                    if (isNaN(date.getTime())) return 'Ngày lỗi';
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}/${month}/${year}`;
+                } catch (e) {
+                    console.error("Error formatting date:", dateString, e);
+                    return 'Lỗi định dạng';
+                }
+            }
+
+            function handleAjaxError(xhr, actionText) {
+                hideLoading();
+                console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText);
+                let errorMsg = `Không thể ${actionText.toLowerCase()}.`;
+                if (xhr.responseJSON && xhr.responseJSON.message) { errorMsg = xhr.responseJSON.message; }
+                else if (xhr.status === 400) { errorMsg += ' Dữ liệu gửi lên không hợp lệ.'; }
+                else if (xhr.status === 401 || xhr.status === 403) { errorMsg = 'Bạn không có quyền thực hiện thao tác này.'; }
+                else if (xhr.status === 404) { errorMsg = 'Không tìm thấy tài nguyên được yêu cầu.'; }
+                else if (xhr.status === 409) { errorMsg = 'Dữ liệu bị trùng lặp hoặc xung đột.'; }
+                else if (xhr.status >= 500) { errorMsg += ' Lỗi máy chủ nội bộ.'; }
+                showErrorAlert('Lỗi hệ thống', errorMsg);
+            }
+
+
+            // =========================================================================
+            // CHỨC NĂNG DATATABLE & PHÂN TRANG TÙY CHỈNH (Chung)
+            // =========================================================================
+            function updateCustomPagination(tableInstance, paginationListSelector, pageInfoSelector) {
+                if (!tableInstance) return;
+                const pageInfo = tableInstance.page.info();
+                const $paginationList = $(paginationListSelector);
+                const $pageInfoSpan = $(pageInfoSelector);
+                const $paginationNav = $paginationList.parent('nav');
+
+                $paginationList.find('.page-item.page-number').remove();
+                $pageInfoSpan.hide().empty();
+
+                if (pageInfo.pages <= 1) {
+                    $paginationNav.hide();
+                    if (pageInfo.recordsDisplay > 0) {
+                        $pageInfoSpan.text(`Hiện 1-${pageInfo.recordsDisplay} / ${pageInfo.recordsDisplay.toLocaleString('vi-VN')} mục`).show();
+                    } else {
+                        $pageInfoSpan.text("(Không có mục nào)").show();
+                    }
+                    return;
+                } else {
+                    $paginationNav.show();
+                }
+
+                const recordsDisplayed = pageInfo.recordsDisplay;
+                if (recordsDisplayed > 0) {
+                    const startRecord = pageInfo.start + 1;
+                    const endRecord = pageInfo.end;
+                    $pageInfoSpan.text(`Hiện ${startRecord}-${endRecord} / ${recordsDisplayed.toLocaleString('vi-VN')} mục`).show();
+                    $paginationList.find('.page-item').removeClass('disabled');
+                } else {
+                    $pageInfoSpan.text("(Không có mục nào)").show();
+                    $paginationList.find('.page-item').addClass('disabled');
+                }
+
+                const currentPage = pageInfo.page;
+                const totalPages = pageInfo.pages;
+                const maxPagesToShow = 5;
+                let startPage, endPage;
+
+                if (totalPages <= maxPagesToShow) { startPage = 0; endPage = totalPages - 1; }
+                else {
+                    const pagesBefore = Math.floor((maxPagesToShow - 1) / 2);
+                    const pagesAfter = Math.ceil((maxPagesToShow - 1) / 2);
+                    if (currentPage <= pagesBefore) { startPage = 0; endPage = maxPagesToShow - 1; }
+                    else if (currentPage + pagesAfter >= totalPages - 1) { startPage = totalPages - maxPagesToShow; endPage = totalPages - 1; }
+                    else { startPage = currentPage - pagesBefore; endPage = currentPage + pagesAfter; }
+                }
+
+                const prevButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(1)').attr('id');
+                const nextButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
+
+                if (startPage > 0) {
+                    $('#' + prevButtonId).after('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageNum = i + 1;
+                    const $pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`);
+                    $pageItem.insertBefore($('#' + nextButtonId)).find('a').on('click', function (e) {
+                        e.preventDefault();
+                        if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) {
+                            tableInstance.page(i).draw('page');
+                        }
+                    });
+                }
+
+                if (endPage < totalPages - 1) {
+                    $('#' + nextButtonId).before('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+                }
+
+                const firstButtonId = $paginationList.find('.page-item:has(a[href="#"]):first').attr('id');
+                const lastButtonId = $paginationList.find('.page-item:has(a[href="#"]):last').attr('id');
+
+                $('#' + firstButtonId).toggleClass('disabled', currentPage === 0);
+                $('#' + prevButtonId).toggleClass('disabled', currentPage === 0);
+                $('#' + nextButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
+                $('#' + lastButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
+            }
+
+            function setupCustomPaginationEvents(tableInstance, paginationListSelector) {
+                const $paginationNav = $(paginationListSelector).parent();
+                const firstButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):first').attr('id');
+                const prevButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(1)').attr('id');
+                const nextButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
+                const lastButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):last').attr('id');
+
+                $paginationNav.off('click', `#${firstButtonId} a`).on('click', `#${firstButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('first').draw('page'); });
+                $paginationNav.off('click', `#${prevButtonId} a`).on('click', `#${prevButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('previous').draw('page'); });
+                $paginationNav.off('click', `#${nextButtonId} a`).on('click', `#${nextButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('next').draw('page'); });
+                $paginationNav.off('click', `#${lastButtonId} a`).on('click', `#${lastButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('last').draw('page'); });
+            }
+
+            const dataTableLanguage = {
+                "sEmptyTable": "Không có dữ liệu trong bảng", "sInfo": "Hiện _START_ đến _END_ trong tổng số _TOTAL_ mục",
+                "sInfoEmpty": "Hiện 0 đến 0 trong tổng số 0 mục", "sInfoFiltered": "(được lọc từ _MAX_ mục)",
+                "sInfoPostFix": "", "sInfoThousands": ".", "sLengthMenu": "Hiện _MENU_ mục", "sLoadingRecords": "Đang tải...",
+                "sProcessing": '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div> Đang xử lý...',
+                "sSearch": "Tìm kiếm:", "sZeroRecords": "Không tìm thấy kết quả phù hợp",
+                "oPaginate": { "sFirst": "<<", "sLast": ">>", "sNext": ">", "sPrevious": "<" },
+                "oAria": { "sSortAscending": ": Sắp xếp cột tăng dần", "sSortDescending": ": Sắp xếp cột giảm dần" }
+            };
+
+            // =========================================================================
+            // MODULE DATATABLE CHO TAB DANH SÁCH CHÍNH
+            // =========================================================================
+            const activeCategoryTableModule = (function () {
+                let tableInstance = null;
+
+                const tableSelector = '#activeCategoryTable';
+                const paginationSelector = '#activeCategoryPagination';
+                const pageInfoSelector = '#activeCategoryPageInfo';
+                const searchInputSelector = '#activeCategorySearch';
+                const statusFilterSelector = '#activeCategoryStatusFilter';
+                const pageLengthSelector = '#activeCategoryPageLength';
+                const resetFilterBtnSelector = '#resetActiveCategoryFilterBtn';
+
+                function init() {
+                    if (tableInstance) return;
+                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
+
+                    tableInstance = $(tableSelector).DataTable({
+                        serverSide: true, 
+                        ajax: {
+                            url: "/Admin/Category/GetDataActive", type: "POST", dataType: "json",
+                            data: function (d) {
+                                d.statusFilter = $(statusFilterSelector).val();
+                                d.__RequestVerificationToken = csrfToken;
+                                // Map DataTables search to server-side search parameter name
+                                d.searchValue = d.search.value;
+                            },
+                            error: function (xhr, error, code) {
+                                console.error("Lỗi Ajax DataTables (Active):", error, code, xhr.status, xhr.responseText);
+                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách chính. Mã lỗi: ${xhr.status}`);
+                                $(tableSelector + '_processing').hide();
+                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="6" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu.</td></tr>`);
+                                $(paginationSelector).parent().hide(); $(pageInfoSelector).hide();
+                            }
+                        },
+                        columns: [
+                            { data: null, name: "STT", orderable: false, searchable: false, className: 'text-center align-middle', render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart },
+                            { data: "nameCategory", name: "NameCategory", orderable: true, className: 'text-start align-middle' },
+                            {
+                                data: "isActive", name: "IsActive", orderable: true, className: 'text-center align-middle',
+                                render: data => data ? '<span class="badge bg-success-subtle text-success-emphasis rounded-pill">Hoạt động</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Không hoạt động</span>'
+                            },
+                            { data: "createdAt", name: "CreatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) },
+                            { data: "updatedAt", name: "UpdatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) },
+                            {
+                                data: "id", name: "Actions", orderable: false, searchable: false, className: 'text-center align-middle',
+                                render: function (data, type, row) {
+                                    const safeName = row.nameCategory ? $('<div>').text(row.nameCategory).html() : 'loại này';
+                                    const editBtn = `<button type="button" class="btn btn-sm btn-outline-warning me-1 edit-category-btn" data-id="${data}" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>`;
+                                    const deleteBtn = `<button type="button" class="btn btn-sm btn-outline-danger delete-category-btn" data-id="${data}" data-name="${safeName}" title="Xóa"><i class="fas fa-trash"></i></button>`;
+                                    return editBtn + deleteBtn;
+                                }
+                            }
+                        ],
+                        order: [[3, 'desc']],
+                        pageLength: initialPageLength, searching: true, lengthChange: false, info: false, paging: true,
+                        dom: 'rt', language: dataTableLanguage, responsive: true,
+                        drawCallback: function (settings) {
+                            updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
+                            var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (!tooltipInstance) { tooltipInstance = new bootstrap.Tooltip(tooltipTriggerEl); }
+                                return tooltipInstance;
+                            });
+                        }
+                    });
+
+                    setupCustomControlsEvents();
+                    setupCustomPaginationEvents(tableInstance, paginationSelector);
+                    setupActionEvents();
+                }
+
+                function setupCustomControlsEvents() {
+                    let searchTimeout; const searchDebounce = 400;
+                    $(searchInputSelector).off('keyup').on('keyup', function () {
+                        const searchValue = $(this).val(); clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => { if (tableInstance.search() !== searchValue) { tableInstance.search(searchValue).draw(); } }, searchDebounce);
+                    });
+                    $(pageLengthSelector).off('change').on('change', function () { tableInstance.page.len($(this).val()).draw(); });
+                    $(statusFilterSelector).off('change').on('change', function () { tableInstance.ajax.reload(); }); // Reload is enough as server handles filter
+                    $(resetFilterBtnSelector).off('click').on('click', function () {
+                        $(searchInputSelector).val(''); $(statusFilterSelector).val('all'); $(pageLengthSelector).val('10');
+                        tableInstance.search('').page.len(10).order([[3, 'desc']]).ajax.reload(null, true);
+                    });
+                }
+
+                function setupActionEvents() {
+                    // Use event delegation on tbody to handle dynamically created buttons
+                    $(tableSelector + ' tbody').off('click', '.edit-category-btn').on('click', '.edit-category-btn', function () {
+                        var id = $(this).data('id'); window.showEditCategoryModal(id);
+                    });
+                    $(tableSelector + ' tbody').off('click', '.delete-category-btn').on('click', '.delete-category-btn', function () {
+                        var id = $(this).data('id'); var name = $(this).data('name'); window.deleteCategory(id, name);
+                    });
+                }
+
+                function reload() { if (tableInstance) { tableInstance.ajax.reload(null, false); } } // false: keep current page
+                function reloadAndResetPaging() { if (tableInstance) { tableInstance.ajax.reload(null, true); } } // true: go to first page
+                
+                function getInstance() {
+                    return tableInstance;
+                }
+
+                return {
+                    init: init,
+                    reload: reload,
+                    reloadAndResetPaging: reloadAndResetPaging,
+                    getInstance: getInstance
+                };
+            })();
+
+            // =========================================================================
+            // MODULE DATATABLE CHO TAB ĐÃ XÓA
+            // =========================================================================
+            const deletedCategoryTableModule = (function () {
+                let tableInstance = null;
+                const tableSelector = '#deletedCategoryTable';
+                const paginationSelector = '#deletedCategoryPagination';
+                const pageInfoSelector = '#deletedCategoryPageInfo';
+                const searchInputSelector = '#deletedCategorySearch';
+                const pageLengthSelector = '#deletedCategoryPageLength';
+
+                function init() {
+                    if (tableInstance) return;
+                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
+
+                    tableInstance = $(tableSelector).DataTable({
+                        serverSide: true,
+                        ajax: {
+                            url: "/Admin/Category/GetDataDeleted", type: "POST", dataType: "json",
+                            data: function (d) {
+                                d.__RequestVerificationToken = csrfToken;
+                                // Map DataTables search to server-side search parameter name
+                                d.searchValue = d.search.value;
+                            },
+                            error: function (xhr, error, code) {
+                                console.error("Lỗi Ajax DataTables (Deleted):", error, code, xhr.status, xhr.responseText);
+                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách đã xóa. Mã lỗi: ${xhr.status}`);
+                                $(tableSelector + '_processing').hide();
+                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="5" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu.</td></tr>`);
+                                $(paginationSelector).parent().hide(); $(pageInfoSelector).hide();
+                            }
+                        },
+                        columns: [
+                            { data: null, name: "STT", orderable: false, searchable: false, className: 'text-center align-middle', render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart },
+                            { data: "nameCategory", name: "NameCategory", orderable: true, className: 'text-start align-middle' },
+                            { data: "createdAt", name: "CreatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) },
+                            { data: "updatedAt", name: "UpdatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) }, // Ngày xóa
+                            {
+                                data: "id", name: "Actions", orderable: false, searchable: false, className: 'text-center align-middle',
+                                render: function (data, type, row) {
+                                    const safeName = row.nameCategory ? $('<div>').text(row.nameCategory).html() : 'loại này';
+                                    const restoreBtn = `<button type="button" class="btn btn-sm btn-outline-success restore-category-btn" data-id="${data}" data-name="${safeName}" title="Khôi phục"><i class="fas fa-undo-alt"></i></button>`;
+                                    return restoreBtn;
+                                }
+                            }
+                        ],
+                        order: [[3, 'desc']], // Sắp xếp mặc định theo Ngày xóa giảm dần (index 3)
+                        pageLength: initialPageLength, searching: true, lengthChange: false, info: false, paging: true,
+                        dom: 'rt', language: dataTableLanguage, responsive: true,
+                        drawCallback: function (settings) {
+                            updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
+                            var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (!tooltipInstance) { tooltipInstance = new bootstrap.Tooltip(tooltipTriggerEl); }
+                                return tooltipInstance;
+                            });
+                        }
+                    });
+
+                    setupCustomControlsEvents();
+                    setupCustomPaginationEvents(tableInstance, paginationSelector);
+                    setupActionEvents();
+                }
+
+                function setupCustomControlsEvents() {
+                    let searchTimeout; const searchDebounce = 400;
+                    $(searchInputSelector).off('keyup').on('keyup', function () {
+                        const searchValue = $(this).val(); clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => { if (tableInstance.search() !== searchValue) { tableInstance.search(searchValue).draw(); } }, searchDebounce);
+                    });
+                    $(pageLengthSelector).off('change').on('change', function () { tableInstance.page.len($(this).val()).draw(); });
+                }
+
+                function setupActionEvents() {
+                    // Use event delegation on tbody
+                    $(tableSelector + ' tbody').off('click', '.restore-category-btn').on('click', '.restore-category-btn', function () {
+                        var id = $(this).data('id'); var name = $(this).data('name'); window.restoreCategory(id, name);
+                    });
+                }
+
+                function reload() { if (tableInstance) { tableInstance.ajax.reload(null, false); } } // false: keep current page
+                function getInstance() {
+                    return tableInstance;
+                }
+
+                return {
+                    init: init,
+                    reload: reload,
+                    getInstance: getInstance
+                };
+            })();
+
+
+            // =========================================================================
+            // MODULE MODAL THÊM/SỬA
+            // =========================================================================
+            const categoryModalModule = (function () {
+                const modalSelector = '#categoryModal';
+                const formContainerSelector = '#categoryFormContainer';
+                const saveBtnSelector = '#saveCategoryBtn';
+                const editIdInputSelector = '#editCategoryId';
+                const nameInputSelector = '#modalNameCategory';
+                const statusTrueSelector = '#modalIsActiveTrue';
+                const statusFalseSelector = '#modalIsActiveFalse';
+                const statusErrorSelector = '#isActiveError';
+                const modalTitleSelector = '#categoryModalLabel';
+                const createdAtContainerSelector = '#createdAtDisplayContainer';
+                const createdAtDisplaySelector = '#modalCreatedAtDisplay';
+                let modalInstance = null;
+
+                function resetForm() {
+                    const $formContainer = $(formContainerSelector);
+                    $(editIdInputSelector).val('');
+                    $(nameInputSelector).val('');
+                    $(statusTrueSelector).prop('checked', true);
+                    $(statusFalseSelector).prop('checked', false);
+                    $formContainer.removeClass('was-validated');
+                    $formContainer.find('.is-invalid').removeClass('is-invalid');
+                    $(statusErrorSelector).hide();
+                    $(modalTitleSelector).text('Thêm loại sản phẩm mới');
+                    $(saveBtnSelector).text('Lưu').prop('disabled', false).removeClass('btn-warning').addClass('btn-primary');
+                    $(createdAtContainerSelector).hide();
+                    $(createdAtDisplaySelector).text('');
+                }
+
+                function validateForm() {
+                    const $formContainer = $(formContainerSelector);
+                    let isValid = true;
+                    $formContainer.removeClass('was-validated');
+                    $formContainer.find('.is-invalid').removeClass('is-invalid');
+                    $(statusErrorSelector).hide();
+
+                    const $nameInput = $(nameInputSelector);
+                    if (!$nameInput.val() || !$nameInput.val().trim()) {
+                        $nameInput.addClass('is-invalid'); isValid = false;
+                    }
+                    const $radioButtons = $formContainer.find('input[name="IsActive"]');
+                    if (!$radioButtons.is(':checked')) {
+                        $radioButtons.addClass('is-invalid'); $(statusErrorSelector).show(); isValid = false;
+                    }
+                    if (!isValid) {
+                        $formContainer.addClass('was-validated');
+                        $formContainer.find('.is-invalid').first().focus();
+                    }
+                    return isValid;
+                }
+
+                function handleSave() {
+                    if (!validateForm()) return;
+                    const categoryId = $(editIdInputSelector).val();
+                    const isEditMode = !!categoryId;
+                    const postData = {
+                        __RequestVerificationToken: csrfToken, Id: categoryId || 0,
+                        NameCategory: $(nameInputSelector).val().trim(),
+                        IsActive: $(formContainerSelector).find('input[name="IsActive"]:checked').val() === 'true'
+                    };
+                    const url = isEditMode ? `/Admin/Category/Edit/${categoryId}` : "/Admin/Category/Create";
+                    const actionText = isEditMode ? 'Cập nhật' : 'Thêm';
+                    const savingText = isEditMode ? 'Đang cập nhật...' : 'Đang thêm...';
+                    const $saveButton = $(saveBtnSelector);
+
+                    $saveButton.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${savingText}`);
+                    showLoading(modalSelector + ' .modal-content');
+
+                    $.ajax({
+                        url: url, type: 'POST', data: postData, dataType: 'json',
+                        success: function (response) {
+                            hideLoading(modalSelector + ' .modal-content');
+                            if (response.success) {
+                                modalInstance.hide();
+                                showSuccessToast(response.message || `${actionText} thành công!`);
+                                // activeCategoryTableModule.reloadAndResetPaging();
+                                activeCategoryTableModule.reload(); // Chỉ reload bảng Active và về trang 1
+                            } else {
+                                let errorMessage = response.message || `Lỗi khi ${actionText.toLowerCase()}.`;
+                                if (response.errors && Array.isArray(response.errors) && response.errors.length > 0) {
+                                    errorMessage += '<br/><ul>' + response.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                                }
+                                showErrorAlert(`${actionText} thất bại`, errorMessage);
+                                $saveButton.prop('disabled', false).text(actionText);
+                            }
+                        },
+                        error: function (xhr) {
+                            hideLoading(modalSelector + ' .modal-content');
+                            handleAjaxError(xhr, actionText);
+                            const buttonText = isEditMode ? 'Cập nhật' : 'Lưu';
+                            $saveButton.prop('disabled', false).text(buttonText);
+                        }
+                    });
+                }
+
+                window.showEditCategoryModal = function (id) {
+                    if (!id) return;
+                    resetForm();
+                    showLoading(modalSelector + ' .modal-body', 'Đang tải dữ liệu...');
+
+                    $.ajax({
+                        url: `/Admin/Category/GetCategoryDetails/${id}`, type: 'GET', dataType: 'json',
+                        success: function (data) {
+                            hideLoading(modalSelector + ' .modal-body');
+                            if (data) {
+                                $(editIdInputSelector).val(data.id);
+                                $(nameInputSelector).val(data.nameCategory);
+                                $(data.isActive ? statusTrueSelector : statusFalseSelector).prop('checked', true);
+                                if (data.createdAt) {
+                                    $(createdAtDisplaySelector).text(formatDate(data.createdAt)); $(createdAtContainerSelector).show();
+                                } else { $(createdAtContainerSelector).hide(); }
+                                $(modalTitleSelector).text('Chỉnh sửa Loại sản phẩm');
+                                $(saveBtnSelector).text('Cập nhật').removeClass('btn-primary').addClass('btn-warning');
+                                modalInstance.show();
+                            } else { showErrorAlert('Lỗi', 'Không tìm thấy dữ liệu loại sản phẩm.'); }
+                        },
+                        error: function (xhr) {
+                            hideLoading(modalSelector + ' .modal-body'); handleAjaxError(xhr, 'tải chi tiết loại sản phẩm');
+                        }
+                    });
+                };
+
+                function setupEvents() {
+                    modalInstance = new bootstrap.Modal(document.getElementById('categoryModal'));
+                    $('#showAddCategoryModalBtn').on('click', function () { resetForm(); modalInstance.show(); });
+                    $(saveBtnSelector).on('click', handleSave);
+                    $(modalSelector).on('hidden.bs.modal', resetForm);
+                    $(formContainerSelector).on('keypress', 'input[type="text"]', function (event) {
+                        if (event.key === "Enter" || event.keyCode === 13) { event.preventDefault(); $(saveBtnSelector).click(); }
+                    });
+                }
+                return { setup: setupEvents };
+            })();
+
+            // =========================================================================
+            // HÀM XÓA & KHÔI PHỤC (Cập nhật xử lý pagination)
+            // =========================================================================
+            window.deleteCategory = function (id, name) {
+                const safeName = name ? $('<div>').text(name).html() : 'loại này';
+                // Lấy thông tin trang hiện tại của bảng Active TRƯỚC KHI xóa
+                const activeTable = activeCategoryTableModule.getInstance();
+                let currentPage = 0;
+                let recordsOnCurrentPage = 0;
+                if (activeTable) { // Kiểm tra instance tồn tại
+                    currentPage = activeTable.page();
+                    recordsOnCurrentPage = activeTable.rows({ page: 'current' }).count();
+                }
+                const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
+
+                Swal.fire({
+                    title: 'Xác nhận xóa',
+                    html: `Bạn chắc chắn muốn xóa loại <strong>${safeName}</strong>?<br/><small class='text-warning'>Hành động này sẽ chuyển loại vào thùng rác.</small>`,
+                    icon: 'warning', showCancelButton: true, confirmButtonText: '<i class="fas fa-trash-alt me-1"></i>Xóa', cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
+                    reverseButtons: true, customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-delete-btn btn ms-2', cancelButton: 'custom-cancel-btn btn me-2' },
+                    buttonsStyling: false, showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return $.ajax({
+                            url: `/Admin/Category/Delete/${id}`, type: 'POST', data: { __RequestVerificationToken: csrfToken }, dataType: 'json'
+                        }).catch(error => { Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`); });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value.success) {
+                        showSuccessToast(result.value.message || 'Đã xóa thành công.');
+
+                        // Reload bảng Active với callback để xử lý chuyển trang nếu cần
+                        if (activeTable) {
+                            activeTable.ajax.reload(function (json) {
+                                // Callback này chạy SAU KHI dữ liệu được tải lại
+                                const newTotalRecords = activeTable.page.info().recordsDisplay; // Tổng số record sau khi xóa
+                                if (shouldGoToPrevPage && newTotalRecords > 0) {
+                                    // Nếu cần về trang trước VÀ còn dữ liệu VÀ trang hiện tại vẫn là trang cũ (DataTables có thể tự về trang cuối nếu trang hiện tại > max)
+                                    if (activeTable.page() === currentPage) {
+                                        activeTable.page(currentPage - 1).draw(false); // Chuyển về trang trước đó
+                                        console.log('Adjusted Active table to previous page after delete.');
+                                    }
+                                }
+                                // Reload bảng Deleted sau khi bảng Active xử lý xong (hoặc chạy song song nếu không quan trọng thứ tự)
+                                deletedCategoryTableModule.reload();
+                                console.log('Reloaded Deleted table after delete.');
+                            }, false); // false: không reset paging trong quá trình reload
+                        } else {
+                            // Nếu không lấy được instance, chỉ reload bình thường
+                            deletedCategoryTableModule.reload();
+                        }
+
+                        console.log('Reloading Active table after delete.');
+
+                    } else if (result.isConfirmed && !result.value.success) {
+                        showErrorAlert('Xóa thất bại', result.value.message || 'Không thể xóa loại sản phẩm.');
+                    }
+                });
+            };
+
+            window.restoreCategory = function (id, name) {
+                const safeName = name ? $('<div>').text(name).html() : 'loại này';
+                // Lấy thông tin trang hiện tại của bảng Deleted TRƯỚC KHI khôi phục
+                const deletedTable = deletedCategoryTableModule.getInstance();
+                let currentPage = 0;
+                let recordsOnCurrentPage = 0;
+                if (deletedTable) { // Kiểm tra instance tồn tại
+                    currentPage = deletedTable.page();
+                    recordsOnCurrentPage = deletedTable.rows({ page: 'current' }).count();
+                }
+                const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
+
+                Swal.fire({
+                    title: 'Xác nhận khôi phục', html: `Bạn chắc chắn muốn khôi phục loại <strong>${safeName}</strong>?`, icon: 'question',
+                    showCancelButton: true, confirmButtonText: '<i class="fas fa-undo-alt me-1"></i>Khôi phục', cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
+                    reverseButtons: true, customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-restore-btn btn ms-2', cancelButton: 'custom-cancel-btn btn me-2' },
+                    buttonsStyling: false, showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return $.ajax({
+                            url: `/Admin/Category/Restore/${id}`, type: 'POST', data: { __RequestVerificationToken: csrfToken }, dataType: 'json'
+                        }).catch(error => { Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`); });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value.success) {
+                        showSuccessToast(result.value.message || 'Đã khôi phục thành công.');
+
+                        // Reload bảng Deleted với callback để xử lý chuyển trang nếu cần
+                        if (deletedTable) {
+                            deletedTable.ajax.reload(function (json) {
+                                // Callback này chạy SAU KHI dữ liệu được tải lại
+                                const newTotalRecords = deletedTable.page.info().recordsDisplay; // Tổng số record sau khi khôi phục
+                                if (shouldGoToPrevPage && newTotalRecords > 0) {
+                                    if (deletedTable.page() === currentPage) {
+                                        deletedTable.page(currentPage - 1).draw(false); // Chuyển về trang trước đó
+                                        console.log('Adjusted Deleted table to previous page after restore.');
+                                    }
+                                }
+                                // Reload bảng Active sau khi bảng Deleted xử lý xong
+                                activeCategoryTableModule.reloadAndResetPaging(); // Reload Active table và về trang 1
+                                console.log('Reloaded Active table after restore.');
+                            }, false); // false: không reset paging trong quá trình reload
+                        } else {
+                            // Nếu không lấy được instance, chỉ reload bình thường
+                            activeCategoryTableModule.reloadAndResetPaging();
+                        }
+                        console.log('Reloading Deleted table after restore.');
+
+                    } else if (result.isConfirmed && !result.value.success) {
+                        showErrorAlert('Khôi phục thất bại', result.value.message || 'Không thể khôi phục loại sản phẩm.');
+                    }
+                });
+            };
+
+            // =========================================================================
+            // XỬ LÝ CHUYỂN TAB
+            // =========================================================================
+            function setupTabEvents() {
+                let deletedTabLoaded = false;
+                const deletedTabTrigger = document.getElementById('nav-deleted-tab');
+                const activeTabTrigger = document.getElementById('nav-active-tab');
+
+                const loadTooltips = (tableSelector) => {
+                    setTimeout(function () {
+                        try {
+                            const tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (tooltipInstance) {
+                                    tooltipInstance.dispose(); // Hủy tooltip cũ để tránh lỗi
+                                }
+                                new bootstrap.Tooltip(tooltipTriggerEl); // Tạo mới
+                            });
+                        } catch (e) { console.error("Error initializing tooltips: ", e); }
+                    }, 250); // Tăng nhẹ delay nếu cần
+                };
+
+                if (deletedTabTrigger) {
+                    deletedTabTrigger.addEventListener('shown.bs.tab', function (event) {
+                        if (!deletedTabLoaded) {
+                            deletedCategoryTableModule.reload(); // Chỉ reload khi load lần đầu
+                            deletedTabLoaded = true;
+                        } else {
+                            // Tùy chọn: Reload lại bảng nếu cần dữ liệu mới nhất mỗi lần click
+                            // deletedCategoryTableModule.reload();
+                        }
+                        loadTooltips('#deletedCategoryTable'); // Load tooltip cho bảng đã xóa
+                    });
+                }
+
+                if (activeTabTrigger) {
+                    activeTabTrigger.addEventListener('shown.bs.tab', function (event) {
+                        // Bảng active thường đã load ban đầu, chỉ cần đảm bảo tooltip
+                        loadTooltips('#activeCategoryTable');
+                    });
+                }
+            }
+
+            // =========================================================================
+            // KHỞI TẠO KHI TRANG SẴN SÀNG
+            // =========================================================================
+            $(document).ready(function () {
+                csrfToken = $('input[name="__RequestVerificationToken"]').val();
+                if (!csrfToken) { console.error("CSRF token not found!"); showErrorAlert("Lỗi cấu hình", "Không tìm thấy mã xác thực bảo mật."); }
+
+                activeCategoryTableModule.init();   // Khởi tạo bảng active (sẽ load data ngay)
+                deletedCategoryTableModule.init();  // Khởi tạo bảng deleted (chưa load data)
+                categoryModalModule.setup();        // Khởi tạo modal
+                setupTabEvents();                   // Khởi tạo sự kiện chuyển tab
+
+                // Đảm bảo tooltip cho bảng active được load ban đầu
+                setTimeout(() => {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('#activeCategoryTable [title]'));
+                    tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    });
+                }, 300); // Delay nhỏ để đảm bảo table đã vẽ
+
+                console.log("Trang quản lý loại SP (2 Tabs) đã sẵn sàng.");
+            });
+
+        })(jQuery);
+    </script>
+}

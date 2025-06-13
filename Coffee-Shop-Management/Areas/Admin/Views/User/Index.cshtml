@@ -1,0 +1,1859 @@
+﻿@* File: Areas/Admin/Views/User/Index.cshtml *@
+@{
+    ViewData["Title"] = "Quản lý Người dùng";
+    // Tạo AntiForgeryToken ẩn trong trang
+    @Html.AntiForgeryToken()
+}
+
+<div class="container-fluid">
+
+    @* --- Tabs Navigation --- *@
+    <nav>
+        <div class="nav nav-tabs mb-3" id="nav-tab" role="tablist">
+            <button class="nav-link active" id="nav-active-tab" data-bs-toggle="tab" data-bs-target="#nav-active" type="button" role="tab" aria-controls="nav-active" aria-selected="true">
+                <i class="fas fa-users me-1"></i> Danh sách chính
+            </button>
+            <button class="nav-link" id="nav-deleted-tab" data-bs-toggle="tab" data-bs-target="#nav-deleted" type="button" role="tab" aria-controls="nav-deleted" aria-selected="false">
+                <i class="fas fa-user-slash me-1"></i> Đã xóa
+            </button>
+        </div>
+    </nav>
+
+    @* --- Tab Content --- *@
+    <div class="tab-content" id="nav-tabContent">
+
+        @* --- Tab Pane: Danh sách chính (Active/Inactive/Locked) --- *@
+        <div class="tab-pane fade show active" id="nav-active" role="tabpanel" aria-labelledby="nav-active-tab" tabindex="0">
+            @* --- Hàng điều khiển --- *@
+            <div class="row mb-3 gy-2 align-items-center">
+                <div class="col-12 col-sm-auto mb-2 mb-md-0">
+                    <button id="showAddUserModalBtn" class="btn btn-primary shadow-sm me-2">
+                        <i class="fas fa-user-plus"></i> Thêm người dùng
+                    </button>
+                </div>
+                <div class="col-12 col-sm">
+                    <div class="row gx-2 gy-2 justify-content-end">
+                        <div class="col-12 col-md-5 col-lg-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="activeUserSearch" class="form-control" placeholder="Tìm theo tên, username, email...">
+                            </div>
+                        </div>
+                        @* Dropdown Lọc Chức vụ *@
+                        <div class="col-12 col-md-3">
+                            <select id="activeUserJobTitleFilter" class="form-select" aria-label="Lọc theo chức vụ">
+                                <option value="all" selected>Tất cả chức vụ</option>
+                                @* Options sẽ được load bằng AJAX *@
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <select id="activeUserStatusFilter" class="form-select">
+                                <option value="all" selected>Tất cả trạng thái</option>
+                                <option value="false">Đang hoạt động</option>
+                                <option value="true">Bị khóa</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">Hiện</span>
+                                <select id="activeUserPageLength" class="form-select" style="max-width: 80px;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button id="resetActiveUserFilterBtn" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-undo"></i> Xóa bộ lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Bảng DataTable --- *@
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2"><h5 class="mb-0 card-title">Danh sách Người dùng</h5></div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive position-relative" id="activeUserTableContainer">
+                        <table id="activeUserTable" class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 3%;">STT</th>
+                                    <th style="width: 5%;" data-orderable="false">Avatar</th>
+                                    <th style="width: 15%;" data-name="Name">Họ và tên</th>
+                                    <th style="width: 12%;" data-name="UserName">Tên đăng nhập</th>
+                                    <th style="width: 15%;" data-name="Email">Email</th>
+                                    <th style="width: 10%;" data-name="JobTitle">Chức vụ</th>
+                                    <th style="width: 10%;" data-name="LockoutEnd">Trạng thái</th>
+                                    <th style="width: 10%;" data-name="CreatedAt">Ngày tạo</th>
+                                    <th style="width: 10%;" data-name="UpdateAt">Ngày sửa</th>
+                                    <th style="width: 10%;" data-orderable="false">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                @* --- Phân trang & Thông tin --- *@
+                <div class="card-footer bg-light py-2">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                        <span id="activeUserPageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
+                        <nav aria-label="Active user table navigation" class="mt-2 mt-md-0">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center" id="activeUserPagination">
+                                <li class="page-item" id="activeUserFirst"><a class="page-link" href="#">&laquo;</a></li>
+                                <li class="page-item" id="activeUserPrevious"><a class="page-link" href="#">&lt;</a></li>
+                                <li class="page-item" id="activeUserNext"><a class="page-link" href="#">&gt;</a></li>
+                                <li class="page-item" id="activeUserLast"><a class="page-link" href="#">&raquo;</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div> @* --- Hết Tab Pane: Danh sách chính --- *@
+
+
+        @* --- Tab Pane: Đã xóa (Deleted) --- *@
+        <div class="tab-pane fade" id="nav-deleted" role="tabpanel" aria-labelledby="nav-deleted-tab" tabindex="0">
+            @* --- Hàng điều khiển --- *@
+            <div class="row mb-3 gy-2 align-items-center">
+                <div class="col-12 col-sm">
+                    <div class="row gx-2 gy-2 justify-content-end">
+                        <div class="col-12 col-md-5 col-lg-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="deletedUserSearch" class="form-control" placeholder="Tìm người dùng đã xóa...">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">Hiện</span>
+                                <select id="deletedUserPageLength" class="form-select" style="max-width: 80px;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @* --- Bảng DataTable --- *@
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-light py-2"><h5 class="mb-0 card-title">Người dùng đã xóa</h5></div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive position-relative" id="deletedUserTableContainer">
+                        <table id="deletedUserTable" class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 3%;">STT</th>
+                                    <th style="width: 5%;" data-orderable="false">Avatar</th>
+                                    <th style="width: 20%;" data-name="Name">Họ và tên</th>
+                                    <th style="width: 17%;" data-name="UserName">Tên đăng nhập</th>
+                                    <th style="width: 20%;" data-name="Email">Email</th>
+                                    <th style="width: 15%;" data-name="CreatedAt">Ngày tạo gốc</th>
+                                    <th style="width: 10%;" data-name="UpdateAt">Ngày xóa</th>
+                                    <th style="width: 10%;" data-orderable="false">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                @* --- Phân trang & Thông tin --- *@
+                <div class="card-footer bg-light py-2">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                        <span id="deletedUserPageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
+                        <nav aria-label="Deleted user table navigation" class="mt-2 mt-md-0">
+                            <ul class="pagination pagination-sm mb-0 justify-content-center" id="deletedUserPagination">
+                                <li class="page-item" id="deletedUserFirst"><a class="page-link" href="#">&laquo;</a></li>
+                                <li class="page-item" id="deletedUserPrevious"><a class="page-link" href="#">&lt;</a></li>
+                                <li class="page-item" id="deletedUserNext"><a class="page-link" href="#">&gt;</a></li>
+                                <li class="page-item" id="deletedUserLast"><a class="page-link" href="#">&raquo;</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div> @* --- Hết Tab Pane: Đã xóa --- *@
+
+    </div> @* --- Hết Tab Content --- *@
+
+</div> @* --- Hết container-fluid --- *@
+
+
+@* --- Modal Thêm/Sửa Người dùng --- *@
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light text-dark">
+                <h5 class="modal-title" id="userModalLabel">Thêm người dùng mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @* Đặt thẻ form bao quanh nội dung modal body *@
+                <form id="userForm" enctype="multipart/form-data">
+                    @* Token đã được render ở đầu trang, JS sẽ đọc và gửi qua header *@
+                    <input type="hidden" id="editUserId" name="Id" value="" /> @* Input ẩn chứa Id khi edit *@
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <label for="modalAvatarFile" class="form-label">Ảnh đại diện</label><br />
+                            <img id="modalAvatarPreview" src="/images/placeholder-avatar.png" alt="Avatar Preview" class="img-thumbnail mb-2" style="width: 120px; height: 120px; object-fit: cover; cursor: pointer;" onclick="$('#modalAvatarFile').click();" data-original-src="/images/placeholder-avatar.png"> @* Lưu src gốc để reset *@
+                            <input type="file" class="form-control d-none" id="modalAvatarFile" name="AvatarFile" accept="image/jpeg, image/png, image/gif">
+                            <small class="form-text text-muted d-block">Nhấp vào ảnh để đổi. Tối đa 5MB.</small>
+                            <div class="invalid-feedback" id="avatarFileError" style="display: none;"></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="modalName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="modalName" name="Name" required maxlength="100" autocomplete="name">
+                                    <div class="invalid-feedback">Vui lòng nhập họ và tên.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="modalUserName" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="modalUserName" name="UserName" required maxlength="100" autocomplete="username">
+                                    <div class="invalid-feedback">Vui lòng nhập tên đăng nhập.</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="modalEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="modalEmail" name="Email" required maxlength="100" autocomplete="email">
+                                    <div class="invalid-feedback">Vui lòng nhập địa chỉ email hợp lệ.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="modalPhoneNumber" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="modalPhoneNumber" name="PhoneNumber" autocomplete="tel">
+                                    <div class="invalid-feedback">Số điện thoại không hợp lệ.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3 password-section">
+                            <label for="modalPassword" class="form-label">Mật khẩu <span class="text-danger password-required-indicator">*</span></label>
+                            <input type="password" class="form-control" id="modalPassword" name="Password" autocomplete="new-password" minlength="6">
+                            <div class="invalid-feedback">Mật khẩu phải có ít nhất 6 ký tự.</div>
+                            <small class="form-text text-muted password-help-text" style="display: none;">Bỏ trống nếu không muốn đổi mật khẩu khi sửa.</small>
+                        </div>
+                        <div class="col-md-6 mb-3 password-section">
+                            <label for="modalConfirmPassword" class="form-label">Xác nhận Mật khẩu <span class="text-danger password-required-indicator">*</span></label>
+                            <input type="password" class="form-control" id="modalConfirmPassword" name="ConfirmPassword" autocomplete="new-password">
+                            <div class="invalid-feedback">Mật khẩu xác nhận không khớp.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="modalAddress" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="modalAddress" name="Address" rows="2" maxlength="400"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalJobTitle" class="form-label">Chức vụ</label>
+                            <select class="form-select" id="modalJobTitle" name="JobTitle" style="width: 100%;">
+                                @* Select2 sẽ quản lý các option *@
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalBirthDate" class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="modalBirthDate" name="BirthDate">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalWageRate" class="form-label">Mức lương (giờ)</label>
+                            <input type="number" step="any" min="0" class="form-control" id="modalWageRate" name="WageRate">
+                            <div class="invalid-feedback">Vui lòng nhập mức lương hợp lệ.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalRoles" class="form-label">Vai trò</label>
+                            <select class="form-select" id="modalRoles" name="SelectedRoles" multiple="multiple" style="width: 100%;"></select>
+                            <div class="invalid-feedback">Vui lòng chọn ít nhất một vai trò.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                @* Giá trị 'true' sẽ được gửi nếu checked, không gửi gì nếu unchecked *@
+                                <input class="form-check-input" type="checkbox" role="switch" id="modalIsLocked" name="IsLocked" value="true">
+                                <label class="form-check-label" for="modalIsLocked">Khóa tài khoản</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3" id="createdAtUserDisplayContainer" style="display: none;">
+                            <label class="form-label">Ngày tạo:</label>
+                            <p id="modalUserCreatedAtDisplay" class="form-control-plaintext mb-0"></p>
+                        </div>
+                    </div>
+                </form> @* Kết thúc thẻ form *@
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                @* Nút lưu này sẽ trigger submit form thông qua JS *@
+                <button type="button" class="btn btn-primary" id="saveUserBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Styles {
+    @* --- CSS DataTables & Icons --- *@
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    @* --- CSS Select2 --- *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    @* --- CSS Tùy chỉnh --- *@
+    <style>
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #5A6A85;
+            padding-top: 2px;
+            padding-right: 38px;
+        }
+
+        /* Áp dụng kiểu chữ và màu cho các mục lựa chọn trong dropdown */
+        .select2-dropdown .select2-results__option {
+            font-size: 0.875rem; /* Áp dụng cùng font-size */
+            font-weight: 400; /* Áp dụng cùng font-weight */
+            line-height: 1.5; /* Áp dụng cùng line-height */
+            color: #5A6A85; /* Áp dụng cùng màu chữ */
+        }
+
+        /* Giữ nguyên các style từ câu trả lời trước */
+        .custom-swal-popup {
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .15);
+        }
+
+            .custom-swal-popup .swal2-title {
+                font-size: 1.4em;
+            }
+
+            .custom-swal-popup .swal2-html-container {
+                font-size: 1.1em;
+                color: #555;
+            }
+
+        .custom-confirm-btn, .custom-cancel-btn, .custom-delete-btn, .custom-restore-btn {
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 5px;
+            padding: .5em 1.5em;
+            border: none;
+        }
+
+        .custom-confirm-btn {
+            background-color: #28a745 !important;
+        }
+
+            .custom-confirm-btn:hover {
+                background-color: #218838 !important;
+            }
+
+        .custom-cancel-btn {
+            background-color: #6c757d !important;
+        }
+
+            .custom-cancel-btn:hover {
+                background-color: #5a6268 !important;
+            }
+
+        .custom-delete-btn {
+            background-color: #dc3545 !important;
+        }
+
+            .custom-delete-btn:hover {
+                background-color: #c82333 !important;
+            }
+
+        .custom-restore-btn {
+            background-color: #198754 !important;
+        }
+
+            .custom-restore-btn:hover {
+                background-color: #157347 !important;
+            }
+
+        #activeUserTable td, #activeUserTable th,
+        #deletedUserTable td, #deletedUserTable th {
+            vertical-align: middle;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            #activeUserTable th[data-name="Name"], #activeUserTable td:nth-child(3),
+            #deletedUserTable th[data-name="Name"], #deletedUserTable td:nth-child(3) {
+                max-width: 150px;
+                text-align: left;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+        .badge {
+            padding: .4em .6em;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        body > .loading-overlay {
+            position: fixed;
+            z-index: 1060;
+        }
+
+        .pagination .page-item .page-link {
+            border-radius: .25rem;
+            margin: 0 2px;
+        }
+
+        .dataTables_processing {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 11;
+        }
+
+        .page-item.disabled .page-link {
+            pointer-events: none;
+            cursor: default;
+            color: #6c757d;
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+
+        @@media (max-width: 767.98px) {
+            .card-footer .d-flex {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #activeUserPageInfo, #deletedUserPageInfo {
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        .edit-user-btn, .delete-user-btn, .restore-user-btn {
+            padding: 0.15rem 0.4rem;
+            font-size: 0.8rem;
+            line-height: 1;
+        }
+
+            .edit-user-btn i, .delete-user-btn i, .restore-user-btn i {
+                vertical-align: middle;
+            }
+
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+        }
+
+        .table-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+        }
+
+        .table-avatar-placeholder {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-dropdown {
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            z-index: 1056; /* Cao hơn z-index modal backdrop */
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd;
+            border-color: #0a58ca;
+            color: white;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+            .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+                color: white;
+            }
+
+        .is-invalid ~ .select2-container .select2-selection {
+            border-color: #dc3545 !important;
+        }
+        /* !important để ghi đè style */
+        #userForm .password-help-text {
+            font-size: 0.8em;
+        }
+
+        #userForm .password-required-indicator {
+            display: none;
+        }
+
+        #userForm.mode-create .password-required-indicator {
+            display: inline;
+        }
+
+    </style>
+}
+
+
+@section Scripts {
+    @* --- Thư viện JS DataTables, Notyf, SweetAlert2 --- *@
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @* --- JS Select2 --- *@
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/vi.js"></script>
+
+    <script>
+        (function ($) {
+            "use strict";
+
+            // =========================================================================
+            // BIẾN TRẠNG THÁI CHUNG & TIỆN ÍCH
+            // =========================================================================
+            let csrfToken = $('input[name="__RequestVerificationToken"]').val();
+            const notyf = new Notyf({
+                duration: 3000,
+                position: {
+                    x: 'right',
+                    y: 'top'
+                },
+                types: [{
+                    type: 'success',
+                    background: '#28a745',
+                    icon: {
+                        className: 'fas fa-check-circle',
+                        tagName: 'i',
+                        color: 'white'
+                    }
+                }, {
+                    type: 'error',
+                    background: '#dc3545',
+                    icon: {
+                        className: 'fas fa-times-circle',
+                        tagName: 'i',
+                        color: 'white'
+                    }
+                }, {
+                    type: 'warning',
+                    background: '#ffc107',
+                    icon: {
+                        className: 'fas fa-exclamation-triangle',
+                        tagName: 'i',
+                        color: 'white'
+                    },
+                    duration: 5000
+                }, {
+                    type: 'info',
+                    background: '#0d6efd',
+                    icon: {
+                        className: 'fas fa-info-circle',
+                        tagName: 'i',
+                        color: 'white'
+                    },
+                    duration: 4000
+                }],
+                dismissible: true
+            });
+
+            function showSuccessToast(message) {
+                notyf.success(message || 'Thao tác thành công.');
+            }
+
+            function showErrorAlert(title, message) {
+                notyf.error((title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.'));
+            }
+
+            function showInfo(message) {
+                notyf.open({
+                    type: 'info',
+                    message: message
+                });
+            }
+
+            function showLoading(selector = 'body', message = 'Đang xử lý...') {
+                const $target = $(selector);
+                if ($target.length && $target.find('.loading-overlay').length === 0) {
+                    let positionStyle = 'absolute';
+                    if (selector === 'body' || $target.is('body')) {
+                        positionStyle = 'fixed';
+                    } else {
+                        const currentPosition = $target.css('position');
+                        if (!['relative', 'absolute', 'fixed'].includes(currentPosition)) {
+                            $target.css('position', 'relative');
+                        }
+                    }
+                    const zIndex = (positionStyle === 'fixed') ? 1060 : ($target.css('z-index') === 'auto' ? 10 : parseInt($target.css('z-index')) + 1);
+                    $target.append(`<div class="loading-overlay" style="position:${positionStyle}; top:0; left:0; width:100%; height:100%; z-index:${zIndex}; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.7); color:#333;"><div class="spinner-border text-primary spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div><span>${message}</span></div>`);
+                }
+            }
+
+            function hideLoading(selector = 'body') {
+                setTimeout(() => {
+                    $(selector).find('.loading-overlay').fadeOut(150, function () {
+                        $(this).remove();
+                    });
+                }, 50);
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                try {
+                    const date = new Date(dateString);
+                    if (isNaN(date.getTime())) return 'Ngày lỗi';
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}/${month}/${year}`;
+                } catch (e) {
+                    console.error("Error formatting date:", dateString, e);
+                    return 'Lỗi định dạng';
+                }
+            }
+
+            function handleAjaxError(xhr, actionText) {
+                hideLoading();
+                console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText);
+                let errorMsg = `Không thể ${actionText.toLowerCase()}.`;
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                    if (xhr.responseJSON.errors && Array.isArray(xhr.responseJSON.errors)) {
+                        errorMsg += '<br/><ul>' + xhr.responseJSON.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                    }
+                } else if (xhr.status === 400) {
+                    errorMsg += ' Dữ liệu gửi lên không hợp lệ.';
+                } else if (xhr.status === 401 || xhr.status === 403) {
+                    errorMsg = 'Bạn không có quyền thực hiện thao tác này.';
+                } else if (xhr.status === 404) {
+                    errorMsg = 'Không tìm thấy tài nguyên được yêu cầu.';
+                } else if (xhr.status === 409) {
+                    errorMsg = 'Dữ liệu bị trùng lặp hoặc xung đột.';
+                } else if (xhr.status >= 500) {
+                    errorMsg += ' Lỗi máy chủ nội bộ.';
+                }
+                showErrorAlert('Lỗi hệ thống', errorMsg);
+            }
+
+            function renderAvatar(imageUrl, name = '?', sizeClass = 'table-avatar') {
+                const placeholderIcon = '<i class="fas fa-user"></i>';
+                const placeholderClass = `${sizeClass} ${sizeClass}-placeholder`;
+
+                if (!imageUrl) {
+                    return `<span class="${placeholderClass}" title="Chưa có ảnh">${placeholderIcon}</span>`;
+                }
+                return `<img src="${imageUrl}" alt="${name || 'Avatar'}" class="${sizeClass}" onerror="this.onerror=null; this.outerHTML='<span class=\\'${placeholderClass}\\'>${placeholderIcon}</span>`;
+            }
+
+            // =========================================================================
+            // DATATABLE & PHÂN TRANG
+            // =========================================================================
+            function updateCustomPagination(tableInstance, paginationListSelector, pageInfoSelector) {
+                if (!tableInstance) return;
+                const pageInfo = tableInstance.page.info();
+                const $paginationList = $(paginationListSelector);
+                const $pageInfoSpan = $(pageInfoSelector);
+                const $paginationNav = $paginationList.parent('nav');
+                $paginationList.find('.page-item.page-number').remove();
+                $pageInfoSpan.hide().empty();
+                if (pageInfo.pages <= 1) {
+                    $paginationNav.hide();
+                    if (pageInfo.recordsDisplay > 0) {
+                        $pageInfoSpan.text(`Hiện 1-${pageInfo.recordsDisplay} / ${pageInfo.recordsDisplay.toLocaleString('vi-VN')} mục`).show();
+                    } else {
+                        $pageInfoSpan.text("(Không có mục nào)").show();
+                    }
+                    return;
+                } else {
+                    $paginationNav.show();
+                }
+                const recordsDisplayed = pageInfo.recordsDisplay;
+                if (recordsDisplayed > 0) {
+                    const startRecord = pageInfo.start + 1;
+                    const endRecord = pageInfo.end;
+                    $pageInfoSpan.text(`Hiện ${startRecord}-${endRecord} / ${recordsDisplayed.toLocaleString('vi-VN')} mục`).show();
+                    $paginationList.find('.page-item').removeClass('disabled');
+                } else {
+                    $pageInfoSpan.text("(Không có mục nào)").show();
+                    $paginationList.find('.page-item').addClass('disabled');
+                }
+                const currentPage = pageInfo.page;
+                const totalPages = pageInfo.pages;
+                const maxPagesToShow = 5;
+                let startPage, endPage;
+                if (totalPages <= maxPagesToShow) {
+                    startPage = 0;
+                    endPage = totalPages - 1;
+                } else {
+                    const pagesBefore = Math.floor((maxPagesToShow - 1) / 2);
+                    const pagesAfter = Math.ceil((maxPagesToShow - 1) / 2);
+                    if (currentPage <= pagesBefore) {
+                        startPage = 0;
+                        endPage = maxPagesToShow - 1;
+                    } else if (currentPage + pagesAfter >= totalPages - 1) {
+                        startPage = totalPages - maxPagesToShow;
+                        endPage = totalPages - 1;
+                    } else {
+                        startPage = currentPage - pagesBefore;
+                        endPage = currentPage + pagesAfter;
+                    }
+                }
+                const prevButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(1)').attr('id');
+                const nextButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
+                if (startPage > 0) {
+                    $('#' + prevButtonId).after('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+                }
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageNum = i + 1;
+                    const $pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`);
+                    $pageItem.insertBefore($('#' + nextButtonId)).find('a').on('click', function (e) {
+                        e.preventDefault();
+                        if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) {
+                            tableInstance.page(i).draw('page');
+                        }
+                    });
+                }
+                if (endPage < totalPages - 1) {
+                    $('#' + nextButtonId).before('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
+                }
+                const firstButtonId = $paginationList.find('.page-item:has(a[href="#"]):first').attr('id');
+                const lastButtonId = $paginationList.find('.page-item:has(a[href="#"]):last').attr('id');
+                $('#' + firstButtonId).toggleClass('disabled', currentPage === 0);
+                $('#' + prevButtonId).toggleClass('disabled', currentPage === 0);
+                $('#' + nextButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
+                $('#' + lastButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
+            }
+
+            function setupCustomPaginationEvents(tableInstance, paginationListSelector) {
+                const $paginationNav = $(paginationListSelector).parent();
+                const firstButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):first').attr('id');
+                const prevButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(1)').attr('id');
+                const nextButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
+                const lastButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):last').attr('id');
+                $paginationNav.off('click', `#${firstButtonId} a`).on('click', `#${firstButtonId} a`, function (e) {
+                    e.preventDefault();
+                    if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('first').draw('page');
+                });
+                $paginationNav.off('click', `#${prevButtonId} a`).on('click', `#${prevButtonId} a`, function (e) {
+                    e.preventDefault();
+                    if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('previous').draw('page');
+                });
+                $paginationNav.off('click', `#${nextButtonId} a`).on('click', `#${nextButtonId} a`, function (e) {
+                    e.preventDefault();
+                    if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('next').draw('page');
+                });
+                $paginationNav.off('click', `#${lastButtonId} a`).on('click', `#${lastButtonId} a`, function (e) {
+                    e.preventDefault();
+                    if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('last').draw('page');
+                });
+            }
+            const dataTableLanguage = {
+                "sEmptyTable": "Không có dữ liệu trong bảng",
+                "sInfo": "Hiện _START_ đến _END_ trong tổng số _TOTAL_ mục",
+                "sInfoEmpty": "Hiện 0 đến 0 trong tổng số 0 mục",
+                "sInfoFiltered": "(được lọc từ _MAX_ mục)",
+                "sInfoPostFix": "",
+                "sInfoThousands": ".",
+                "sLengthMenu": "Hiện _MENU_ mục",
+                "sLoadingRecords": "Đang tải...",
+                "sProcessing": '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div> Đang xử lý...',
+                "sSearch": "Tìm kiếm:",
+                "sZeroRecords": "Không tìm thấy kết quả phù hợp",
+                "oPaginate": {
+                    "sFirst": "<<",
+                    "sLast": ">>",
+                    "sNext": ">",
+                    "sPrevious": "<"
+                },
+                "oAria": {
+                    "sSortAscending": ": Sắp xếp cột tăng dần",
+                    "sSortDescending": ": Sắp xếp cột giảm dần"
+                }
+            };
+
+            // =========================================================================
+            // MODULE DATATABLE ACTIVE USERS
+            // =========================================================================
+            const activeUserTableModule = (function () {
+                let tableInstance = null;
+                const tableSelector = '#activeUserTable',
+                    paginationSelector = '#activeUserPagination',
+                    pageInfoSelector = '#activeUserPageInfo';
+                const searchInputSelector = '#activeUserSearch',
+                    statusFilterSelector = '#activeUserStatusFilter',
+                    jobTitleFilterSelector = '#activeUserJobTitleFilter',
+                    pageLengthSelector = '#activeUserPageLength',
+                    resetFilterBtnSelector = '#resetActiveUserFilterBtn';
+
+                function init() {
+                    if (tableInstance) return;
+                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
+
+                    tableInstance = $(tableSelector).DataTable({
+                        serverSide: true,
+                        ajax: {
+                            url: "/Admin/User/GetDataActive",
+                            type: "POST",
+                            dataType: "json",
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            data: function (d) {
+                                d.statusFilter = $(statusFilterSelector).val();
+                                d.jobTitleFilter = $(jobTitleFilterSelector).val();
+                                d.searchValue = d.search.value;
+                                delete d.search;
+                            },
+                            error: function (xhr, error, code) {
+                                console.error("Lỗi Ajax DataTables (Active Users):", error, code, xhr.status, xhr.responseText);
+                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách người dùng. Mã lỗi: ${xhr.status}`);
+                                $(tableSelector + '_processing').hide();
+                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="10" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu.</td></tr>`);
+                                $(paginationSelector).parent().hide();
+                                $(pageInfoSelector).hide();
+                            }
+                        },
+                        columns: [{
+                            data: null,
+                            name: "STT",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart
+                        }, {
+                            data: "imageUrl",
+                            name: "ImageUrl",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: (data, type, row) => renderAvatar(data, row.name)
+                        }, {
+                            data: "name",
+                            name: "Name",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "userName",
+                            name: "UserName",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "email",
+                            name: "Email",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "jobTitle",
+                            name: "JobTitle",
+                            orderable: true,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: data => data || '-'
+                        }, {
+                            data: "isLocked",
+                            name: "LockoutEnd",
+                            orderable: true,
+                            className: 'text-center align-middle',
+                            render: data => data ? '<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Bị khóa</span>' : '<span class="badge bg-success-subtle text-success-emphasis rounded-pill">Hoạt động</span>'
+                        }, {
+                            data: "createdAt",
+                            name: "CreatedAt",
+                            orderable: true,
+                            className: 'text-center align-middle',
+                            render: data => formatDate(data)
+                        }, {
+                            data: "updateAt",
+                            name: "UpdateAt",
+                            orderable: true,
+                            className: 'text-center align-middle',
+                            render: data => formatDate(data)
+                        }, {
+                            data: "id",
+                            name: "Actions",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: function (data, type, row) {
+                                const safeName = row.name ? $('<div>').text(row.name).html() : (row.userName || 'người dùng này');
+                                const editBtn = `<button type="button" class="btn btn-sm btn-outline-warning me-1 edit-user-btn" data-id="${data}" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>`;
+                                const deleteBtn = `<button type="button" class="btn btn-sm btn-outline-danger delete-user-btn" data-id="${data}" data-name="${safeName}" title="Xóa"><i class="fas fa-trash"></i></button>`;
+                                return editBtn + deleteBtn;
+                            }
+                        }],
+                        order: [
+                            [7, 'desc']
+                        ],
+                        pageLength: initialPageLength,
+                        searching: true,
+                        lengthChange: false,
+                        info: false,
+                        paging: true,
+                        dom: 'rt',
+                        language: dataTableLanguage,
+                        // processing: true,
+                        drawCallback: function (settings) {
+                            updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
+                            var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (tooltipInstance) {
+                                    tooltipInstance.dispose();
+                                }
+                                return new bootstrap.Tooltip(tooltipTriggerEl);
+                            });
+                        }
+                    });
+                    setupCustomControlsEvents();
+                    setupCustomPaginationEvents(tableInstance, paginationSelector);
+                    setupActionEvents();
+                }
+
+                function setupCustomControlsEvents() {
+                    let searchTimeout;
+                    const searchDebounce = 400;
+                    $(searchInputSelector).off('keyup').on('keyup', function () {
+                        const searchValue = $(this).val();
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            if (tableInstance.search() !== searchValue) {
+                                tableInstance.search(searchValue).draw();
+                            }
+                        }, searchDebounce);
+                    });
+                    $(pageLengthSelector).off('change').on('change', function () {
+                        tableInstance.page.len($(this).val()).draw();
+                    });
+                    $(statusFilterSelector).off('change').on('change', function () {
+                        tableInstance.ajax.reload();
+                    });
+                    $(jobTitleFilterSelector).off('change').on('change', function () {
+                        if (tableInstance) { // Check instance exists before reloading
+                            tableInstance.ajax.reload();
+                        }
+                    });
+                    $(resetFilterBtnSelector).off('click').on('click', function () {
+                        $(searchInputSelector).val('');
+                        $(statusFilterSelector).val('all');
+                        $(jobTitleFilterSelector).val('all').trigger('change'); // Trigger change for Select2
+                        $(pageLengthSelector).val('10');
+                        if (tableInstance) { // Check instance exists before reloading
+                            tableInstance.search('').page.len(10).order([
+                                [7, 'desc']
+                            ]).ajax.reload(null, true);
+                        }
+                    });
+                }
+
+                function setupActionEvents() {
+                    $(tableSelector + ' tbody').off('click', '.edit-user-btn').on('click', '.edit-user-btn', function () {
+                        var id = $(this).data('id');
+                        window.showEditUserModal(id);
+                    });
+                    $(tableSelector + ' tbody').off('click', '.delete-user-btn').on('click', '.delete-user-btn', function () {
+                        var id = $(this).data('id');
+                        var name = $(this).data('name');
+                        window.deleteUser(id, name);
+                    });
+                }
+
+                function reload() {
+                    if (tableInstance) {
+                        tableInstance.ajax.reload(null, false);
+                    }
+                }
+
+                function reloadAndResetPaging() {
+                    if (tableInstance) {
+                        tableInstance.ajax.reload(null, true);
+                    }
+                }
+
+                function getInstance() {
+                    return tableInstance;
+                }
+                return {
+                    init: init,
+                    reload: reload,
+                    reloadAndResetPaging: reloadAndResetPaging,
+                    getInstance: getInstance
+                };
+            })();
+
+            // =========================================================================
+            // MODULE DATATABLE DELETED USERS
+            // =========================================================================
+            const deletedUserTableModule = (function () {
+                let tableInstance = null;
+                const tableSelector = '#deletedUserTable',
+                    paginationSelector = '#deletedUserPagination',
+                    pageInfoSelector = '#deletedUserPageInfo';
+                const searchInputSelector = '#deletedUserSearch',
+                    pageLengthSelector = '#deletedUserPageLength';
+
+                function init() {
+                    if (tableInstance) return;
+                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
+                    tableInstance = $(tableSelector).DataTable({
+                        serverSide: true,
+                        ajax: {
+                            url: "/Admin/User/GetDataDeleted",
+                            type: "POST",
+                            dataType: "json",
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            data: function (d) {
+                                d.searchValue = d.search.value;
+                                delete d.search;
+                            },
+                            error: function (xhr, error, code) {
+                                console.error("Lỗi Ajax DataTables (Deleted Users):", error, code, xhr.status, xhr.responseText);
+                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách đã xóa. Mã lỗi: ${xhr.status}`);
+                                $(tableSelector + '_processing').hide();
+                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="8" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu.</td></tr>`);
+                                $(paginationSelector).parent().hide();
+                                $(pageInfoSelector).hide();
+                            }
+                        },
+                        columns: [{
+                            data: null,
+                            name: "STT",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart
+                        }, {
+                            data: "imageUrl",
+                            name: "ImageUrl",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: (data, type, row) => renderAvatar(data, row.name)
+                        }, {
+                            data: "name",
+                            name: "Name",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "userName",
+                            name: "UserName",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "email",
+                            name: "Email",
+                            orderable: true,
+                            className: 'text-start align-middle'
+                        }, {
+                            data: "createdAt",
+                            name: "CreatedAt",
+                            orderable: true,
+                            className: 'text-center align-middle',
+                            render: data => formatDate(data)
+                        }, {
+                            data: "updateAt",
+                            name: "UpdateAt",
+                            orderable: true,
+                            className: 'text-center align-middle',
+                            render: data => formatDate(data)
+                        }, {
+                            data: "id",
+                            name: "Actions",
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center align-middle',
+                            render: function (data, type, row) {
+                                const safeName = row.name ? $('<div>').text(row.name).html() : (row.userName || 'người dùng này');
+                                const restoreBtn = `<button type="button" class="btn btn-sm btn-outline-success restore-user-btn" data-id="${data}" data-name="${safeName}" title="Khôi phục"><i class="fas fa-undo-alt"></i></button>`;
+                                return restoreBtn;
+                            }
+                        }],
+                        order: [
+                            [6, 'desc']
+                        ],
+                        pageLength: initialPageLength,
+                        searching: true,
+                        lengthChange: false,
+                        info: false,
+                        paging: true,
+                        dom: 'rt',
+                        language: dataTableLanguage,
+                        responsive: true,
+                        processing: true,
+                        drawCallback: function (settings) {
+                            updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
+                            var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (tooltipInstance) {
+                                    tooltipInstance.dispose();
+                                }
+                                return new bootstrap.Tooltip(tooltipTriggerEl);
+                            });
+                        }
+                    });
+                    setupCustomControlsEvents();
+                    setupCustomPaginationEvents(tableInstance, paginationSelector);
+                    setupActionEvents();
+                }
+
+                function setupCustomControlsEvents() {
+                    let searchTimeout;
+                    const searchDebounce = 400;
+                    $(searchInputSelector).off('keyup').on('keyup', function () {
+                        const searchValue = $(this).val();
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            if (tableInstance.search() !== searchValue) {
+                                tableInstance.search(searchValue).draw();
+                            }
+                        }, searchDebounce);
+                    });
+                    $(pageLengthSelector).off('change').on('change', function () {
+                        tableInstance.page.len($(this).val()).draw();
+                    });
+                }
+
+                function setupActionEvents() {
+                    $(tableSelector + ' tbody').off('click', '.restore-user-btn').on('click', '.restore-user-btn', function () {
+                        var id = $(this).data('id');
+                        var name = $(this).data('name');
+                        window.restoreUser(id, name);
+                    });
+                }
+
+                function reload() {
+                    if (tableInstance) {
+                        tableInstance.ajax.reload(null, false);
+                    }
+                }
+
+                function getInstance() {
+                    return tableInstance;
+                }
+                return {
+                    init: init,
+                    reload: reload,
+                    getInstance: getInstance
+                };
+            })();
+
+            // =========================================================================
+            // MODULE MODAL THÊM/SỬA USER
+            // =========================================================================
+            const userModalModule = (function () {
+                const modalSelector = '#userModal',
+                    formSelector = '#userForm',
+                    saveBtnSelector = '#saveUserBtn';
+                const editIdInputSelector = '#editUserId',
+                    nameInputSelector = '#modalName',
+                    userNameInputSelector = '#modalUserName';
+                const emailInputSelector = '#modalEmail',
+                    passwordInputSelector = '#modalPassword',
+                    confirmPasswordInputSelector = '#modalConfirmPassword';
+                const phoneInputSelector = '#modalPhoneNumber',
+                    addressInputSelector = '#modalAddress',
+                    jobTitleInputSelector = '#modalJobTitle';
+                const birthDateInputSelector = '#modalBirthDate',
+                    wageRateInputSelector = '#modalWageRate',
+                    isLockedCheckboxSelector = '#modalIsLocked';
+                const rolesSelectSelector = '#modalRoles',
+                    avatarPreviewSelector = '#modalAvatarPreview',
+                    avatarFileInputSelector = '#modalAvatarFile';
+                const avatarFileErrorSelector = '#avatarFileError',
+                    modalTitleSelector = '#userModalLabel',
+                    createdAtContainerSelector = '#createdAtUserDisplayContainer';
+                const createdAtDisplaySelector = '#modalUserCreatedAtDisplay',
+                    passwordSectionSelector = '.password-section';
+                const passwordRequiredIndicatorSelector = '.password-required-indicator',
+                    passwordHelpTextSelector = '.password-help-text';
+                let modalInstance = null;
+                let isEditMode = false;
+                const placeholderAvatarUrl = '/images/placeholder-avatar.png';
+
+                function resetForm() {
+                    const $form = $(formSelector);
+                    $form[0].reset();
+                    $(editIdInputSelector).val('');
+                    $(rolesSelectSelector).val(null).trigger('change');
+                    $(jobTitleInputSelector).val(null).empty().trigger('change');
+                    $(avatarPreviewSelector).attr('src', placeholderAvatarUrl);
+                    $(avatarPreviewSelector).data('original-src', placeholderAvatarUrl);
+                    $(avatarFileInputSelector).val('');
+                    $(avatarFileErrorSelector).text('').hide();
+                    $form.removeClass('was-validated mode-create mode-edit');
+                    $form.find('.is-invalid').removeClass('is-invalid');
+                    $(rolesSelectSelector).siblings('.select2-container').find('.select2-selection').removeClass('is-invalid');
+                    $(jobTitleInputSelector).siblings('.select2-container').find('.select2-selection').removeClass('is-invalid');
+                    $(modalTitleSelector).text('Thêm người dùng mới');
+                    $(saveBtnSelector).text('Lưu').prop('disabled', false).removeClass('btn-warning').addClass('btn-primary');
+                    $(createdAtContainerSelector).hide();
+                    $(createdAtDisplaySelector).text('');
+                    $(passwordHelpTextSelector).hide();
+                    $(passwordRequiredIndicatorSelector).hide();
+                    isEditMode = false;
+                    $(passwordInputSelector).prop('required', false);
+                    $(confirmPasswordInputSelector).prop('required', false);
+                }
+
+                function validateForm() {
+                    const $form = $(formSelector);
+                    let isValid = true;
+                    $form.removeClass('was-validated');
+                    $form.find('.is-invalid').removeClass('is-invalid');
+                    $(rolesSelectSelector).siblings('.select2-container').find('.select2-selection').removeClass('is-invalid');
+                    $(jobTitleInputSelector).siblings('.select2-container').find('.select2-selection').removeClass('is-invalid');
+                    $(avatarFileErrorSelector).text('').hide();
+
+                    $form.find('input[required], textarea[required], select[required]').each(function () {
+                        if (!$(this).is(':visible')) return;
+                        if ($(this).is('select')) {
+                            if (!$(this).val()) {
+                                $(this).addClass('is-invalid');
+                                isValid = false;
+                                if ($(this).is(rolesSelectSelector) || $(this).is(jobTitleInputSelector)) {
+                                    $(this).siblings('.select2-container').find('.select2-selection').addClass('is-invalid');
+                                }
+                            }
+                        } else {
+                            if (!$(this).val() || !$(this).val().trim()) {
+                                $(this).addClass('is-invalid');
+                                isValid = false;
+                            }
+                        }
+                    });
+
+                    const emailVal = $(emailInputSelector).val();
+                    if (emailVal && !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(emailVal)) {
+                        $(emailInputSelector).addClass('is-invalid');
+                        $(emailInputSelector).next('.invalid-feedback').text('Địa chỉ email không hợp lệ.');
+                        isValid = false;
+                    }
+
+                    const passwordVal = $(passwordInputSelector).val();
+                    const confirmPasswordVal = $(confirmPasswordInputSelector).val();
+                    if (!isEditMode) {
+                        if (!passwordVal || passwordVal.length < 6) {
+                            $(passwordInputSelector).addClass('is-invalid').next('.invalid-feedback').text('Mật khẩu phải có ít nhất 6 ký tự.');
+                            isValid = false;
+                        }
+                        if (!confirmPasswordVal || passwordVal !== confirmPasswordVal) {
+                            $(confirmPasswordInputSelector).addClass('is-invalid').next('.invalid-feedback').text('Mật khẩu xác nhận không khớp.');
+                            isValid = false;
+                        }
+                    } else {
+                        if (passwordVal && passwordVal.length < 6) {
+                            $(passwordInputSelector).addClass('is-invalid').next('.invalid-feedback').text('Mật khẩu mới phải có ít nhất 6 ký tự.');
+                            isValid = false;
+                        }
+                        if (passwordVal && passwordVal !== confirmPasswordVal) {
+                            $(confirmPasswordInputSelector).addClass('is-invalid').next('.invalid-feedback').text('Mật khẩu xác nhận không khớp.');
+                            isValid = false;
+                        }
+                    }
+
+                    const avatarFile = $(avatarFileInputSelector)[0].files[0];
+                    if (avatarFile) {
+                        const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+                        const maxSize = 5 * 1024 * 1024;
+                        if (!allowedExtensions.exec(avatarFile.name)) {
+                            $(avatarFileErrorSelector).text('Chỉ chấp nhận file .jpg, .png, .gif.').show();
+                            isValid = false;
+                        } else if (avatarFile.size > maxSize) {
+                            $(avatarFileErrorSelector).text('Kích thước file không được vượt quá 5MB.').show();
+                            isValid = false;
+                        }
+                    }
+
+                    if (!isValid) {
+                        $form.addClass('was-validated');
+                        $form.find('.is-invalid').first().focus();
+                        if ($(rolesSelectSelector).hasClass('is-invalid')) {
+                            $(rolesSelectSelector).select2('open');
+                        } else if ($(jobTitleInputSelector).hasClass('is-invalid')) {
+                            $(jobTitleInputSelector).select2('open');
+                        }
+                    }
+                    return isValid;
+                }
+
+                function handleSave() {
+                    if (!validateForm()) return;
+
+                    const formData = new FormData($(formSelector)[0]);
+                    const userId = $(editIdInputSelector).val();
+                    const isEdit = !!userId;
+                    const url = isEdit ? `/Admin/User/Edit` : "/Admin/User/Create";
+                    const actionText = isEdit ? 'Cập nhật' : 'Thêm';
+                    const savingText = isEdit ? 'Đang cập nhật...' : 'Đang thêm...';
+                    const $saveButton = $(saveBtnSelector);
+
+                    formData.set('IsLocked', $(isLockedCheckboxSelector).is(':checked'));
+
+                    $saveButton.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${savingText}`);
+                    showLoading(modalSelector + ' .modal-content');
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'RequestVerificationToken': csrfToken
+                        },
+                        success: function (response) {
+                            hideLoading(modalSelector + ' .modal-content');
+                            if (response.success) {
+                                modalInstance.hide();
+                                showSuccessToast(response.message || `${actionText} thành công!`);
+                                activeUserTableModule.reload();
+                                loadJobTitles();
+                            } else {
+                                let errorMessage = response.message || `Lỗi khi ${actionText.toLowerCase()}.`;
+                                if (response.errors && Array.isArray(response.errors)) {
+                                    errorMessage += '<br/><ul class="text-start ps-3">' + response.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                                }
+                                showErrorAlert(`${actionText} thất bại`, errorMessage);
+                                $saveButton.prop('disabled', false).text(actionText);
+                            }
+                        },
+                        error: function (xhr) {
+                            hideLoading(modalSelector + ' .modal-content');
+                            handleAjaxError(xhr, actionText);
+                            $saveButton.prop('disabled', false).text(isEdit ? 'Cập nhật' : 'Lưu');
+                        }
+                    });
+                }
+
+                window.showEditUserModal = function (id) {
+                    if (!id) return;
+                    resetForm();
+                    isEditMode = true;
+                    $(formSelector).removeClass('mode-create').addClass('mode-edit');
+                    $(passwordHelpTextSelector).show();
+                    $(passwordRequiredIndicatorSelector).hide();
+                    $(passwordInputSelector).prop('required', false);
+                    $(confirmPasswordInputSelector).prop('required', false);
+
+                    showLoading(modalSelector + ' .modal-body', 'Đang tải dữ liệu...');
+                    $.ajax({
+                        url: `/Admin/User/GetUserDetails/${id}`,
+                        type: 'GET',
+                        dataType: 'json',
+                        headers: {
+                            'RequestVerificationToken': csrfToken
+                        },
+                        success: function (data) {
+                            hideLoading(modalSelector + ' .modal-body');
+                            if (data) {
+                                $(editIdInputSelector).val(data.id);
+                                $(nameInputSelector).val(data.name);
+                                $(userNameInputSelector).val(data.userName);
+                                $(emailInputSelector).val(data.email);
+                                $(phoneInputSelector).val(data.phoneNumber);
+                                $(addressInputSelector).val(data.address);
+                                // $(jobTitleInputSelector).val(data.jobTitle); // Job title handled below
+                                if (data.birthDate) {
+                                    try {
+                                        const date = new Date(data.birthDate);
+                                        const formattedDate = date.toISOString().split('T')[0];
+                                        $(birthDateInputSelector).val(formattedDate);
+                                    } catch (e) { }
+                                }
+                                $(wageRateInputSelector).val(data.wageRate);
+                                $(isLockedCheckboxSelector).prop('checked', data.isLocked);
+
+                                const currentImageUrl = data.imageUrl || placeholderAvatarUrl;
+                                $(avatarPreviewSelector).attr('src', currentImageUrl).data('original-src', currentImageUrl);
+                                $(avatarFileInputSelector).val('');
+
+                                const $rolesSelect = $(rolesSelectSelector);
+                                $rolesSelect.empty();
+                                if (data.allRoles && data.allRoles.length > 0) {
+                                    data.allRoles.forEach(function (roleName) {
+                                        $rolesSelect.append(new Option(roleName, roleName, false, false));
+                                    });
+                                }
+                                if (data.selectedRoles && data.selectedRoles.length > 0) {
+                                    $rolesSelect.val(data.selectedRoles);
+                                }
+                                $rolesSelect.trigger('change');
+
+                                const $jobTitleSelect = $(jobTitleInputSelector);
+                                $jobTitleSelect.val(null).empty();
+                                if (data.jobTitle) {
+                                    var option = new Option(data.jobTitle, data.jobTitle, true, true);
+                                    $jobTitleSelect.append(option);
+                                }
+                                $jobTitleSelect.trigger('change');
+
+                                if (data.createdAt) {
+                                    $(createdAtDisplaySelector).text(formatDate(data.createdAt));
+                                    $(createdAtContainerSelector).show();
+                                } else {
+                                    $(createdAtContainerSelector).hide();
+                                }
+                                $(modalTitleSelector).text('Chỉnh sửa Người dùng');
+                                $(saveBtnSelector).text('Cập nhật').removeClass('btn-primary').addClass('btn-warning');
+                                modalInstance.show();
+                            } else {
+                                showErrorAlert('Lỗi', 'Không tìm thấy dữ liệu người dùng.');
+                            }
+                        },
+                        error: function (xhr) {
+                            hideLoading(modalSelector + ' .modal-body');
+                            handleAjaxError(xhr, 'tải chi tiết người dùng');
+                        }
+                    });
+                };
+
+                function previewAvatar(input) {
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        const file = input.files[0];
+                        const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+                        const maxSize = 5 * 1024 * 1024;
+
+                        $(avatarFileErrorSelector).text('').hide();
+
+                        if (!allowedExtensions.exec(file.name)) {
+                            $(avatarFileErrorSelector).text('Định dạng file không hợp lệ.').show();
+                            input.value = '';
+                            $(avatarPreviewSelector).attr('src', $(avatarPreviewSelector).data('original-src'));
+                            return;
+                        }
+                        if (file.size > maxSize) {
+                            $(avatarFileErrorSelector).text('Kích thước file quá lớn (> 5MB).').show();
+                            input.value = '';
+                            $(avatarPreviewSelector).attr('src', $(avatarPreviewSelector).data('original-src'));
+                            return;
+                        }
+
+                        reader.onload = function (e) {
+                            $(avatarPreviewSelector).attr('src', e.target.result);
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        $(avatarPreviewSelector).attr('src', $(avatarPreviewSelector).data('original-src'));
+                    }
+                }
+
+                function setupEvents() {
+                    modalInstance = new bootstrap.Modal(document.getElementById('userModal'));
+
+                    $(rolesSelectSelector).select2({
+                        theme: "bootstrap-5",
+                        dropdownParent: $(modalSelector + ' .modal-body'),
+                        placeholder: "Chọn vai trò",
+                        allowClear: true,
+                        language: "vi"
+                    });
+
+                    $(jobTitleInputSelector).select2({
+                        theme: "bootstrap-5",
+                        dropdownParent: $(modalSelector + ' .modal-body'),
+                        placeholder: "Nhập hoặc chọn chức vụ",
+                        allowClear: true,
+                        tags: true,
+                        language: "vi",
+                        ajax: {
+                            url: '/Admin/User/GetJobTitles',
+                            dataType: 'json',
+                            delay: 250,
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            processResults: function (data) {
+                                if (data.success && Array.isArray(data.data)) {
+                                    return {
+                                        results: data.data.map(function (item) {
+                                            return {
+                                                id: item,
+                                                text: item
+                                            };
+                                        })
+                                    };
+                                } else {
+                                    console.error("Lỗi xử lý dữ liệu chức vụ cho Select2:", data.message);
+                                    return {
+                                        results: []
+                                    };
+                                }
+                            },
+                            cache: true
+                        },
+                        createTag: function (params) {
+                            var term = $.trim(params.term);
+                            if (term === '') {
+                                return null;
+                            }
+                            return {
+                                id: term,
+                                text: term,
+                                newTag: true
+                            }
+                        }
+                    });
+
+                    $('#showAddUserModalBtn').on('click', function () {
+                        resetForm();
+                        isEditMode = false;
+                        $(formSelector).removeClass('mode-edit').addClass('mode-create');
+                        $(passwordHelpTextSelector).hide();
+                        $(passwordRequiredIndicatorSelector).show();
+                        $(passwordInputSelector).prop('required', true);
+                        $(confirmPasswordInputSelector).prop('required', true);
+
+                        const $rolesSelect = $(rolesSelectSelector);
+                        $rolesSelect.empty().append(new Option('Đang tải vai trò...', '', true, true)).prop('disabled', true).trigger('change');
+                        showLoading(modalSelector + ' .modal-body', 'Đang tải dữ liệu...');
+
+                        $.ajax({
+                            url: '/Admin/User/GetAllRoles',
+                            type: 'GET',
+                            dataType: 'json',
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            success: function (response) {
+                                hideLoading(modalSelector + ' .modal-body');
+                                $rolesSelect.empty().prop('disabled', false);
+                                if (response.success && response.roles && response.roles.length > 0) {
+                                    response.roles.forEach(function (roleName) {
+                                        $rolesSelect.append(new Option(roleName, roleName, false, false));
+                                    });
+                                } else {
+                                    $rolesSelect.append(new Option('Không có vai trò nào', '', true, true));
+                                    if (!response.success) {
+                                        showErrorAlert('Lỗi tải vai trò', response.message || 'Không thể lấy danh sách vai trò.');
+                                    }
+                                }
+                                $rolesSelect.trigger('change');
+                                modalInstance.show();
+                            },
+                            error: function (xhr) {
+                                hideLoading(modalSelector + ' .modal-body');
+                                $rolesSelect.empty().prop('disabled', false).append(new Option('Lỗi tải vai trò', '', true, true)).trigger('change');
+                                handleAjaxError(xhr, 'tải danh sách vai trò');
+                            }
+                        });
+                    });
+
+                    $(saveBtnSelector).on('click', handleSave);
+                    $(modalSelector).on('hidden.bs.modal', resetForm);
+                    $(avatarFileInputSelector).on('change', function () {
+                        previewAvatar(this);
+                    });
+                    $(formSelector).on('submit', function (e) {
+                        e.preventDefault();
+                    });
+                    $(formSelector).on('keypress', 'input:not(textarea)', function (event) {
+                        if (event.key === "Enter" || event.keyCode === 13) {
+                            if (!$(event.target).closest('.select2-container--open').length) {
+                                event.preventDefault();
+                                $(saveBtnSelector).click();
+                            }
+                        }
+                    });
+                }
+                return {
+                    setup: setupEvents
+                };
+            })();
+
+            // =========================================================================
+            // HÀM XÓA & KHÔI PHỤC USER
+            // =========================================================================
+            window.deleteUser = function (id, name) {
+                const safeName = name ? $('<div>').text(name).html() : 'người dùng này';
+                const activeTable = activeUserTableModule.getInstance();
+                let currentPage = 0,
+                    recordsOnCurrentPage = 0;
+                if (activeTable) {
+                    currentPage = activeTable.page();
+                    recordsOnCurrentPage = activeTable.rows({
+                        page: 'current'
+                    }).count();
+                }
+                const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
+                Swal.fire({
+                    title: 'Xác nhận xóa',
+                    html: `Bạn chắc chắn muốn xóa người dùng <strong>${safeName}</strong>?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-trash-alt me-1"></i>Xóa',
+                    cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'custom-swal-popup',
+                        confirmButton: 'custom-delete-btn btn ms-2',
+                        cancelButton: 'custom-cancel-btn btn me-2'
+                    },
+                    buttonsStyling: false,
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return $.ajax({
+                            url: `/Admin/User/Delete/${id}`,
+                            type: 'POST',
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            dataType: 'json'
+                        }).catch(error => Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`));
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value.success) {
+                        showSuccessToast(result.value.message || 'Đã xóa thành công.');
+                        if (activeTable) {
+                            activeTable.ajax.reload(function () {
+                                const newTotalRecords = activeTable.page.info().recordsDisplay;
+                                if (shouldGoToPrevPage && newTotalRecords > 0 && activeTable.page() === currentPage) {
+                                    activeTable.page(currentPage - 1).draw(false);
+                                }
+                                deletedUserTableModule.reload();
+                            }, false);
+                        } else {
+                            deletedUserTableModule.reload();
+                        }
+                    } else if (result.isConfirmed && !result.value.success) {
+                        showErrorAlert('Xóa thất bại', result.value.message || 'Không thể xóa người dùng.');
+                    }
+                });
+            };
+            window.restoreUser = function (id, name) {
+                const safeName = name ? $('<div>').text(name).html() : 'người dùng này';
+                const deletedTable = deletedUserTableModule.getInstance();
+                let currentPage = 0,
+                    recordsOnCurrentPage = 0;
+                if (deletedTable) {
+                    currentPage = deletedTable.page();
+                    recordsOnCurrentPage = deletedTable.rows({
+                        page: 'current'
+                    }).count();
+                }
+                const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
+                Swal.fire({
+                    title: 'Xác nhận khôi phục',
+                    html: `Bạn chắc chắn muốn khôi phục người dùng <strong>${safeName}</strong>?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-undo-alt me-1"></i>Khôi phục',
+                    cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'custom-swal-popup',
+                        confirmButton: 'custom-restore-btn btn ms-2',
+                        cancelButton: 'custom-cancel-btn btn me-2'
+                    },
+                    buttonsStyling: false,
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        return $.ajax({
+                            url: `/Admin/User/Restore/${id}`,
+                            type: 'POST',
+                            headers: {
+                                'RequestVerificationToken': csrfToken
+                            },
+                            dataType: 'json'
+                        }).catch(error => Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`));
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value.success) {
+                        showSuccessToast(result.value.message || 'Đã khôi phục thành công.');
+                        if (deletedTable) {
+                            deletedTable.ajax.reload(function () {
+                                const newTotalRecords = deletedTable.page.info().recordsDisplay;
+                                if (shouldGoToPrevPage && newTotalRecords > 0 && deletedTable.page() === currentPage) {
+                                    deletedTable.page(currentPage - 1).draw(false);
+                                }
+                                activeUserTableModule.reloadAndResetPaging();
+                            }, false);
+                        } else {
+                            activeUserTableModule.reloadAndResetPaging();
+                        }
+                    } else if (result.isConfirmed && !result.value.success) {
+                        showErrorAlert('Khôi phục thất bại', result.value.message || 'Không thể khôi phục người dùng.');
+                    }
+                });
+            };
+
+            // =========================================================================
+            // XỬ LÝ CHUYỂN TAB & KHỞI TẠO
+            // =========================================================================
+            function setupTabEvents() {
+                let deletedTabLoaded = false;
+                const deletedTabTrigger = document.getElementById('nav-deleted-tab');
+                const activeTabTrigger = document.getElementById('nav-active-tab');
+                const loadTooltips = (tableSelector) => {
+                    setTimeout(function () {
+                        try {
+                            const tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
+                            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                                let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                                if (tooltipInstance) {
+                                    tooltipInstance.dispose();
+                                }
+                                new bootstrap.Tooltip(tooltipTriggerEl);
+                            });
+                        } catch (e) {
+                            console.error("Error initializing tooltips: ", e);
+                        }
+                    }, 250);
+                };
+                if (deletedTabTrigger) {
+                    deletedTabTrigger.addEventListener('shown.bs.tab', function (event) {
+                        if (!deletedTabLoaded) {
+                            deletedTabLoaded = true;
+                        }
+                        const table = deletedUserTableModule.getInstance();
+                        if (table) table.columns.adjust().responsive.recalc();
+                        loadTooltips('#deletedUserTable');
+                    });
+                }
+                if (activeTabTrigger) {
+                    activeTabTrigger.addEventListener('shown.bs.tab', function (event) {
+                        const table = activeUserTableModule.getInstance();
+                        if (table) table.columns.adjust().responsive.recalc();
+                        loadTooltips('#activeUserTable');
+                        // Tùy chọn: Khởi tạo Select2 filter ở đây nếu chưa làm trong ready
+                        // initializeJobTitleFilterSelect2();
+                    });
+                }
+            }
+
+            function loadJobTitles() {
+                const $select = $('#activeUserJobTitleFilter');
+                $select.prop('disabled', true).find('option:not([value="all"])').remove();
+                $select.append(new Option('Đang tải...', '', true, true));
+
+                $.ajax({
+                    url: '/Admin/User/GetJobTitles',
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'RequestVerificationToken': csrfToken
+                    },
+                    success: function (response) {
+                        $select.prop('disabled', false);
+                        $select.find('option[value=""]').remove();
+
+                        if (response.success && response.data && Array.isArray(response.data)) {
+                            response.data.forEach(function (title) {
+                                if (title) {
+                                    $select.append(new Option(title, title));
+                                }
+                            });
+                            // Khởi tạo Select2 SAU KHI load xong data
+                            initializeJobTitleFilterSelect2();
+                        } else {
+                            console.error("Lỗi tải danh sách chức vụ:", response.message);
+                            $select.append(new Option('Lỗi tải', ''));
+                            showErrorAlert('Lỗi', response.message || 'Không thể tải danh sách chức vụ.');
+                        }
+                    },
+                    error: function (xhr) {
+                        $select.prop('disabled', false);
+                        $select.find('option[value=""]').remove();
+                        $select.append(new Option('Lỗi tải', ''));
+                        console.error("AJAX Error loading job titles:", xhr);
+                        showErrorAlert('Lỗi', 'Lỗi kết nối khi tải danh sách chức vụ.');
+                    }
+                });
+            }
+
+            function initializeJobTitleFilterSelect2() {
+                if (!$('#activeUserJobTitleFilter').data('select2')) { // Check if already initialized
+                    $('#activeUserJobTitleFilter').select2({
+                        theme: "bootstrap-5",
+                        placeholder: "Lọc theo chức vụ",
+                        allowClear: true,
+                        language: "vi",
+                        width: 'style' // Adjust width to style attribute or parent
+                    }).on('select2:clearing', function (e) {
+                        // Set value to 'all' and trigger change when cleared
+                        $(this).val('all').trigger('change');
+                    });
+                    console.log("Select2 for Job Title Filter initialized.");
+                }
+            }
+
+            $(document).ready(function () {
+                csrfToken = $('input[name="__RequestVerificationToken"]').val();
+                if (!csrfToken) {
+                    console.error("CSRF token not found!");
+                    showErrorAlert("Lỗi cấu hình", "Không tìm thấy mã xác thực bảo mật.");
+                    return;
+                }
+                activeUserTableModule.init();
+                deletedUserTableModule.init();
+                userModalModule.setup();
+                setupTabEvents();
+                loadJobTitles(); // Load data, which will then initialize Select2 filter
+
+                setTimeout(() => {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('#activeUserTable [title]'));
+                    tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    });
+                }, 500);
+                console.log("Trang quản lý Người dùng (Select2 Filter) đã sẵn sàng.");
+            });
+
+        })(jQuery);
+    </script>
+}

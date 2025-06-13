@@ -1,0 +1,1101 @@
+﻿@{
+    ViewData["Title"] = "Danh sách sản phẩm";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between mb-3">
+        <button id="showAddProductModal" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus"></i> Thêm sản phẩm
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light text-dark">
+            <h4 class="card-title mb-0">Danh sách sản phẩm</h4>
+        </div>
+        <div class="card-body" style="padding-block: 0px">
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <label for="customPageLength" class="col-form-label">Hiển thị:</label>
+                    <select id="customPageLength" class="form-select">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filterIsShow" class="col-form-label">Trạng thái:</label>
+                    <select id="filterIsShow" class="form-select">
+                        <option value="All">Tất cả</option>
+                        <option value="true">Còn hàng</option>
+                        <option value="false">Hết hàng</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="priceFrom" class="col-form-label">Đơn giá:</label>
+                    <div class="input-group">
+                        <input type="text" id="unitPriceFrom" class="form-control" placeholder="Từ" inputmode="numeric" pattern="[0-9]*">
+                        <span class="input-group-text">→</span>
+                        <input type="text" id="unitPriceTo" class="form-control" placeholder="Đến" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                </div>
+                @*                 <div class="col-md-3">
+                <label for="customSearch" class="col-form-label">Tìm kiếm:</label>
+                <input type="text" id="customSearch" class="form-control" placeholder="Tìm sản phẩm...">
+                </div> *@
+            </div>
+            <div class="form-group row mb-3">
+                <div class="col-md-3">
+                    <label for="filterCategory" class="col-form-label">Loại sản phẩm:</label>
+                    <select id="filterCategory" class="form-select" multiple="multiple">
+                        @* <option value="All" selected>Tất cả</option> *@
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label for="customSearch" class="col-form-label">Tìm kiếm:</label>
+                    <input type="text" id="customSearch" class="form-control" placeholder="Tìm tên, loại, đơn vị, giá, ngày (dd/MM/yyyy)...">
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive rounded-0">
+            <table id="productTable" class="table">
+                <thead class="thead-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Loại SP</th>
+                        <th>ĐVT</th>
+                        <th>Đơn giá</th>
+                        <th>Giá vốn</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="padding-block: 0px">
+            <div class="pagination-container d-flex justify-content-center">
+                <ul class="pagination">
+                    <li class="page-item" id="customFirst">
+                        <a class="page-link" href="#">&laquo;</a>
+                    </li>
+                    <li class="page-item" id="customPrevious">
+                        <a class="page-link" href="#">&lt;</a>
+                    </li>
+                    <li class="page-item active">
+                        <a class="page-link" href="#" id="customPageNumber">1</a>
+                    </li>
+                    <li class="page-item" id="customNext">
+                        <a class="page-link" href="#">&gt;</a>
+                    </li>
+                    <li class="page-item" id="customLast">
+                        <a class="page-link" href="#">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light text-dark">
+                <h4 class="modal-title" id="addProductModalLabel">Thêm sản phẩm mới</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nameProduct" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nameProduct" name="nameProduct" required>
+                            <div class="invalid-feedback">Vui lòng nhập tên sản phẩm.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="idCategory" class="form-label">Loại sản phẩm <span class="text-danger">*</span></label>
+                            <select class="form-select" id="idCategory" name="idCategory" required>
+                                <option disabled selected>Chọn loại sản phẩm</option>
+                                <option value="1">Loại 1</option>
+                                <option value="2">Loại 2</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng chọn loại sản phẩm.</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unit" class="form-label">Đơn vị tính <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" list="unitOptions" required id="unitInput">
+                            <input type="hidden" id="selectedUnit" name="unit">
+                            <datalist id="unitOptions">
+                                <option value="Cái"></option>
+                                <option value="Chiếc"></option>
+                                <option value="Kg"></option>
+                                <option value="Gram"></option>
+                                <option value="Mét"></option>
+                                <option value="Lít"></option>
+                                <option value="Hộp"></option>
+                                <option value="Bộ"></option>
+                                <option value="Túi"></option>
+                                <option value="Thùng"></option>
+                            </datalist>
+                            <div class="invalid-feedback">Vui lòng nhập đơn vị tính.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="originalPrice" class="form-label">Giá vốn <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control price-input" id="originalPrice" name="originalPrice" required>
+                            <div class="invalid-feedback">Vui lòng nhập giá vốn.</div>
+                            <div id="originalPriceSuggestions" class="price-suggestions mt-2" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Đơn giá <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control price-input" id="price" name="price" required>
+                            <div class="invalid-feedback">Vui lòng nhập đơn giá.</div>
+                            <div id="priceSuggestions" class="price-suggestions mt-2" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="imageProduct" class="form-label">Chọn hình ảnh <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="imageProduct" name="imageProduct" accept="image/*" required>
+                            <div class="invalid-feedback">Vui lòng chọn hình ảnh.</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Còn hàng/Hết hàng <span class="text-danger">*</span></label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="inStock" id="inStockTrue" value="true" required checked>
+                                <label class="form-check-label" for="inStockTrue">Còn hàng</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="inStock" id="inStockFalse" value="false" required>
+                                <label class="form-check-label" for="inStockFalse">Hết hàng</label>
+                            </div>
+                            <div class="invalid-feedback">Vui lòng chọn trạng thái hàng.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Styles {
+    <style>
+        /* CSS cho popup SweetAlert2 */
+        .custom-swal-popup {
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* CSS cho nút xác nhận */
+        .custom-confirm-btn {
+            background-color: #007bff !important;
+            color: white !important;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        /* CSS cho nút hủy */
+        .custom-cancel-btn {
+            background-color: #ffc107 !important;
+            color: black !important;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        /* CSS cho cột tên sản phẩm */
+        .product-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+            .product-name:hover {
+                white-space: normal;
+                overflow: visible;
+                max-width: none;
+                position: relative;
+                z-index: 2;
+            }
+
+
+        /* CSS để bo tròn và thêm màu sắc cho bảng */
+        #productTable {
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+            #productTable th,
+            #productTable td {
+                padding: 12px 15px;
+                text-align: center;
+            }
+
+            #productTable th {
+                white-space: nowrap;
+            }
+
+            #productTable thead {
+                background-color: #F9F9F9;
+            }
+
+            /* Màu nền cho các dòng chẵn lẻ */
+            #productTable tbody tr:nth-child(even) {
+                /* background-color: #f9f9f9; */
+            }
+
+            /* Hiệu ứng hover cho các dòng */
+            #productTable tbody tr:hover {
+                background-color: #FBFBFB;
+            }
+
+
+        /* CSS tùy chỉnh cho tìm kiếm và phân trang */
+
+        .pagination-container {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pagination {
+            display: flex;
+        }
+
+        .page-item {
+            cursor: pointer;
+        }
+
+        /* Ẩn tính năng mặt định của datatable */
+        .dt-layout-row:nth-child(2n+1) {
+            display: none !important;
+        }
+
+        /* CSS cho gợi ý giá tiền */
+        .price-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px; /* Khoảng cách giữa các nút */
+        }
+
+        .suggestion-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            color: #495057;
+            border-radius: 0.2rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .suggestion-btn:hover {
+                background-color: #e2e6ea;
+                border-color: #adb5bd;
+            }
+
+        /* Style tùy chỉnh cho Select2 để hợp với Bootstrap */
+        .select2-container--default .select2-selection--multiple {
+            border: 1px solid #DFE5EF; /* Giống border của Bootstrap input */
+            min-height: calc(1.5em + .75rem + 2px);
+            padding: .170rem .75rem;
+            /* padding: 8px 38px 8px 16px; */
+            border-radius: 7px;
+            box-shadow: unset;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, -webkit-box-shadow 0.15s ease-in-out;
+        }
+
+            .select2-container--default .select2-selection--multiple:active {
+                border: 1px solid #5D87FF;
+                /* opacity: 0.6; */
+            }
+
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background-color: #5D87FF;
+                border-color: #5D87FF;
+                color: white;
+                /* padding: 0.25rem 0.5rem; */
+                margin-right: 0.3rem;
+                font-size: 0.875rem;
+                line-height: 1.5;
+            }
+
+            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                color: white;
+                /* margin-left: 0.3rem; */
+            }
+
+                .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+                    color: white;
+                }
+
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border: solid #bad7ff 1px;
+            outline: 0;
+            /* opacity: 0.6; */
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #5897fb;
+            color: white;
+        }
+
+        .select2-container--default .select2-search--inline .select2-search__field {
+            /*  margin-top: 0; */
+            height: calc(1.5em + .1rem);
+        }
+
+        .select2-dropdown {
+            border: 1px solid #bad7ff; /* Border cho dropdown */
+        }
+
+    </style>
+}
+@section Scripts {
+    <script>
+        // --- CODE GỢI Ý GIÁ TIỀN (TĨNH HOẶC ĐỘNG THEO PHẦN SỐ CÓ NGHĨA) ---
+
+        // Định dạng số thành tiền tệ VNĐ (ví dụ: 100000 -> "100.000 VNĐ")
+        function formatCurrencyVND(value) {
+            if (isNaN(value) || value === null) return '';
+            // Sử dụng BigInt để định dạng số lớn an toàn hơn
+            try {
+                // Chuyển sang BigInt nếu giá trị lớn hơn MAX_SAFE_INTEGER
+                const num = (typeof value === 'bigint' || value > Number.MAX_SAFE_INTEGER) ? BigInt(value) : Number(value);
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(num);
+            } catch (e) {
+                console.error("Lỗi định dạng tiền tệ:", value, e);
+                // Fallback dùng toLocaleString nếu Intl lỗi
+                try {
+                    return value.toLocaleString('vi-VN') + ' VNĐ';
+                } catch (e2) {
+                    console.error("Lỗi toLocaleString:", value, e2);
+                    return String(value) + ' VNĐ'; // Fallback cuối cùng về chuỗi
+                }
+            }
+        }
+
+
+        // Các mức giá gợi ý tĩnh (chỉ hiện khi input trống)
+        const staticPriceSuggestionValues = [5000, 10000, 15000, 20000, 25000, 30000, 35000];
+        // Giới hạn giá trị gợi ý tối đa (ví dụ: 50 tỷ - dùng BigInt để so sánh)
+        const MAX_SUGGESTION_VALUE = 50000000000n; // Sử dụng BigInt cho số lớn
+
+        // Hàm cập nhật và hiển thị các nút gợi ý (TĨNH hoặc ĐỘNG)
+        function updateAndShowSuggestions(inputField, container) {
+            container.empty(); // Xóa các nút gợi ý cũ
+            const suggestions = new Set(); // Dùng Set để tránh trùng lặp gợi ý
+
+            // Lấy giá trị hiện tại từ input, làm sạch
+            const rawValue = inputField.val().trim();
+            const cleanedValue = rawValue.replace(/[^0-9]/g, ''); // Chỉ giữ lại chữ số
+
+            if (cleanedValue === '' || BigInt(cleanedValue) <= 0n) {
+                // --- Trường hợp 1: Input trống hoặc bằng 0 -> Chỉ hiển thị gợi ý TĨNH ---
+                staticPriceSuggestionValues.forEach(value => {
+                    const bigIntValue = BigInt(value);
+                    if (bigIntValue > 0n && bigIntValue <= MAX_SUGGESTION_VALUE) {
+                        suggestions.add(Number(bigIntValue)); // Lưu lại dạng Number nếu có thể, hoặc giữ BigInt nếu quá lớn
+                    }
+                });
+            } else {
+                // --- Trường hợp 2: Input có số dương -> Chỉ hiển thị gợi ý ĐỘNG dựa trên phần số có nghĩa ---
+
+                // 1. Tìm phần số có nghĩa (loại bỏ số 0 ở cuối)
+                let significantPart = cleanedValue;
+                while (significantPart.length > 1 && significantPart.endsWith('0')) {
+                    significantPart = significantPart.slice(0, -1);
+                }
+
+                try {
+                    const baseNumForDynamic = BigInt(significantPart); // Sử dụng BigInt
+
+                    if (baseNumForDynamic > 0n) {
+                        // 2. Tạo các gợi ý động bằng cách nhân với hệ số
+                        const multipliers = [1000n, 10000n, 100000n, 1000000n]; // Dùng BigInt
+
+                        for (const multiplier of multipliers) {
+                            const dynamicValue = baseNumForDynamic * multiplier;
+
+                            // Kiểm tra giá trị không vượt quá giới hạn
+                            if (dynamicValue > 0n && dynamicValue <= MAX_SUGGESTION_VALUE) {
+                                // Cố gắng lưu dưới dạng Number nếu trong khoảng an toàn, nếu không giữ BigInt
+                                if (dynamicValue <= BigInt(Number.MAX_SAFE_INTEGER)) {
+                                    suggestions.add(Number(dynamicValue));
+                                } else {
+                                    suggestions.add(dynamicValue); // Lưu dạng BigInt cho số rất lớn
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi xử lý BigInt cho phần số có nghĩa:", significantPart, e);
+                    // Có thể hiển thị lại gợi ý tĩnh như một fallback
+                    // staticPriceSuggestionValues.forEach(value => suggestions.add(value));
+                }
+            }
+
+            // Sắp xếp các gợi ý theo giá trị tăng dần (cần xử lý cả Number và BigInt)
+            const sortedSuggestions = Array.from(suggestions).sort((a, b) => {
+                const bigA = BigInt(a); // Chuyển cả hai sang BigInt để so sánh nhất quán
+                const bigB = BigInt(b);
+                if (bigA < bigB) return -1;
+                if (bigA > bigB) return 1;
+                return 0;
+            });
+
+
+            // Tạo và thêm các nút vào container
+            sortedSuggestions.forEach(value => {
+                // value có thể là Number hoặc BigInt
+                const formattedValue = formatCurrencyVND(value);
+                if (formattedValue && formattedValue.trim() !== '') {
+                    const button = $('<button></button>')
+                        .attr('type', 'button')
+                        .addClass('suggestion-btn')
+                        .text(formattedValue)
+                        // Lưu giá trị dưới dạng chuỗi để đảm bảo không mất độ chính xác khi đọc lại từ data attribute
+                        .data('value', String(value));
+                    container.append(button);
+                }
+            });
+
+            // Hiển thị container nếu có gợi ý
+            if (sortedSuggestions.length > 0) {
+                $('.price-suggestions').not(container).slideUp(150);
+                container.slideDown(200);
+            } else {
+                container.slideUp(150);
+            }
+        }
+
+        // Hàm thiết lập xử lý sự kiện cho một cặp input/container
+        function setupPriceInputSuggestions(inputId, containerId) {
+            const inputField = $(`#${inputId}`);
+            const container = $(`#${containerId}`);
+            let blurTimeout;
+
+            inputField.on('focus input', function () {
+                clearTimeout(blurTimeout);
+                updateAndShowSuggestions(inputField, container);
+            });
+
+            inputField.on('blur', function () {
+                blurTimeout = setTimeout(() => {
+                    container.slideUp(200);
+                }, 150);
+            });
+
+            // Xử lý click vào nút gợi ý
+            container.on('click', '.suggestion-btn', function (e) {
+                e.preventDefault();
+                const valueString = $(this).data('value'); // Lấy giá trị dạng chuỗi
+                if (valueString !== undefined) {
+                    inputField.val(valueString); // Đặt giá trị chuỗi vào input
+                    container.slideUp(150);
+                    clearTimeout(blurTimeout);
+                    inputField.trigger('change');
+                    // Cập nhật lại gợi ý ngay sau khi chọn
+                    // updateAndShowSuggestions(inputField, container);
+                }
+            });
+        }
+
+        // Thiết lập cho ô Giá vốn
+        setupPriceInputSuggestions('originalPrice', 'originalPriceSuggestions');
+
+        // Thiết lập cho ô Đơn giá
+        setupPriceInputSuggestions('price', 'priceSuggestions');
+
+        // Reset suggestions khi modal ẩn đi
+        $('#addProductModal').on('hidden.bs.modal', function () {
+            $('.price-suggestions').hide().empty();
+        });
+
+        // --- KẾT THÚC CODE GỢI Ý GIÁ TIỀN ---
+
+        //Nhập dữ liệu từ input datalist vào inputhiden cho đơn vị tính
+        document.addEventListener('DOMContentLoaded', function () {
+            const unitInput = document.querySelector('input[list="unitOptions"]'); // Lấy input có list="unitOptions"
+            const selectedUnitInput = document.getElementById('selectedUnit');
+
+            unitInput.addEventListener('change', function () {
+                selectedUnitInput.value = this.value;
+            });
+        });
+
+
+        $(document).ready(function () {
+            var productTable = $('#productTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/Admin/Product/GetData',
+                    type: 'POST',
+                    data: function (d) {
+                        d.isActive = $('#filterIsShow').val();
+                        // d.customSearch = $('#customSearch').val(); // Ví dụ nếu backend xử lý tìm kiếm
+                        // Lấy giá trị lọc giá (cần xử lý chuỗi rỗng và chuyển đổi sang số nếu cần ở backend)
+                        d.unitPriceFrom = $('#unitPriceFrom').val();
+                        d.unitPriceTo = $('#unitPriceTo').val();
+                        let selectedCategories = $('#filterCategory').val();
+                        d.categoryIds = selectedCategories || [];
+                    },
+                    dataSrc: function (json) {
+                        console.log(json.data);
+                        return json.data;
+                    }
+                },
+                columns: [
+                    {
+                        data: null,
+                        title: 'STT',
+                        orderable: false,
+                        render: function (data, type, row, meta) {
+                            return meta.row + 1 + meta.settings._iDisplayStart;
+                        }
+                    },
+                    {
+                        data: 'imageProduct', render: function (data) {
+                            return `<img src="/product/${data}" class="img-fluid rounded" style="height: 50px; object-fit: cover;" />`;
+                        }
+                    },
+                    {
+                        data: 'nameProduct',
+                        render: function (data) {
+                            return `<p class="product-name">${data}</p>`;
+                        }
+                    },
+                    {
+                        data: 'category',
+                        render: function (data) {
+                            return `<p class="product-name">${data}</p>`;
+                        }
+                    },
+                    {
+                        data: 'unitOfMeasure',
+                        render: function (data) {
+                            return `<p class="product-name">${data}</p>`;
+                        }
+                    },
+                    {
+                        data: 'unitPrice', render: function (data) {
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data);
+                        }
+                    },
+                    {
+                        data: 'costPrice', render: function (data) {
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data);
+                        }
+                    },
+                    {
+                        data: 'createdAt', render: function (data) {
+                            // Định dạng lại ngày nếu cần
+                            try {
+                                const date = new Date(data);
+                                const day = String(date.getDate()).padStart(2, '0');
+                                const month = String(date.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
+                                const year = date.getFullYear();
+                                return `${day}/${month}/${year}`;
+                            } catch (e) {
+                                return data; // Trả về dữ liệu gốc nếu không parse được
+                            }
+                        }
+                    },
+                    {
+                        data: 'isActive', render: function (data) {
+                            if (data === true) {
+                                return '<span class="badge bg-success text-white">Còn hàng</span>';
+                            } else {
+                                return '<span class="badge bg-danger text-white">Hết hàng</span>';
+                            }
+                        }
+                    },
+                    {
+                        data: 'id', render: function (data, type, row) {
+                            return `
+                                                <a href="/Admin/Product/Edit/${data}" class="btn btn-warning btn-sm" title="Chỉnh sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button onclick="deleteProduct(${data}, '${row.nameProduct.replace(/'/g, "\\'")}')" class="btn btn-danger btn-sm" title="Xóa">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            `;
+                        }
+                    }
+                ],
+                "pageLength": 5,
+                "lengthMenu": [5, 10, 15, 20, 25, 50, 100], // Đảm bảo giá trị trong #customPageLength có trong menu này
+                responsive: true,
+                "language": {
+                    "sProcessing": "Đang xử lý...",
+                    "sLengthMenu": "Hiển thị:&nbsp;_MENU_",
+                    "sZeroRecords": "Không tìm thấy kết quả phù hợp", // Cập nhật message
+                    "sInfo": "Hiển thị _START_ - _END_ / _TOTAL_ ",
+                    "sInfoEmpty": "Hiển thị 0 đến 0 trong tổng số 0 bản ghi",
+                    "sInfoFiltered": "(được lọc từ _MAX_ bản ghi)",
+                    "sSearch": "Tìm kiếm:", // Label này bị ẩn bởi CSS của bạn nhưng vẫn nên để đúng
+                    "oPaginate": {
+                        "sFirst": "<<",
+                        "sPrevious": "<",
+                        "sNext": ">",
+                        "sLast": ">>"
+                    }
+                },
+                // Quan trọng: Tắt tính năng tìm kiếm mặc định của DataTables nếu bạn đang dùng tìm kiếm tùy chỉnh hoàn toàn
+                // searching: false, // Bỏ comment dòng này nếu bạn không muốn DataTables tự xử lý tìm kiếm
+                // dom: 'lrtip' // Bỏ các thành phần không cần thiết nếu bạn dùng UI tùy chỉnh hoàn toàn
+            });
+
+            // --- TỐI ƯU PHẦN TÌM KIẾM ---
+            let searchTimeout;
+            const delay = 400; // Thời gian chờ (ms) trước khi gửi yêu cầu tìm kiếm
+
+            $('#customSearch').on('keyup', function () {
+                const searchValue = $(this).val();
+
+                // Xóa timeout cũ nếu có
+                clearTimeout(searchTimeout);
+
+                // Đặt timeout mới
+                searchTimeout = setTimeout(function () {
+                    if (productTableInitialized) { // Kiểm tra lại productTableInitialized nếu cần
+                        console.log('Searching for:', searchValue); // Debug
+                        productTable.search(searchValue).draw();
+                        // Không cần gọi updateCustomPagination() ở đây nữa vì nó đã được gọi trong sự kiện 'draw.dt'
+                    }
+                }, delay);
+            });
+            // --- KẾT THÚC TỐI ƯU TÌM KIẾM ---
+
+            // Thêm sự kiện để reload bảng khi giá trị lọc giá thay đổi (có thể thêm debounce/delay)
+            let priceFilterTimeout;
+            $('#unitPriceFrom, #unitPriceTo').on('keyup', function () {
+                clearTimeout(priceFilterTimeout);
+                priceFilterTimeout = setTimeout(function () {
+                    if (productTableInitialized) { // Đảm bảo DataTable đã sẵn sàng
+                        productTable.ajax.reload();
+                    }
+                }, 500); // Chờ 500ms sau khi ngừng gõ mới reload
+            });
+
+            $('#filterIsShow, #filterCategory').on('change', function () { // Add #filterCategory here
+                if (productTableInitialized) {
+                    productTable.ajax.reload();
+                }
+            });
+
+            // --- KHỐI CODE PHÂN TRANG TÙY CHỈNH (GIỮ NGUYÊN) ---
+            // Lưu ý: Khối code này có vẻ đang khởi tạo lại DataTable, điều này không đúng.
+            // Bạn chỉ nên khởi tạo DataTable một lần. Hãy cấu trúc lại như sau:
+
+            let productTableInitialized = true; // Đã khởi tạo ở trên
+            let visiblePages = 5; // Number of visible page numbers in pagination
+            // Thêm dòng này để hiển thị khi không có kết quả
+            // $('.card-body').append('<div id="noResults" style="display: none; text-align: center; margin-top: 10px; color: red;">Không tìm thấy kết quả phù hợp.</div>');
+            let noResultsMessage = $('#noResults');
+
+
+            // Gọi updateCustomPagination() khi DataTables vẽ lại bảng (bao gồm cả lần đầu và sau khi search/filter/page change)
+            productTable.on('draw.dt', function () {
+                updateCustomPagination();
+                // Kiểm tra và hiển thị thông báo không có kết quả
+                var info = productTable.page.info();
+                if (info.recordsDisplay === 0) {
+                    noResultsMessage.show();
+                    $('.pagination-container').hide(); // Ẩn cả phân trang
+                } else {
+                    noResultsMessage.hide();
+                    $('.pagination-container').show(); // Hiện lại phân trang
+                }
+            });
+
+
+            // Phân trang tùy chỉnh (Handlers)
+            $('#customPrevious').on('click', function (e) {
+                e.preventDefault(); // Ngăn hành vi mặc định của thẻ <a>
+                if (!$(this).hasClass('disabled') && productTableInitialized) {
+                    productTable.page('previous').draw('page');
+                    // Không cần gọi updateCustomPagination() ở đây
+                }
+            });
+
+            $('#customNext').on('click', function (e) {
+                e.preventDefault();
+                if (!$(this).hasClass('disabled') && productTableInitialized) {
+                    productTable.page('next').draw('page');
+                    // Không cần gọi updateCustomPagination() ở đây
+                }
+            });
+
+            $('#customFirst').on('click', function (e) {
+                e.preventDefault();
+                if (!$(this).hasClass('disabled') && productTableInitialized) {
+                    productTable.page('first').draw('page');
+                    // Không cần gọi updateCustomPagination() ở đây
+                }
+            });
+
+            $('#customLast').on('click', function (e) {
+                e.preventDefault();
+                if (!$(this).hasClass('disabled') && productTableInitialized) {
+                    productTable.page('last').draw('page');
+                    // Không cần gọi updateCustomPagination() ở đây
+                }
+            });
+
+            $('#customPageLength').on('change', function () {
+                if (productTableInitialized) {
+                    productTable.page.len($(this).val()).draw();
+                    // Không cần gọi updateCustomPagination() ở đây
+                }
+            });
+
+            // Hàm cập nhật giao diện phân trang tùy chỉnh
+            function updateCustomPagination() {
+                if (productTableInitialized) {
+                    var pageInfo = productTable.page.info();
+                    var currentPage = pageInfo.page;
+                    var totalPages = pageInfo.pages;
+                    var paginationList = $('.pagination'); // Cache selector
+
+                    // Xóa các số trang cũ (trừ First, Previous, Next, Last và ô hiển thị số trang hiện tại)
+                    paginationList.find('.page-item.page-number').remove();
+
+                    if (totalPages <= 1) { // Nếu chỉ có 1 trang hoặc không có trang nào
+                        paginationList.hide(); // Ẩn luôn phân trang
+                        $('#customPageNumber').hide(); // Ẩn cả số trang dạng X/Y
+                    } else {
+                        paginationList.show(); // Hiện lại phân trang
+                        $('#customPageNumber').show().text((currentPage + 1) + '/' + totalPages); // Cập nhật số trang X/Y và hiện nó
+
+                        // Tính toán khoảng trang hiển thị
+                        let startPage = Math.max(0, currentPage - Math.floor(visiblePages / 2));
+                        let endPage = Math.min(totalPages - 1, startPage + visiblePages - 1);
+
+                        // Điều chỉnh nếu khoảng trang bị lệch về cuối
+                        if (endPage - startPage + 1 < visiblePages && totalPages > visiblePages) {
+                            startPage = Math.max(0, totalPages - visiblePages);
+                            endPage = totalPages - 1;
+                        }
+
+                        // Tạo các nút số trang
+                        for (let i = startPage; i <= endPage; i++) {
+                            let pageNum = i + 1;
+                            // Tạo nút trang mới
+                            // Sửa: Chèn trước nút Next thay vì nút hiển thị số trang
+                            let pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}">
+                                                                <a class="page-link" href="#">${pageNum}</a>
+                                                            </li>`);
+
+
+                            // Chèn nút số trang vào trước nút "Next"
+                            pageItem.insertBefore($('#customNext'));
+
+
+                            // Gắn sự kiện click cho nút số trang (sử dụng event delegation để tối ưu hơn nếu cần)
+                            pageItem.on('click', function (e) {
+                                e.preventDefault();
+                                if (!$(this).hasClass('active')) { // Chỉ xử lý nếu không phải trang hiện tại
+                                    productTable.page(i).draw('page');
+                                    // Không gọi updateCustomPagination() ở đây
+                                }
+                            });
+                        }
+
+
+                        // Cập nhật trạng thái disabled cho các nút điều hướng
+                        $('#customFirst').toggleClass('disabled', currentPage === 0);
+                        $('#customPrevious').toggleClass('disabled', currentPage === 0);
+                        $('#customNext').toggleClass('disabled', currentPage >= totalPages - 1);
+                        $('#customLast').toggleClass('disabled', currentPage >= totalPages - 1);
+                    }
+                }
+            }
+
+            // Gọi lần đầu để khởi tạo phân trang
+            updateCustomPagination();
+            // --- KẾT THÚC KHỐI CODE PHÂN TRANG TÙY CHỈNH ---
+
+
+            // --- KHỞI TẠO SELECT2 CHO BỘ LỌC CATEGORY ---
+            $('#filterCategory').select2({
+                placeholder: "Chọn một hoặc nhiều loại SP", // Text hiển thị khi chưa chọn
+                allowClear: true, // Cho phép nút xóa tất cả lựa chọn
+                width: '100%' // Đảm bảo Select2 chiếm đủ chiều rộng cột Bootstrap
+            });
+            // --- KẾT THÚC KHỞI TẠO SELECT2 ---
+
+            // --- AJAX LẤY CATEGORY CHO BỘ LỌC ---
+            function loadFilterCategories() {
+                $.ajax({
+                    url: '/Admin/Product/GetCategories', // Reuse existing endpoint
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        var filterCategoryDropdown = $('#filterCategory');
+                        // Xóa các option cũ trước khi thêm mới
+                        filterCategoryDropdown.empty();
+
+                        // Không thêm option "Tất cả" nữa
+                        // Select2 sẽ dùng placeholder đã cấu hình
+
+                        // Thêm các category lấy được từ AJAX
+                        $.each(data, function (index, item) {
+                            filterCategoryDropdown.append($('<option>', {
+                                value: item.id, // Category ID
+                                text: item.nameCategory // Category Name
+                            }));
+                        });
+
+                        // Quan trọng: Trigger update để Select2 nhận biết option mới
+                        // Cần thiết nếu Select2 được khởi tạo *trước* khi AJAX hoàn thành
+                        filterCategoryDropdown.trigger('change.select2');
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("Lỗi khi tải danh mục cho bộ lọc:", textStatus, errorThrown);
+                    }
+                });
+            }
+            loadFilterCategories(); // Gọi hàm khi tải trang
+
+
+            // --- KHỐI CODE AJAX LẤY CATEGORY VÀ XỬ LÝ MODAL (GIỮ NGUYÊN) ---
+            // Lấy danh sách danh mục sản phẩm để đưa vào dropdown
+            $.ajax({
+                url: '/Admin/Product/GetCategories', // Đổi đường dẫn nếu cần
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var categoryDropdown = $('#idCategory');
+                    categoryDropdown.empty(); // Xóa các option cũ
+                    categoryDropdown.append($('<option>', {
+                        value: '',
+                        text: 'Chọn loại sản phẩm',
+                        disabled: true,
+                        selected: true
+                    })); // Thêm option mặc định
+                    $.each(data, function (index, item) {
+                        categoryDropdown.append($('<option>', {
+                            value: item.id, // 'id' là tên trường chứa ID trong dữ liệu trả về
+                            text: item.nameCategory // 'nameCategory' là tên trường chứa tên danh mục
+                        }));
+                    });
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Lỗi khi tải danh mục:", textStatus, errorThrown);
+                    // alert('Lỗi khi tải danh mục sản phẩm!');
+                }
+            });
+
+            // Hiển thị modal khi click nút "Thêm sản phẩm"
+            $('#showAddProductModal').click(function () {
+                $('#addProductModal').modal('show');
+                //Reset form khi mo modal
+                $('#addProductForm')[0].reset();
+                // Xóa các lớp validation của Bootstrap
+                $('#addProductForm').removeClass('was-validated');
+                $('#addProductForm .is-invalid').removeClass('is-invalid');
+                $('#addProductForm .invalid-feedback').hide(); // Có thể không cần nếu CSS xử lý tốt
+                // Reset giá trị đơn vị tính ẩn
+                $('#selectedUnit').val('');
+                // Đặt lại giá trị mặc định cho dropdown category
+                $('#idCategory').val('');
+                // Đặt lại radio button về mặc định (ví dụ: Còn hàng)
+                $('#inStockTrue').prop('checked', true);
+            });
+
+
+            // Xử lý sự kiện click nút "Lưu" trong modal
+            $('#saveProductBtn').click(function () {
+                var form = $('#addProductForm')[0]; // Lấy thẻ form thuần
+                var jqForm = $('#addProductForm'); // Lấy đối tượng jQuery của form
+
+                // Reset trạng thái validation cũ
+                jqForm.removeClass('was-validated');
+                jqForm.find('.is-invalid').removeClass('is-invalid');
+
+
+                // Kiểm tra form hợp lệ bằng HTML5 validation
+                if (form.checkValidity() === false) {
+                    // Ngăn chặn gửi form nếu không hợp lệ
+                    // event.preventDefault(); // Không cần vì không phải submit form truyền thống
+                    // event.stopPropagation();
+
+                    // Hiển thị thông báo lỗi của Bootstrap
+                    jqForm.addClass('was-validated');
+
+                    // Tùy chọn: Focus vào trường không hợp lệ đầu tiên
+                    jqForm.find(':invalid').first().focus();
+                    return; // Dừng thực thi
+                }
+
+                // Nếu form hợp lệ, tiến hành gửi AJAX
+                var formData = new FormData(form);
+
+                // Thêm giá trị từ input ẩn 'selectedUnit' vào FormData nếu cần
+                // Lưu ý: Tên 'unit' trong FormData sẽ lấy từ thuộc tính name="unit" của input ẩn
+                // formData.append('unit', $('#selectedUnit').val()); // Đã có input ẩn nên không cần dòng này
+
+                // Disable nút Lưu để tránh double click
+                $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang lưu...');
+
+
+                $.ajax({
+                    url: '/Admin/Product/Create', // Thay đổi URL nếu cần
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#addProductModal').modal('hide');
+                            Swal.fire({
+                                title: '<strong>Thành công!</strong>',
+                                html: `<p style="color: green; font-size: 18px;">${response.message || 'Thêm sản phẩm thành công.'}</p>`, // Thêm message mặc định
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                customClass: { popup: 'custom-swal-popup' } // Áp dụng CSS tùy chỉnh nếu có
+                            });
+                            productTable.ajax.reload(null, false); // reload lại bảng, giữ nguyên trang hiện tại
+                        } else {
+                            Swal.fire({
+                                title: '<strong>Lỗi!</strong>',
+                                html: `<p style="color: red; font-size: 18px;">${response.message || 'Có lỗi xảy ra, vui lòng thử lại.'}</p>`, // Thêm message mặc định
+                                icon: 'error',
+                                confirmButtonText: 'Đóng',
+                                customClass: {
+                                    popup: 'custom-swal-popup',
+                                    confirmButton: 'custom-cancel-btn' // Sử dụng class nút hủy cho nút đóng lỗi? Xem lại CSS
+                                }
+                            });
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("Lỗi AJAX khi thêm sản phẩm:", textStatus, errorThrown, jqXHR.responseText);
+                        Swal.fire({
+                            title: '<strong>Lỗi!</strong>',
+                            html: '<p style="color: red; font-size: 18px;">Đã có lỗi hệ thống xảy ra khi thêm sản phẩm.</p>',
+                            icon: 'error',
+                            confirmButtonText: 'Đóng',
+                            customClass: {
+                                popup: 'custom-swal-popup',
+                                confirmButton: 'custom-cancel-btn'
+                            }
+                        });
+                    },
+                    complete: function () {
+                        // Bật lại nút Lưu sau khi hoàn tất AJAX
+                        $('#saveProductBtn').prop('disabled', false).html('Lưu');
+                    }
+                });
+            });
+            // --- KẾT THÚC KHỐI CODE AJAX VÀ MODAL ---
+
+        }); // Kết thúc document ready
+
+        // --- HÀM DELETE PRODUCT (GIỮ NGUYÊN) ---
+        function deleteProduct(id, nameProduct) {
+            // Escape HTML trong tên sản phẩm để tránh XSS nếu hiển thị trong HTML của Swal
+            const safeNameProduct = $('<div>').text(nameProduct).html();
+
+            Swal.fire({
+                title: '<strong>Xác nhận xóa</strong>', // Ngắn gọn hơn
+                html: `Bạn có chắc chắn muốn xóa sản phẩm <strong style="color: #d33;">${safeNameProduct}</strong> không? Hành động này không thể hoàn tác.`, // Nhấn mạnh tên SP và cảnh báo
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33', // Đổi màu nút xóa thành đỏ
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '<i class="fas fa-trash-alt"></i> Xóa', // Thêm icon và đổi text
+                cancelButtonText: '<i class="fas fa-times"></i> Hủy', // Thêm icon
+                buttonsStyling: true, // Nên để true để dễ dùng class hơn
+                customClass: {
+                    popup: 'custom-swal-popup',
+                    confirmButton: 'btn btn-danger mx-1', // Dùng class Bootstrap trực tiếp nếu muốn
+                    cancelButton: 'btn btn-secondary mx-1' // Dùng class Bootstrap
+                },
+                // reverseButtons: true // Đảo vị trí nút nếu muốn (Hủy bên trái, Xóa bên phải)
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Hiển thị loading indicator
+                    Swal.fire({
+                        title: 'Đang xóa...',
+                        html: 'Vui lòng chờ trong giây lát.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/Admin/Product/Delete/' + id, // Đảm bảo URL đúng
+                        type: 'POST', // Hoặc DELETE nếu API hỗ trợ
+                        // Gửi kèm __RequestVerificationToken nếu dùng AntiForgeryToken
+                        // headers: {
+                        //    "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val()
+                        // },
+                        success: function (response) { // Giả sử backend trả về { success: true/false, message: "..." }
+                            if (response && response.success) {
+                                Swal.fire({
+                                    title: '<strong>Đã xóa!</strong>',
+                                    html: `<p style="color: green; font-size: 18px;">${response.message || 'Sản phẩm đã được xóa thành công.'}</p>`,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    customClass: { popup: 'custom-swal-popup' }
+                                });
+                                $('#productTable').DataTable().ajax.reload(null, false); // Reload và giữ nguyên trang
+                            } else {
+                                Swal.fire({
+                                    title: '<strong>Lỗi!</strong>',
+                                    html: `<p style="color: red; font-size: 18px;">${response.message || 'Xóa sản phẩm không thành công.'}</p>`,
+                                    icon: 'error',
+                                    confirmButtonText: 'Đóng',
+                                    customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-cancel-btn' }
+                                });
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error("Lỗi AJAX khi xóa sản phẩm:", textStatus, errorThrown, jqXHR.responseText);
+                            Swal.fire({
+                                title: '<strong>Lỗi!</strong>',
+                                html: '<p style="color: red; font-size: 18px;">Đã có lỗi hệ thống xảy ra khi xóa sản phẩm.</p>',
+                                icon: 'error',
+                                confirmButtonText: 'Đóng',
+                                customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-cancel-btn' }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        // --- KẾT THÚC HÀM DELETE PRODUCT ---
+
+    </script>
+}

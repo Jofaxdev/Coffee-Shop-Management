@@ -1,0 +1,11 @@
+{
+    "dependencies": {
+        "@binay7587/ckeditor5-full-free": "^0.0.8",
+        "@ckeditor/ckeditor5-heading": "^44.1.0",
+        "@ckeditor/ckeditor5-list": "^44.1.0",
+        "@ckeditor/ckeditor5-upload": "^44.1.0"
+    },
+    "scripts": {
+        "build": "node build.js"
+    }
+}
