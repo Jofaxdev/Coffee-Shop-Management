@@ -41,6 +41,184 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return View();
         }
 
+        #region Dashboard API
+
+        // API cho các thẻ KPI
+        [HttpGet]
+        public async Task<IActionResult> GetDashboardKpis()
+        {
+            var ingredients = await _context.Ingredients
+                                            .Where(i => !i.DeleteTemp && i.IsActive)
+                                            .ToListAsync();
+
+            var kpi = new DashboardKpiVM
+            {
+                TotalInventoryValue = ingredients.Sum(i => i.CurrentStockLevel * i.LastPurchasePrice),
+                LowStockItemsCount = ingredients.Count(i => i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value)
+            };
+
+            return Ok(kpi);
+        }
+
+        // API cho biểu đồ tròn Phân bổ giá trị kho
+        [HttpGet]
+        public async Task<IActionResult> GetInventoryValueDistribution()
+        {
+            var data = await _context.Ingredients
+                .Where(i => !i.DeleteTemp && i.IsActive && i.CurrentStockLevel > 0)
+                .Select(i => new ChartItem
+                {
+                    Label = i.Name,
+                    Value = i.CurrentStockLevel * i.LastPurchasePrice
+                })
+                .OrderByDescending(x => x.Value)
+                .ToListAsync();
+
+            // Gom các mục nhỏ vào thành "Khác"
+            const int topN = 6;
+            if (data.Count > topN)
+            {
+                var topItems = data.Take(topN).ToList();
+                var otherValue = data.Skip(topN).Sum(x => x.Value);
+                if (otherValue > 0)
+                {
+                    topItems.Add(new ChartItem { Label = "Khác", Value = otherValue });
+                }
+                return Ok(topItems);
+            }
+
+            return Ok(data);
+        }
+
+        // API cho biểu đồ Top 10 NVL tiêu thụ
+        [HttpGet]
+        public async Task<IActionResult> GetTopConsumedIngredients()
+        {
+            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+            var data = await _context.InventoryTransactions
+                .Where(t => (t.TransactionType == InventoryTransactionType.SaleConsumption || t.TransactionType == InventoryTransactionType.AdjustmentOut) && t.TransactionDate >= thirtyDaysAgo)
+                .Include(t => t.Ingredient)
+                .GroupBy(t => t.Ingredient.Name)
+                .Select(g => new ChartItem
+                {
+                    Label = g.Key,
+                    Value = g.Sum(t => Math.Abs(t.QuantityChanged)) // Lấy số dương
+                })
+                .OrderByDescending(x => x.Value)
+                .Take(10)
+                .ToListAsync();
+
+            return Ok(data);
+        }
+
+        // API cho biểu đồ xu hướng hàng hủy
+        [HttpGet]
+        public async Task<IActionResult> GetWasteTrend()
+        {
+            var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+            var monthlyWaste = await _context.InventoryTransactions
+                .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut && t.TransactionDate >= sixMonthsAgo)
+                .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
+                .Select(g => new
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    TotalValue = g.Sum(t => Math.Abs(t.TotalPrice ?? 0))
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync();
+
+            // Tạo danh sách 6 tháng gần nhất để đảm bảo không thiếu tháng
+            var result = new List<MonthlyData>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var date = DateTime.Now.AddMonths(-i);
+                var wasteData = monthlyWaste.FirstOrDefault(w => w.Year == date.Year && w.Month == date.Month);
+                result.Add(new MonthlyData
+                {
+                    Month = date.ToString("MM/yyyy"),
+                    Value = wasteData?.TotalValue ?? 0
+                });
+            }
+
+            return Ok(result);
+        }
+
+        // API mới: Lấy danh sách các NVL dưới định mức
+        [HttpGet]
+        public async Task<IActionResult> GetLowStockIngredients()
+        {
+            var data = await _context.Ingredients
+                .Where(i => !i.DeleteTemp && i.IsActive && i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value)
+                .OrderBy(i => i.CurrentStockLevel / i.MinimumStockLevel) // Ưu tiên các mục cạn nhất
+                .Select(i => new LowStockIngredientVM
+                {
+                    Name = i.Name,
+                    CurrentStock = i.CurrentStockLevel,
+                    MinimumStock = i.MinimumStockLevel.Value
+                })
+                .Take(10) // Lấy 10 mục cần nhập gấp nhất
+                .ToListAsync();
+
+            return Ok(data);
+        }
+
+        // API mới: Lấy Top NVL bị hủy/thất thoát theo giá trị
+        [HttpGet]
+        public async Task<IActionResult> GetTopWastedIngredients()
+        {
+            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+            var data = await _context.InventoryTransactions
+                .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut && t.TransactionDate >= thirtyDaysAgo)
+                .Include(t => t.Ingredient)
+                .GroupBy(t => t.Ingredient.Name)
+                .Select(g => new WastedItemVM
+                {
+                    Name = g.Key,
+                    QuantityWasted = g.Sum(t => Math.Abs(t.QuantityChanged)),
+                    ValueWasted = g.Sum(t => Math.Abs(t.TotalPrice ?? 0))
+                })
+                .OrderByDescending(x => x.ValueWasted)
+                .Take(7) // Lấy top 7
+                .ToListAsync();
+
+            return Ok(data);
+        }
+
+        // Các ViewModel cho Dashboard API
+        public class DashboardKpiVM
+        {
+            public decimal TotalInventoryValue { get; set; }
+            public int LowStockItemsCount { get; set; }
+        }
+
+        public class ChartItem
+        {
+            public string Label { get; set; } = string.Empty;
+            public decimal Value { get; set; }
+        }
+
+        public class MonthlyData
+        {
+            public string Month { get; set; } = string.Empty;
+            public decimal Value { get; set; }
+        }
+
+        public class LowStockIngredientVM
+        {
+            public string Name { get; set; } = string.Empty;
+            public decimal CurrentStock { get; set; }
+            public decimal MinimumStock { get; set; }
+        }
+
+        public class WastedItemVM
+        {
+            public string Name { get; set; } = string.Empty;
+            public decimal QuantityWasted { get; set; }
+            public decimal ValueWasted { get; set; }
+        }
+        #endregion
+
         #region Xuất Báo cáo Tồn Kho Chi Tiết Excel
 
         [HttpPost]

@@ -423,7 +423,10 @@
 
     <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="ingredients-tab-btn" data-bs-toggle="tab" data-bs-target="#ingredientsTabPane" type="button" role="tab" aria-controls="ingredientsTabPane" aria-selected="true"><i class="bi bi-droplet-half me-1"></i>Nguyên vật liệu</button>
+            <button class="nav-link active" id="dashboard-tab-btn" data-bs-toggle="tab" data-bs-target="#dashboardTabPane" type="button" role="tab" aria-controls="dashboardTabPane" aria-selected="true"><i class="bi bi-bar-chart-line-fill me-1"></i>Tổng quan</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ingredients-tab-btn" data-bs-toggle="tab" data-bs-target="#ingredientsTabPane" type="button" role="tab" aria-controls="ingredientsTabPane" aria-selected="true"><i class="bi bi-droplet-half me-1"></i>Nguyên vật liệu</button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="suppliers-tab-btn" data-bs-toggle="tab" data-bs-target="#suppliersTabPane" type="button" role="tab" aria-controls="suppliersTabPane" aria-selected="false"><i class="bi bi-truck me-1"></i>Nhà cung cấp</button>
@@ -437,8 +440,102 @@
     </ul>
 
     <div class="tab-content" id="inventoryTabsContent">
+        @* --- TAB DASHBOARD (MỚI) --- *@
+        @* --- TAB DASHBOARD (ĐÃ CẬP NHẬT) --- *@
+        <div class="tab-pane fade show active" id="dashboardTabPane" role="tabpanel" aria-labelledby="dashboard-tab-btn">
+            <div class="row mt-3">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng giá trị tồn kho</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiTotalValue"><div class="spinner-border spinner-border-sm"></div></div>
+                                </div>
+                                <div class="col-auto"><i class="bi bi-cash-coin fs-2 text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">NVL dưới định mức</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiLowStockItems"><div class="spinner-border spinner-border-sm"></div></div>
+                                </div>
+                                <div class="col-auto"><i class="bi bi-exclamation-triangle-fill fs-2 text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-6 col-lg-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-danger">Cảnh báo: Các NVL cần nhập hàng</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-bar" style="height: 320px;">
+                                <canvas id="lowStockChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6 col-lg-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Tỷ trọng Giá trị Tồn kho</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-pie pt-4" style="height: 320px;">
+                                <canvas id="inventoryValuePieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Top 10 NVL Tiêu thụ (30 ngày qua)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-bar" style="height: 350px;">
+                                <canvas id="consumedIngredientsBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-warning">Phân tích Hàng hủy/Thất thoát (30 ngày qua)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small">Top các mặt hàng bị hủy nhiều nhất tính theo giá trị:</p>
+                            <div class="chart-bar mb-4" style="height: 200px;">
+                                <canvas id="topWastedItemsChart"></canvas>
+                            </div>
+                            <hr>
+                            <p class="small">Xu hướng tổng giá trị hàng hủy theo tháng:</p>
+                            <div class="chart-area" style="height: 150px;">
+                                <canvas id="wasteTrendLineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         @* --- TAB NGUYÊN VẬT LIỆU --- *@
-        <div class="tab-pane fade show active" id="ingredientsTabPane" role="tabpanel" aria-labelledby="ingredients-tab-btn">
+        <div class="tab-pane fade" id="ingredientsTabPane" role="tabpanel" aria-labelledby="ingredients-tab-btn">
             <div class="card card-inventory">
                 <div class="card-header">
                     <h5 class="card-title"><i class="bi bi-droplet-half me-2"></i>Danh sách Nguyên vật liệu</h5>
@@ -903,6 +1000,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <partial name="_ValidationScriptsPartial" />
 
     @* SweetAlert2 & Notyf được giả định đã có trong Layout *@
@@ -1778,20 +1877,18 @@
                     showErrorAlert("Dữ liệu không hợp lệ", "Vui lòng kiểm tra lại các trường thông tin được đánh dấu đỏ.");
                     return;
                 }
-                const transactionDateTimeLocalValue = $('#transactionDate').val();
-                if (!transactionDateTimeLocalValue) {
-                    showErrorAlert("Thiếu thông tin", "Vui lòng chọn ngày giờ giao dịch.");
-                    return;
-                }
+
+                // Lấy giá trị TotalPrice và loại bỏ các ký tự không phải số
+                const totalPriceString = ($('#transactionTotalPrice').val() || '').replace(/[.đ\s]/g, '');
 
                 const formData = {
                     IngredientId: parseInt($('#transactionIngredientId').val()),
                     TransactionType: $('#transactionType').val(),
                     Quantity: parseFloat($('#transactionQuantity').val()),
                     UnitPrice: $('#transactionUnitPrice').val() ? parseFloat($('#transactionUnitPrice').val()) : null,
-                    TotalPrice: $('#transactionTotalPrice').val() ? parseFloat($('#transactionTotalPrice').val()) : null,
+                    TotalPrice: totalPriceString ? parseFloat(totalPriceString) : null, // Gửi đi giá trị số
                     SupplierId: $('#transactionSupplierId').val() ? parseInt($('#transactionSupplierId').val()) : null,
-                    TransactionDate: transactionDateTimeLocalValue,
+                    TransactionDate: new Date().toISOString(), // SỬA LỖI: Gửi đi theo chuẩn ISO 8601
                     Notes: $('#transactionNotes').val().trim() || null
                 };
 
@@ -1803,7 +1900,7 @@
                         hideLoading('#createTransactionTabPane .card-body');
                         if (response.success) {
                             showSuccessToast(response.message);
-                            $('#createTransactionForm button[type="reset"]').trigger('click');
+                            $('#createTransactionForm').trigger('reset'); // Dùng trigger thay vì click
 
                             if (transactionsHistoryTable) transactionsHistoryTable.draw();
                             if (ingredientsTable) ingredientsTable.draw(false);
@@ -2142,6 +2239,242 @@
                 }
             });
 
+
+            // =================== DASHBOARD CHARTING LOGIC ===================
+            // Hàm định dạng số cho đẹp hơn
+            const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+            const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value);
+
+            // Hàm để load tất cả dữ liệu cho dashboard
+            function loadDashboardData() {
+                const kpiUrl = '@Url.Action("GetDashboardKpis", "Inventory")';
+                const pieChartUrl = '@Url.Action("GetInventoryValueDistribution", "Inventory")';
+                const barChartUrl = '@Url.Action("GetTopConsumedIngredients", "Inventory")';
+                const lineChartUrl = '@Url.Action("GetWasteTrend", "Inventory")';
+                const lowStockUrl = '@Url.Action("GetLowStockIngredients", "Inventory")'; // API mới
+                const topWastedUrl = '@Url.Action("GetTopWastedIngredients", "Inventory")'; // API mới
+
+
+                // Gọi API cho KPI
+                $.get(kpiUrl, function (data) {
+                    $('#kpiTotalValue').text(formatCurrency(data.totalInventoryValue));
+                    $('#kpiLowStockItems').text(formatNumber(data.lowStockItemsCount) + ' loại');
+                });
+
+                // Gọi API và vẽ biểu đồ tròn
+                $.get(pieChartUrl, function (data) {
+                    const ctx = document.getElementById('inventoryValuePieChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.map(d => d.label),
+                            datasets: [{
+                                data: data.map(d => d.value),
+                                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'],
+                            }],
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed !== null) {
+                                                label += formatCurrency(context.parsed);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    });
+                });
+
+                // Gọi API và vẽ biểu đồ cột
+                $.get(barChartUrl, function (data) {
+                    const ctx = document.getElementById('consumedIngredientsBarChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.label),
+                            datasets: [{
+                                label: 'Số lượng tiêu thụ',
+                                data: data.map(d => d.value),
+                                backgroundColor: '#4e73df',
+                            }],
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        },
+                    });
+                });
+
+                // Gọi API và vẽ biểu đồ đường
+                $.get(lineChartUrl, function (data) {
+                    const ctx = document.getElementById('wasteTrendLineChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(d => d.month),
+                            datasets: [{
+                                label: 'Giá trị hủy',
+                                data: data.map(d => d.value),
+                                borderColor: '#e74a3b',
+                                backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }],
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function (value, index, values) {
+                                            return formatCurrency(value);
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return 'Hủy/Thất thoát: ' + formatCurrency(context.parsed.y);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+                // Gọi API và vẽ biểu đồ NVL dưới định mức
+                $.get(lowStockUrl, function (data) {
+                    if (window.lowStockChart instanceof Chart) { window.lowStockChart.destroy(); }
+                    const ctx = document.getElementById('lowStockChart');
+                    if (!ctx) return;
+
+                    // Nếu không có dữ liệu, hiển thị thông báo
+                    if (data.length === 0) {
+                        ctx.parentElement.innerHTML = '<div class="text-center p-5 text-success"><i class="bi bi-check-circle-fill fs-2"></i><p>Tuyệt vời! Không có NVL nào dưới định mức.</p></div>';
+                        return;
+                    }
+
+                    window.lowStockChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.name),
+                            datasets: [
+                                {
+                                    label: 'Tồn kho hiện tại',
+                                    data: data.map(d => d.currentStock),
+                                    backgroundColor: 'rgba(255, 193, 7, 0.7)', // Màu vàng cảnh báo
+                                    borderColor: 'rgba(255, 193, 7, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Tồn kho tối thiểu',
+                                    data: data.map(d => d.minimumStock),
+                                    backgroundColor: 'rgba(220, 53, 69, 0.7)', // Màu đỏ nguy hiểm
+                                    borderColor: 'rgba(220, 53, 69, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            indexAxis: 'y', // Biến thành biểu đồ cột ngang
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatNumber(value)
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed.x !== null) {
+                                                label += formatNumber(context.parsed.x);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+
+                // Gọi API và vẽ biểu đồ Top NVL bị hủy
+                $.get(topWastedUrl, function (data) {
+                    if (window.topWastedItemsChart instanceof Chart) { window.topWastedItemsChart.destroy(); }
+                    const ctx = document.getElementById('topWastedItemsChart');
+                    if (!ctx) return;
+
+                    window.topWastedItemsChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.name),
+                            datasets: [{
+                                label: 'Giá trị hủy',
+                                data: data.map(d => d.valueWasted),
+                                backgroundColor: '#fd7e14',
+                                // Đưa dữ liệu số lượng vào để dùng trong tooltip
+                                customData: data.map(d => d.quantityWasted)
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { callback: (value) => formatCurrency(value) }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const value = formatCurrency(context.parsed.y);
+                                            const quantity = context.chart.data.datasets[0].customData[context.dataIndex];
+                                            return `Giá trị: ${value} (SL: ${formatNumber(quantity)})`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Gọi hàm load dashboard khi trang được tải
+            loadDashboardData();
+
+            // Tùy chọn: Load lại dashboard khi người dùng click vào tab
+            $('#dashboard-tab-btn').on('shown.bs.tab', function (e) {
+                // Có thể thêm logic load lại ở đây nếu cần, nhưng hiện tại chỉ cần load 1 lần là đủ
+            });
+            // ================= END DASHBOARD LOGIC ===================
         });
     </script>
 }
