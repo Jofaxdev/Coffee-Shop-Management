@@ -226,25 +226,29 @@
         .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
             line-height: 1.5;
         }
-         /* Style cho Select2 multiple */
+
+        /* Style cho Select2 multiple */
         .select2-container--bootstrap-5 .select2-selection--multiple {
             min-height: calc(1.5em + .75rem + 2px);
             font-size: 1rem;
             /* padding: .375rem .75rem; */ /* Bỏ padding này để không bị lệch */
         }
-        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            padding-left: 0.5rem; /* Thêm padding để giống input thường */
-        }
-        .select2-container--bootstrap-5 .select2-selection--multiple .select2-search__field {
-             margin-top: 0.2rem; /* Điều chỉnh vị trí con trỏ gõ */
-        }
-        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-            margin-top: calc(((.75rem + 2px) - 1.5em) / 2); /* Căn giữa các tag đã chọn */
-            margin-right: 0.375rem;
-        }
+
+            .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                padding-left: 0.5rem; /* Thêm padding để giống input thường */
+            }
+
+            .select2-container--bootstrap-5 .select2-selection--multiple .select2-search__field {
+                margin-top: 0.2rem; /* Điều chỉnh vị trí con trỏ gõ */
+            }
+
+            .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+                margin-top: calc(((.75rem + 2px) - 1.5em) / 2); /* Căn giữa các tag đã chọn */
+                margin-right: 0.375rem;
+            }
 
 
         .select2-container--bootstrap-5 .select2-dropdown {
@@ -264,7 +268,7 @@
             outline: 0;
         }
 
-        *:focus { 
+        *:focus {
             outline: none;
         }
 
@@ -316,7 +320,6 @@
             }
 
         .dt-search {
-           
         }
 
         /* Style cho table header */
@@ -345,7 +348,7 @@
         .dt-no-wrap {
             white-space: nowrap;
         }
-        
+
         /* --- Cấu hình chung cho việc cắt ngắn văn bản nhiều dòng --- */
         .dt-col-100-row-2,
         .dt-col-110-row-2,
@@ -360,22 +363,42 @@
             word-break: break-word;
         }
 
-        .dt-col-100-row-2 { min-width: 100px !important; max-width: 100px !important;}
-        .dt-col-110-row-2 { min-width: 110px !important; max-width: 110px !important;}
-        .dt-col-120-row-2 { min-width: 120px !important; max-width: 120px !important;}
+        .dt-col-100-row-2 {
+            min-width: 100px !important;
+            max-width: 100px !important;
+        }
+
+        .dt-col-110-row-2 {
+            min-width: 110px !important;
+            max-width: 110px !important;
+        }
+
+        .dt-col-120-row-2 {
+            min-width: 120px !important;
+            max-width: 120px !important;
+        }
+
         .dt-col-180-row-2,
-        .dt-col-180-row-3 { min-width: 180px !important; max-width: 180px !important; }
+        .dt-col-180-row-3 {
+            min-width: 180px !important;
+            max-width: 180px !important;
+        }
 
         .dt-col-100-row-2,
         .dt-col-110-row-2,
         .dt-col-120-row-2,
-        .dt-col-180-row-2 { -webkit-line-clamp: 2; }
-        .dt-col-180-row-3 { -webkit-line-clamp: 3; }
+        .dt-col-180-row-2 {
+            -webkit-line-clamp: 2;
+        }
+
+        .dt-col-180-row-3 {
+            -webkit-line-clamp: 3;
+        }
 
         /* Căn chỉnh nút xóa filter trong Lịch sử giao dịch */
         .transaction-history-filters .btn-clear-filters {
-            margin-top: auto; 
-            height: calc(1.5em + .75rem + 2px); 
+            margin-top: auto;
+            height: calc(1.5em + .75rem + 2px);
         }
 
         /* Style cho các nút chọn nhanh thời gian */
@@ -390,15 +413,13 @@
         }
     </style>
 }
-
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="page-title mb-0"><i class="bi bi-box-seam me-2"></i>Quản lý Kho</h1>
-        <button type="button" class="btn btn-success" id="btnOpenInventoryReportModal">
-            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Báo cáo Tồn kho
+        <button type="button" class="btn btn-primary" id="btnOpenInventoryReportModal">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> Báo cáo & Xuất file
         </button>
     </div>
-
 
     <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
         <li class="nav-item" role="presentation">
@@ -433,16 +454,12 @@
                             <div class="dt-length-select-group">
                                 <label for="ingredientsTableLength" class="form-label">Hiện</label>
                                 <select id="ingredientsTableLength" name="ingredientsTableLength" class="form-select">
-                                    <option value="5">5</option>
                                     <option value="10" selected>10</option>
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="-1">Tất cả</option>
                                 </select>
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-clear-filters" data-target-table="ingredientsTable" title="Xóa bộ lọc tìm kiếm">
-                                <i class="bi bi-x-lg"></i> <span class="d-none d-sm-inline">Xóa bộ lọc</span>
-                            </button>
                         </div>
                     </div>
                     <div class="table-responsive position-relative">
@@ -466,19 +483,6 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                        <div id="ingredientsTableInfo" class="dataTables_info_wrapper text-muted mb-2 mb-md-0"></div>
-                        <nav aria-label="Ingredients table navigation">
-                            <ul class="pagination mb-0 justify-content-center justify-content-md-end" id="customPaginationIngredients">
-                                <li class="page-item" id="ingredientsFirstPage"><a class="page-link" href="#">&laquo;</a></li>
-                                <li class="page-item" id="ingredientsPrevPage"><a class="page-link" href="#">&lt;</a></li>
-                                <li class="page-item" id="ingredientsNextPage"><a class="page-link" href="#">&gt;</a></li>
-                                <li class="page-item" id="ingredientsLastPage"><a class="page-link" href="#">&raquo;</a></li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -499,16 +503,12 @@
                             <div class="dt-length-select-group">
                                 <label for="suppliersTableLength" class="form-label">Hiện</label>
                                 <select id="suppliersTableLength" name="suppliersTableLength" class="form-select">
-                                    <option value="5">5</option>
                                     <option value="10" selected>10</option>
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="-1">Tất cả</option>
                                 </select>
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-clear-filters" data-target-table="suppliersTable" title="Xóa bộ lọc tìm kiếm">
-                                <i class="bi bi-x-lg"></i> <span class="d-none d-sm-inline">Xóa bộ lọc</span>
-                            </button>
                         </div>
                     </div>
                     <div class="table-responsive position-relative">
@@ -530,22 +530,10 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                        <div id="suppliersTableInfo" class="dataTables_info_wrapper text-muted mb-2 mb-md-0"></div>
-                        <nav aria-label="Suppliers table navigation">
-                            <ul class="pagination mb-0 justify-content-center justify-content-md-end" id="customPaginationSuppliers">
-                                <li class="page-item" id="suppliersFirstPage"><a class="page-link" href="#">&laquo;</a></li>
-                                <li class="page-item" id="suppliersPrevPage"><a class="page-link" href="#">&lt;</a></li>
-                                <li class="page-item" id="suppliersNextPage"><a class="page-link" href="#">&gt;</a></li>
-                                <li class="page-item" id="suppliersLastPage"><a class="page-link" href="#">&raquo;</a></li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
             </div>
         </div>
 
+        @* --- TAB TẠO PHIẾU KHO --- *@
         @* --- TAB TẠO PHIẾU KHO --- *@
         <div class="tab-pane fade" id="createTransactionTabPane" role="tabpanel" aria-labelledby="create-transaction-tab-btn">
             <div class="card card-inventory">
@@ -581,41 +569,32 @@
                             <div class="col-md-4">
                                 <div class="form-label-group">
                                     <label for="transactionDate" class="form-label">Ngày giao dịch</label>
-                                    <input type="datetime-local"
-                                           id="transactionDate"
-                                           name="TransactionDate"
-                                           class="form-control"
-                                           required
-                                           value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
+                                    <input type="text" id="transactionDate" name="TransactionDate" class="form-control" readonly>
                                 </div>
                             </div>
 
                             <div class="col-md-4">
                                 <div class="form-label-group">
                                     <label for="transactionQuantity" class="form-label">Số lượng <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="number" id="transactionQuantity" name="Quantity" class="form-control" step="0.001" min="0.001" required>
-                                    </div>
+                                    <input type="number" id="transactionQuantity" name="Quantity" class="form-control" step="0.001" min="0.001" required>
                                 </div>
                             </div>
 
-
-                            <div class="col-md-4" id="transactionUnitPriceContainer" style="display:none;">
+                            <div class="col-md-4" id="transactionUnitPriceContainer">
                                 <div class="form-label-group">
-                                    <label for="transactionUnitPrice" class="form-label">Đơn giá</label>
-                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
+                                    <label for="transactionUnitPrice" class="form-label" id="transactionUnitPriceLabel">Đơn giá <span class="text-danger">*</span></label>                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
                                 </div>
                             </div>
-                            <div class="col-md-4" id="transactionTotalPriceContainer" style="display:none;">
+                            <div class="col-md-4" id="transactionTotalPriceContainer">
                                 <div class="form-label-group">
                                     <label for="transactionTotalPrice" class="form-label">Thành tiền</label>
-                                    <input type="number" id="transactionTotalPrice" name="TotalPrice" class="form-control" step="100" readonly>
+                                    <input type="text" id="transactionTotalPrice" name="TotalPrice" class="form-control" readonly>
                                 </div>
                             </div>
 
                             <div class="col-md-4" id="transactionSupplierContainer" style="display:none;">
                                 <div class="form-label-group">
-                                    <label for="transactionSupplierId" class="form-label">Nhà cung cấp</label>
+                                    <label for="transactionSupplierId" class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
                                     <select id="transactionSupplierId" name="SupplierId" class="form-select select2-custom" style="width:100%;">
                                         <option value="">-- Tìm & chọn NCC --</option>
                                     </select>
@@ -645,7 +624,7 @@
                     <h5 class="card-title"><i class="bi bi-list-check me-2"></i>Lịch sử Giao dịch Kho</h5>
                 </div>
                 <div class="card-body p-3">
-                    <div class="row gx-2 gy-2 mb-3 transaction-history-filters"> @* gx-2 gy-2 để có khoảng cách giữa các cột và dòng *@
+                    <div class="row gx-2 gy-2 mb-3 transaction-history-filters">
                         <div class="col-md-3 col-sm-6 col-12">
                             <div class="form-label-group">
                                 <label for="historyFromDate" class="form-label">Từ ngày</label>
@@ -687,7 +666,6 @@
                             <div class="dt-length-select-group">
                                 <label for="transactionsHistoryTableLength" class="form-label">Hiện</label>
                                 <select id="transactionsHistoryTableLength" name="transactionsHistoryTableLength" class="form-select">
-                                    <option value="5">5</option>
                                     <option value="10" selected>10</option>
                                     <option value="25">25</option>
                                     <option value="50">50</option>
@@ -722,26 +700,12 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                        <div id="transactionsHistoryTableInfo" class="dataTables_info_wrapper text-muted mb-2 mb-md-0"></div>
-                        <nav aria-label="Transaction History table navigation">
-                            <ul class="pagination mb-0 justify-content-center justify-content-md-end" id="customPaginationTransactions">
-                                <li class="page-item" id="transactionsFirstPage"><a class="page-link" href="#">&laquo;</a></li>
-                                <li class="page-item" id="transactionsPrevPage"><a class="page-link" href="#">&lt;</a></li>
-                                <li class="page-item" id="transactionsNextPage"><a class="page-link" href="#">&gt;</a></li>
-                                <li class="page-item" id="transactionsLastPage"><a class="page-link" href="#">&raquo;</a></li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
 @* --- MODALS --- *@
-@* Modal Thêm/Sửa Nguyên vật liệu *@
 <div class="modal fade" id="ingredientModal" tabindex="-1" aria-labelledby="ingredientModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -761,7 +725,6 @@
                             <div class="form-label-group">
                                 <label for="ingredientUnitOfMeasure" class="form-label">Đơn vị tính <span class="text-danger">*</span></label>
                                 <select class="form-select" id="ingredientUnitOfMeasure" name="UnitOfMeasure" required>
-                                    @* JS sẽ điền options *@
                                 </select>
                             </div>
                         </div>
@@ -801,7 +764,6 @@
     </div>
 </div>
 
-@* Modal Thêm/Sửa Nhà cung cấp *@
 <div class="modal fade" id="supplierModal" tabindex="-1" aria-labelledby="supplierModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -852,12 +814,11 @@
     </div>
 </div>
 
-@* --- MODAL XUẤT BÁO CÁO TỒN KHO --- *@
 <div class="modal fade" id="inventoryReportModal" tabindex="-1" aria-labelledby="inventoryReportModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="inventoryReportModalLabel"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Tùy chọn Báo cáo Tồn kho</h5>
+                <h5 class="modal-title" id="inventoryReportModalLabel"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Tùy chọn Báo cáo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -866,9 +827,7 @@
                         <div class="col-12">
                             <div class="form-label-group">
                                 <label for="reportIngredientIds" class="form-label">Chọn Nguyên vật liệu</label>
-                                <select id="reportIngredientIds" name="IngredientIds" class="form-select select2-report" multiple="multiple" data-placeholder="-- Chọn một hoặc nhiều NVL (để trống là tất cả) --">
-                                    @* JS sẽ tải danh sách NVL vào đây *@
-                                </select>
+                                <select id="reportIngredientIds" name="IngredientIds" class="form-select select2-report" multiple="multiple" data-placeholder="-- Chọn một hoặc nhiều NVL (để trống là tất cả) --"></select>
                                 <div class="mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-primary" id="btnSelectAllIngredients">Chọn tất cả</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="btnClearAllIngredients">Bỏ chọn tất cả</button>
@@ -876,7 +835,6 @@
                             </div>
                         </div>
                     </div>
-
                     <hr />
                     <p class="fw-bold mb-2">Chọn khoảng thời gian báo cáo:</p>
                     <div class="row">
@@ -895,176 +853,170 @@
                     </div>
                     <div class="mt-2 mb-3 time-shortcut-buttons">
                         <label class="form-label small">Chọn nhanh:</label>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Thời gian nhanh">
+                        <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-outline-info" data-range="thisWeek">Tuần này</button>
                             <button type="button" class="btn btn-outline-info" data-range="thisMonth">Tháng này</button>
                             <button type="button" class="btn btn-outline-info" data-range="thisYear">Năm này</button>
-                        </div>
-                        <div class="btn-group btn-group-sm mt-1" role="group" aria-label="Thời gian nhanh khác">
-                             <button type="button" class="btn btn-outline-secondary" data-range="lastWeek">Tuần trước</button>
-                             <button type="button" class="btn btn-outline-secondary" data-range="lastMonth">Tháng trước</button>
-                             <button type="button" class="btn btn-outline-secondary" data-range="lastYear">Năm trước</button>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Hủy</button>
-                <button type="button" class="btn btn-success" id="btnExportInventoryToExcel"><i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel</button>
+                <button type="button" class="btn btn-info" id="btnPreviewInventoryReport"><i class="bi bi-eye me-1"></i>Xem trước</button>
+                <button type="button" class="btn btn-success" id="btnExportInventoryToExcel"><i class="bi bi-file-earmark-excel me-1"></i>Tải xuống Excel</button>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="previewReportModal" tabindex="-1" aria-labelledby="previewReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewReportModalLabel">Bản xem trước Báo cáo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="previewReportModalBody" style="background-color: #f8f9fa;"></div>
+            <div class="modal-footer">
+                @* Nút Quay lại, mặc định sẽ ẩn đi *@
+                <button type="button" class="btn btn-outline-secondary" id="btn-back-to-summary" style="display: none;">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+                </button>
+
+                @* Dùng div này để đẩy 2 nút còn lại sang phải *@
+                @* <div class="me-auto"></div> *@
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="btnDownloadFromPreview">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Tải xuống Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @* Các thư viện JS cần thiết *@
     <script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script> @* Vietnamese localization for Flatpickr *@
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
-    @* <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@3.2.12/dist/jquery.validate.unobtrusive.min.js"></script> *@
+    <partial name="_ValidationScriptsPartial" />
+
     @* SweetAlert2 & Notyf được giả định đã có trong Layout *@
 
     <script>
         // =============== HÀM TIỆN ÍCH (UTILITY FUNCTIONS) ===============
         function formatVnDynamicDecimal(value, maxFractionDigits = 3) {
-            // Kiểm tra nếu giá trị là null, undefined hoặc chuỗi rỗng
             if (value === null || typeof value === 'undefined' || value === '') {
-                return '-'; // Trả về dấu gạch ngang nếu không có giá trị
+                return '-';
             }
-            // Chuyển đổi giá trị sang số
             const number = parseFloat(value);
-            // Kiểm tra nếu không phải là số hợp lệ
             if (isNaN(number)) {
-                // Nếu là chuỗi và không rỗng, trả về chuỗi gốc; ngược lại trả về dấu gạch ngang
                 return (typeof value === 'string' && value.trim() !== '') ? value : '-';
             }
-            // Định dạng số theo chuẩn Việt Nam
             return number.toLocaleString('vi-VN', {
-                minimumFractionDigits: 0, // Không hiển thị phần thập phân nếu là số nguyên
-                maximumFractionDigits: maxFractionDigits // Số chữ số thập phân tối đa
+                minimumFractionDigits: 0,
+                maximumFractionDigits: maxFractionDigits
             });
         }
 
         function formatVnCurrency(value, showSymbol = true) {
-            // Kiểm tra nếu giá trị là null, undefined hoặc chuỗi rỗng
             if (value === null || typeof value === 'undefined' || value === '') {
-                return '-'; // Trả về dấu gạch ngang
+                return '-';
             }
-            // Chuyển đổi giá trị sang số
             const number = parseFloat(value);
-            // Kiểm tra nếu không phải là số hợp lệ
             if (isNaN(number)) {
-                // Nếu là chuỗi và không rỗng
                 if (typeof value === 'string' && value.trim() !== '') {
-                    // Nếu chuỗi kết thúc bằng 'đ', giả định đã được định dạng; ngược lại, có thể không hợp lệ
                     return value.trim().endsWith('đ') ? value.trim() : '-';
                 }
-                return '-'; // Trả về dấu gạch ngang
+                return '-';
             }
-            // Định dạng số theo chuẩn Việt Nam
             const formattedNumber = number.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            // Trả về số đã định dạng, có kèm theo ký hiệu tiền tệ 'đ' nếu showSymbol là true
             return showSymbol ? formattedNumber + ' đ' : formattedNumber;
         }
 
 
         function showSuccessToast(message) {
-            // Kiểm tra thư viện Notyf có tồn tại không
             if (typeof notyf !== 'undefined') {
-                // Hiển thị thông báo thành công bằng Notyf
                 notyf.success({ message: message || 'Thao tác thành công!', duration: 5000 });
             } else if (typeof Swal !== 'undefined') {
-                // Nếu không có Notyf, sử dụng SweetAlert2
                 Swal.fire({
                     icon: 'success',
                     title: 'Thành công!',
                     text: message || 'Thao tác thành công!',
-                    timer: 2000, // Tự động đóng sau 2 giây
-                    showConfirmButton: false // Không hiển thị nút xác nhận
+                    timer: 2000,
+                    showConfirmButton: false
                 });
             } else {
-                // Nếu cả hai thư viện đều không có, sử dụng alert mặc định
                 alert(message || 'Thao tác thành công!');
             }
         }
 
         function showErrorAlert(titleOrMessage, message) {
-            let finalTitle = 'Lỗi'; // Tiêu đề mặc định
-            let finalMessage = titleOrMessage || 'Có lỗi xảy ra!'; // Nội dung mặc định
-            // Nếu có message được truyền vào, cập nhật tiêu đề và nội dung
+            let finalTitle = 'Lỗi';
+            let finalMessage = titleOrMessage || 'Có lỗi xảy ra!';
             if (message) {
                 finalTitle = titleOrMessage;
                 finalMessage = message;
             }
-            // Kiểm tra thư viện Notyf
             if (typeof notyf !== 'undefined') {
-                // Hiển thị thông báo lỗi bằng Notyf, cho phép HTML trong message
                 notyf.error({ message: `<b>${finalTitle}</b><br>${finalMessage.replace(/\n/g, '<br>')}`, duration: 7000, dismissible: true });
             } else if (typeof Swal !== 'undefined') {
-                // Nếu không có Notyf, sử dụng SweetAlert2
                 Swal.fire({
                     icon: 'error',
                     title: finalTitle,
-                    html: finalMessage.replace(/\n/g, '<br>') // Cho phép HTML trong nội dung
+                    html: finalMessage.replace(/\n/g, '<br>')
                 });
             }
             else {
-                // Sử dụng alert mặc định
                 alert(`${finalTitle}: ${finalMessage}`);
             }
         }
 
         function showLoading(selector = 'body', message = 'Đang xử lý...') {
-            const $target = $(selector); // Chọn phần tử mục tiêu
-            // Kiểm tra nếu phần tử tồn tại và chưa có overlay loading
+            const $target = $(selector);
             if ($target.length && $target.find('.loading-overlay').length === 0) {
-                let positionStyle = $target.is('body') ? 'fixed' : 'absolute'; // Kiểu position
-                // Nếu là absolute, đảm bảo parent có position phù hợp
+                let positionStyle = $target.is('body') ? 'fixed' : 'absolute';
                 if (positionStyle === 'absolute') {
                     const currentPosition = $target.css('position');
                     if (!['relative', 'absolute', 'fixed'].includes(currentPosition)) {
                         $target.css('position', 'relative');
                     }
                 }
-                // Tính z-index để overlay nổi lên trên
                 const zIndex = (positionStyle === 'fixed') ? 1060 : ($target.css('z-index') === 'auto' ? 10 : (parseInt($target.css('z-index')) || 0) + 5);
-                // Thêm overlay vào phần tử mục tiêu
                 $target.append(`<div class="loading-overlay" style="position:${positionStyle}; inset:0; z-index:${zIndex}; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.7);"><div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div><span>${message}</span></div>`);
             }
         }
         function hideLoading(selector = 'body') {
-            // Ẩn overlay loading sau một khoảng trễ nhỏ
             setTimeout(() => {
                 $(selector).find('.loading-overlay').fadeOut(150, function () { $(this).remove(); });
             }, 50);
         }
 
         function handleAjaxError(xhr, actionText) {
-            hideLoading(); // Luôn ẩn loading khi có lỗi
-            console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText); // Ghi log lỗi
-            let errorMsg = `Không thể ${actionText.toLowerCase()}. Vui lòng thử lại.`; // Thông báo lỗi mặc định
-            let errorTitle = 'Lỗi hệ thống'; // Tiêu đề lỗi mặc định
+            hideLoading();
+            console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText);
+            let errorMsg = `Không thể ${actionText.toLowerCase()}. Vui lòng thử lại.`;
+            let errorTitle = 'Lỗi hệ thống';
             try {
-                // Thử parse response JSON từ server
                 const responseJson = JSON.parse(xhr.responseText);
                 if (responseJson) {
-                    if (responseJson.message) errorMsg = responseJson.message; // Lấy message từ server
-                    if (responseJson.title) errorTitle = responseJson.title;   // Lấy title từ server
-                    // Nếu có danh sách lỗi chi tiết (thường từ ModelState)
+                    if (responseJson.message) errorMsg = responseJson.message;
+                    if (responseJson.title) errorTitle = responseJson.title;
                     if (responseJson.errors) {
                         errorTitle = 'Dữ liệu không hợp lệ';
                         errorMsg = "Vui lòng kiểm tra lại thông tin:<br/>";
                         for (const key in responseJson.errors) {
-                            const fieldName = key.charAt(0).toUpperCase() + key.slice(1); // Viết hoa chữ cái đầu của tên trường
+                            const fieldName = key.charAt(0).toUpperCase() + key.slice(1);
                             errorMsg += `<b>${fieldName}:</b> ${responseJson.errors[key].join(', ')}<br/>`;
                         }
                     }
                 }
-            } catch (e) { /* Không phải JSON, sử dụng thông báo mặc định dựa trên status code */ }
+            } catch (e) { /* Fallback */ }
 
-            // Cập nhật tiêu đề lỗi dựa trên status code
             if (xhr.status === 400 && errorTitle === 'Lỗi hệ thống') errorTitle = 'Dữ liệu không hợp lệ';
             else if (xhr.status === 401) errorTitle = 'Chưa xác thực';
             else if (xhr.status === 403) errorTitle = 'Không có quyền';
@@ -1072,79 +1024,70 @@
             else if (xhr.status === 409) errorTitle = 'Xung đột dữ liệu';
             else if (xhr.status >= 500) errorTitle = 'Lỗi máy chủ';
 
-            showErrorAlert(errorTitle, errorMsg); // Hiển thị thông báo lỗi
-            return { title: errorTitle, message: errorMsg }; // Trả về đối tượng lỗi
+            showErrorAlert(errorTitle, errorMsg);
+            return { title: errorTitle, message: errorMsg };
         }
 
         function debounce(func, delay) {
-            let timer; // Biến lưu trữ timer
-            // Trả về một hàm mới
+            let timer;
             return function (...args) {
-                clearTimeout(timer); // Xóa timer cũ nếu có
-                // Đặt timer mới để thực thi hàm func sau khoảng delay
+                clearTimeout(timer);
                 timer = setTimeout(() => func.apply(this, args), delay);
             };
         }
 
-        // =============== HÀM PHÂN TRANG TÙY CHỈNH (CUSTOM PAGINATION) ===============
         function updateCustomPagination(tableInstance, paginationListSelector, pageInfoSelector) {
             if (!tableInstance) { console.warn("updateCustomPagination: tableInstance is null or undefined."); return; }
-            const pageInfo = tableInstance.page.info(); // Lấy thông tin trang hiện tại của DataTable
-            const $paginationList = $(paginationListSelector); // jQuery object cho danh sách ul phân trang
-            const $pageInfoSpan = $(pageInfoSelector);     // jQuery object cho phần tử hiển thị thông tin trang
-            const $paginationNav = $paginationList.closest('nav'); // jQuery object cho thẻ nav chứa phân trang
+            const pageInfo = tableInstance.page.info();
+            const $paginationList = $(paginationListSelector);
+            const $pageInfoSpan = $(pageInfoSelector);
+            const $paginationNav = $paginationList.closest('nav');
 
-            $paginationList.find('.page-item.page-number').remove(); // Xóa các nút số trang cũ
-            $pageInfoSpan.hide().empty(); // Ẩn và xóa nội dung thông tin trang cũ
-            $paginationNav.hide(); // Ẩn thanh điều hướng phân trang
+            $paginationList.find('.page-item.page-number').remove();
+            $pageInfoSpan.hide().empty();
+            $paginationNav.hide();
 
-            // Nếu có dữ liệu để hiển thị
             if (pageInfo.recordsDisplay > 0) {
-                $paginationNav.show(); // Hiện thanh điều hướng
-                const startRecord = pageInfo.start + 1; // Bản ghi bắt đầu
-                const endRecord = pageInfo.end;         // Bản ghi kết thúc
-                const totalRecords = pageInfo.recordsDisplay; // Tổng số bản ghi (đã lọc)
-                const totalRecordsUnfiltered = pageInfo.recordsTotal; // Tổng số bản ghi (chưa lọc)
+                $paginationNav.show();
+                const startRecord = pageInfo.start + 1;
+                const endRecord = pageInfo.end;
+                const totalRecords = pageInfo.recordsDisplay;
+                const totalRecordsUnfiltered = pageInfo.recordsTotal;
 
-                // Tạo chuỗi thông tin trang
                 let infoText = `Hiện ${startRecord.toLocaleString('vi-VN')}-${endRecord.toLocaleString('vi-VN')} / ${totalRecords.toLocaleString('vi-VN')} mục`;
                 if (totalRecords !== totalRecordsUnfiltered) {
                     infoText += ` (lọc từ ${totalRecordsUnfiltered.toLocaleString('vi-VN')} mục)`;
                 }
-                $pageInfoSpan.html(infoText).show(); // Hiển thị thông tin trang
+                $pageInfoSpan.html(infoText).show();
 
-                // Nếu có nhiều hơn 1 trang
                 if (pageInfo.pages > 1) {
-                    $paginationList.find('.page-item').removeClass('disabled'); // Kích hoạt các nút First, Prev, Next, Last
-                    const currentPage = pageInfo.page; // Trang hiện tại (0-indexed)
-                    const totalPages = pageInfo.pages;   // Tổng số trang
-                    const maxPagesToShow = 5; // Số lượng nút số trang tối đa hiển thị (ví dụ: 1 ... 3 4 5 ... 10)
-                    let startPage, endPage; // Trang bắt đầu và kết thúc để hiển thị nút số
+                    $paginationList.find('.page-item').removeClass('disabled');
+                    const currentPage = pageInfo.page;
+                    const totalPages = pageInfo.pages;
+                    const maxPagesToShow = 5;
+                    let startPage, endPage;
 
-                    // Xác định startPage và endPage
                     if (totalPages <= maxPagesToShow) {
                         startPage = 0;
                         endPage = totalPages - 1;
                     } else {
-                        const pagesBefore = Math.floor((maxPagesToShow - 3) / 2); // Số trang trước trang hiện tại (-3 cho first, last, và dấu '...')
-                        const pagesAfter = Math.ceil((maxPagesToShow - 3) / 2);  // Số trang sau trang hiện tại
+                        const pagesBefore = Math.floor((maxPagesToShow - 3) / 2);
+                        const pagesAfter = Math.ceil((maxPagesToShow - 3) / 2);
 
-                        if (currentPage <= pagesBefore + 1) { // Gần đầu
+                        if (currentPage <= pagesBefore + 1) {
                             startPage = 0;
                             endPage = maxPagesToShow - 2;
-                        } else if (currentPage + pagesAfter >= totalPages - 2) { // Gần cuối
+                        } else if (currentPage + pagesAfter >= totalPages - 2) {
                             startPage = totalPages - (maxPagesToShow - 1);
                             endPage = totalPages - 1;
-                        } else { // Ở giữa
+                        } else {
                             startPage = currentPage - pagesBefore;
                             endPage = currentPage + pagesAfter;
                         }
                     }
-                    // Lấy các nút Previous và Next
                     const prevButton = $paginationList.find('.page-item:has(.page-link:contains("<"))');
                     const nextButton = $paginationList.find('.page-item:has(.page-link:contains(">"))');
 
-                    // Thêm nút trang đầu và dấu '...' nếu cần
                     if (startPage > 0) {
                         const firstPageLink = $(`<li class="page-item page-number"><a class="page-link" href="#">1</a></li>`);
                         firstPageLink.insertBefore(nextButton);
@@ -1152,13 +1095,11 @@
                             $('<li class="page-item disabled page-number"><span class="page-link">...</span></li>').insertBefore(nextButton);
                         }
                     }
-                    // Thêm các nút số trang
                     for (let i = startPage; i <= endPage; i++) {
                         const pageNum = i + 1;
                         const $pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`);
                         $pageItem.insertBefore(nextButton);
                     }
-                    // Thêm nút trang cuối và dấu '...' nếu cần
                     if (endPage < totalPages - 1) {
                         if (endPage < totalPages - 2) {
                             $('<li class="page-item disabled page-number"><span class="page-link">...</span></li>').insertBefore(nextButton);
@@ -1166,214 +1107,182 @@
                         const lastPageLink = $(`<li class="page-item page-number"><a class="page-link" href="#">${totalPages}</a></li>`);
                         lastPageLink.insertBefore(nextButton);
                     }
-                    // Cập nhật trạng thái disabled cho các nút First, Prev, Next, Last
                     $paginationList.find('.page-item[id*="FirstPage"]').toggleClass('disabled', currentPage === 0);
                     prevButton.toggleClass('disabled', currentPage === 0);
                     nextButton.toggleClass('disabled', currentPage >= totalPages - 1);
                     $paginationList.find('.page-item[id*="LastPage"]').toggleClass('disabled', currentPage >= totalPages - 1);
-                } else { // Chỉ có 1 trang
+                } else {
                     $paginationList.find('.page-item').addClass('disabled');
                 }
-            } else { // Không có bản ghi nào
+            } else {
                 $pageInfoSpan.text("(Không có mục nào)").show();
                 $paginationNav.hide();
             }
         }
 
         function setupCustomPaginationEvents(tableInstance, paginationListSelector) {
-            const $paginationNav = $(paginationListSelector).parent('nav'); // Lấy thẻ nav cha
-            // Gỡ bỏ sự kiện click cũ và gán sự kiện mới để tránh gán nhiều lần
+            const $paginationNav = $(paginationListSelector).parent('nav');
             $paginationNav.off('click', 'a.page-link').on('click', 'a.page-link', function (e) {
-                e.preventDefault(); // Ngăn hành động mặc định của thẻ a
-                const $parentLi = $(this).closest('.page-item'); // Lấy thẻ li cha
-                // Nếu nút bị disabled hoặc active, hoặc tableInstance không tồn tại thì không làm gì
+                e.preventDefault();
+                const $parentLi = $(this).closest('.page-item');
                 if ($parentLi.hasClass('disabled') || $parentLi.hasClass('active') || !tableInstance) { return; }
 
-                const parentId = $parentLi.attr('id'); // Lấy ID của thẻ li (nếu có, cho First/Prev/Next/Last)
-                const pageNumText = $(this).text(); // Lấy text của nút (số trang)
+                const parentId = $parentLi.attr('id');
+                const pageNumText = $(this).text();
 
-                // Điều hướng DataTable đến trang tương ứng
                 if (parentId && parentId.includes('FirstPage')) { tableInstance.page('first').draw('page'); }
                 else if (parentId && parentId.includes('PrevPage')) { tableInstance.page('previous').draw('page'); }
                 else if (parentId && parentId.includes('NextPage')) { tableInstance.page('next').draw('page'); }
                 else if (parentId && parentId.includes('LastPage')) { tableInstance.page('last').draw('page'); }
-                else if (!isNaN(parseInt(pageNumText))) { tableInstance.page(parseInt(pageNumText) - 1).draw('page'); } // Chuyển đến số trang (0-indexed)
+                else if (!isNaN(parseInt(pageNumText))) { tableInstance.page(parseInt(pageNumText) - 1).draw('page'); }
             });
         }
 
-        // =============== CẤU HÌNH VALIDATION MẶC ĐỊNH (JQUERY VALIDATION) ===============
         if ($.validator) {
             $.validator.setDefaults({
-                errorElement: 'div', // Phần tử hiển thị lỗi
-                errorClass: 'invalid-feedback d-block', // Class cho thông báo lỗi (d-block để luôn hiển thị)
-                // Hàm highlight khi trường không hợp lệ
+                errorElement: 'div',
+                errorClass: 'invalid-feedback d-block',
                 highlight: function (element, errorClass, validClass) {
                     $(element).addClass('is-invalid').removeClass('is-valid');
-                    // Xử lý riêng cho Select2
                     if ($(element).hasClass('select2-hidden-accessible')) {
                         $(element).next('.select2-container').find('.select2-selection').addClass('is-invalid').removeClass('is-valid');
                     }
                 },
-                // Hàm unhighlight khi trường hợp lệ
                 unhighlight: function (element, errorClass, validClass) {
                     $(element).removeClass('is-invalid');
-                    // Chỉ thêm 'is-valid' nếu trường có giá trị hoặc là trường bắt buộc (để tránh hiện valid cho trường trống không bắt buộc)
                     if ($(element).val() || $(element).prop('required')) {
                         $(element).addClass('is-valid');
                     }
-                    // Xử lý riêng cho Select2
                     if ($(element).hasClass('select2-hidden-accessible')) {
                         const $selection = $(element).next('.select2-container').find('.select2-selection');
                         $selection.removeClass('is-invalid');
-                        if ($(element).val()) { // Thêm is-valid nếu select2 có giá trị
+                        if ($(element).val()) {
                             $selection.addClass('is-valid');
                         }
                     }
                 },
-                // Hàm success khi trường đã valid
                 success: function (label, element) {
-                    $(element).addClass('is-valid'); // Thêm class is-valid
+                    $(element).addClass('is-valid');
                     if ($(element).hasClass('select2-hidden-accessible')) {
                         $(element).next('.select2-container').find('.select2-selection').addClass('is-valid');
                     }
-                    label.remove(); // Xóa label lỗi (nếu có)
+                    label.remove();
                 },
-                // Hàm đặt vị trí hiển thị lỗi
                 errorPlacement: function (error, element) {
                     if (element.parent().hasClass('input-group') || element.parent().hasClass('form-floating')) {
                         error.insertAfter(element.parent());
                     } else if (element.hasClass('select2-hidden-accessible')) {
-                        error.insertAfter(element.next('.select2-container')); // Đặt lỗi sau container của Select2
+                        error.insertAfter(element.next('.select2-container'));
                     }
                     else {
-                        error.insertAfter(element); // Mặc định đặt lỗi sau element
+                        error.insertAfter(element);
                     }
                 }
             });
         }
 
-        // =============== KHỞI TẠO CHUNG KHI TRANG SẴN SÀNG (DOCUMENT READY) ===============
         $(document).ready(function () {
-            // Khởi tạo Flatpickr cho các input ngày
+
             flatpickr('.flatpickr-input', { dateFormat: 'd/m/Y', locale: 'vn', allowInput: true });
             flatpickr('.flatpickr-input-report', { dateFormat: 'd/m/Y', locale: 'vn', allowInput: true, monthSelectorType: 'static' });
 
-            // Khởi tạo Select2 cho các dropdown dùng chung class 'select2-custom'
             $('.select2-custom').each(function () {
                 $(this).select2({
-                    theme: "bootstrap-5", // Sử dụng theme Bootstrap 5
-                    width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style', // Độ rộng
-                    placeholder: $(this).data('placeholder') || "-- Chọn --", // Placeholder
-                    allowClear: true, // Cho phép xóa lựa chọn
-                    // Đặt dropdownParent để Select2 hiển thị đúng trong modal (nếu có)
+                    theme: "bootstrap-5",
+                    width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
+                    placeholder: $(this).data('placeholder') || "-- Chọn --",
+                    allowClear: true,
                     dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : $(document.body)
                 });
             });
 
-            // Khởi tạo Select2 cho bộ lọc Nguyên vật liệu trong tab Lịch sử Giao dịch
             $('#historyIngredientFilterId').select2({
                 theme: "bootstrap-5",
                 placeholder: 'Lọc theo NVL',
                 allowClear: true,
                 width: '100%',
-                ajax: { // Sử dụng AJAX để tải danh sách NVL
-                    url: '@Url.Action("GetIngredientsForDropdown", "Inventory")', // Action trả về danh sách NVL
+                ajax: {
+                    url: '@Url.Action("GetIngredientsForDropdown", "Inventory")',
                     dataType: 'json',
-                    delay: 250, // Độ trễ trước khi gửi request
-                    data: function (params) { return { searchTerm: params.term }; }, // Gửi từ khóa tìm kiếm
-                    processResults: function (data) { return { results: data.map(item => ({ id: item.id, text: item.text })) }; }, // Xử lý kết quả trả về
-                    cache: true // Cache kết quả
+                    delay: 250,
+                    data: function (params) { return { searchTerm: params.term }; },
+                    processResults: function (data) { return { results: data.map(item => ({ id: item.id, text: item.text })) }; },
+                    cache: true
                 }
             });
 
-            // Hàm tải danh sách Đơn vị tính cho modal Nguyên vật liệu
             function loadUnitsOfMeasure() {
                 $.ajax({
                     url: '@Url.Action("GetUnitsOfMeasureForDropdown", "Inventory")', type: 'GET',
                     success: function (units) {
                         const $select = $('#ingredientUnitOfMeasure');
-                        const currentValue = $select.val(); // Lưu giá trị hiện tại (nếu đang sửa)
-                        $select.empty().append($('<option>', { value: '', text: '-- Chọn ĐVT --' })); // Xóa và thêm option mặc định
-                        units.forEach(unit => { // Thêm các option ĐVT
+                        const currentValue = $select.val();
+                        $select.empty().append($('<option>', { value: '', text: '-- Chọn ĐVT --' }));
+                        units.forEach(unit => {
                             $select.append($('<option>', { value: unit.id, text: unit.text }));
                         });
-                        if (currentValue) $select.val(currentValue); // Khôi phục giá trị nếu có
+                        if (currentValue) $select.val(currentValue);
                     },
                     error: function (xhr) { showErrorAlert('Lỗi tải ĐVT', 'Không thể tải danh sách đơn vị tính.'); }
                 });
             }
-            loadUnitsOfMeasure(); // Gọi hàm khi trang tải xong
+            loadUnitsOfMeasure();
 
-            // =============== KHỞI TẠO DATA TABLES ===============
-            let ingredientsTable = null; // Bảng Nguyên vật liệu
-            let suppliersTable = null;   // Bảng Nhà cung cấp
-            let transactionsHistoryTable = null; // Bảng Lịch sử giao dịch
+            let ingredientsTable = null;
+            let suppliersTable = null;
+            let transactionsHistoryTable = null;
 
-            // --- Bảng Nguyên vật liệu ---
             try {
                 ingredientsTable = $('#ingredientsTable').DataTable({
-                    language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" }, // Ngôn ngữ Việt hóa
-                    processing: false, // Tắt indicator xử lý mặc định của DataTable (dùng custom)
-                    serverSide: true,  // Xử lý dữ liệu phía server
-                    searching: false,  // Tắt ô tìm kiếm mặc định (dùng custom)
-                    lengthChange: false, // Tắt dropdown chọn số lượng hiển thị (dùng custom)
-                    paging: true,      // Bật phân trang
-                    pageLength: parseInt($('#ingredientsTableLength').val()) || 10, // Số lượng mục mỗi trang
-                    info: false,       // Tắt thông tin "Showing x to y of z entries" (dùng custom)
-                    ajax: { // Cấu hình AJAX
+                    language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
+                    processing: false, serverSide: true, searching: false, lengthChange: false,
+                    paging: true, pageLength: parseInt($('#ingredientsTableLength').val()) || 10, info: false,
+                    ajax: {
                         url: '@Url.Action("GetIngredients", "Inventory")', type: 'POST',
-                        data: function (d) { // Hàm gửi thêm tham số lên server
+                        data: function (d) {
                             d.length = parseInt($('#ingredientsTableLength').val()) || 10;
-                            d.search.value = $('#ingredientSearch').val(); // Lấy giá trị từ ô tìm kiếm custom
+                            d.search.value = $('#ingredientSearch').val();
                             return d;
                         },
-                        beforeSend: function () { $('#ingredientsTable_processing').show(); }, // Hiện indicator loading custom
-                        complete: function () { $('#ingredientsTable_processing').hide(); }, // Ẩn indicator
+                        beforeSend: function () { $('#ingredientsTable_processing').show(); },
+                        complete: function () { $('#ingredientsTable_processing').hide(); },
                         error: function (xhr) { handleAjaxError(xhr, 'tải danh sách nguyên vật liệu'); $('#ingredientsTable_processing').hide(); }
                     },
-                    columns: [ // Định nghĩa các cột
+                    columns: [
                         { data: null, name: "STT", orderable: false, searchable: false, className: "text-center", render: function (data, type, row, meta) { return meta.settings._iDisplayStart + meta.row + 1; } },
                         { data: 'name', name: 'Name', render: function (data, type, row) { return data ? `<span class="dt-col-120-row-2" title="${row.name}">${row.name}</span>` : '-'; } },
-                        { data: 'description', name: 'Description', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-180-row-2" title="${row.description}">${row.description}</span>` : '-'; } },
+                        { data: 'description', name: 'Description', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-120-row-2" title="${row.description}">${row.description}</span>` : '-'; } },
                         { data: 'unitOfMeasure', name: 'UnitOfMeasure' },
                         { data: 'currentStockLevel', name: 'CurrentStockLevel', className: 'text-end', render: function (data) { return formatVnDynamicDecimal(data, 3); } },
                         { data: 'minimumStockLevel', name: 'MinimumStockLevel', className: 'text-end', render: function (data) { return formatVnDynamicDecimal(data, 3); } },
                         { data: 'lastPurchasePrice', name: 'LastPurchasePrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
                         { data: 'isActive', name: 'IsActive', className: 'text-center', orderable: true, render: function (data, type, row) { return `<span class="badge bg-${data ? 'success' : 'danger'} action-toggle-active" data-id="${row.id}" style="cursor:pointer;">${data ? 'Hoạt động' : 'Ngưng'}</span>`; } },
-                        { data: 'updatedAt', name: 'UpdatedAt' }, // Cột để sắp xếp mặc định
+                        { data: 'updatedAt', name: 'UpdatedAt' },
                         { data: 'id', name: 'Actions', orderable: false, searchable: false, className: 'text-center dt-no-wrap', render: function (data) { return `<button class="btn btn-sm btn-info me-1 btn-edit-ingredient" data-id="${data}" title="Sửa"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-danger btn-delete-ingredient" data-id="${data}" title="Xóa"><i class="bi bi-trash-fill"></i></button>`; } }
                     ],
-                    columnDefs: [ // Định nghĩa thêm cho cột
-                        { targets: [0], width: '40px' }, // Độ rộng cột STT
-                        { targets: [8], width: '120px' }, // Cột Cập nhật
-                        { targets: [9], width: '90px' }  // Cột Hành động
+                    columnDefs: [
+                        { targets: [0], width: '40px' },
+                        { targets: [8], width: '120px' },
+                        { targets: [9], width: '90px' }
                     ],
-                    order: [[8, 'desc']], // Sắp xếp mặc định theo cột UpdatedAt (index 8) giảm dần
-                    autoWidth: false, // Tắt tự động tính độ rộng cột
-                    dom: 'rt', // Chỉ hiển thị table và processing indicator (loại bỏ các control mặc định)
-                    // Callback sau mỗi lần vẽ lại bảng
+                    order: [[8, 'desc']], autoWidth: false, dom: 'rt',
                     drawCallback: function (settings) {
-                        updateCustomPagination(this.api(), '#customPaginationIngredients', '#ingredientsTableInfo'); // Cập nhật phân trang custom
-                        // Xử lý Tooltip cho bảng Ingredients
+                        updateCustomPagination(this.api(), '#customPaginationIngredients', '#ingredientsTableInfo');
                         var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#ingredientsTable [title]'));
                         tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
                             var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
                             if (existingTooltip) {
-                                existingTooltip.dispose(); // Hủy tooltip cũ nếu có
+                                existingTooltip.dispose();
                             }
-                            new bootstrap.Tooltip(tooltipTriggerEl); // Khởi tạo tooltip mới trực tiếp trên element
+                            new bootstrap.Tooltip(tooltipTriggerEl);
                         });
                     }
                 });
-                // Sự kiện cho dropdown chọn số lượng hiển thị
                 $('#ingredientsTableLength').on('change', function () { ingredientsTable.page.len(parseInt($(this).val()) || 10).draw(); });
-                // Sự kiện cho ô tìm kiếm custom (với debounce)
                 $('#ingredientSearch').on('keyup', debounce(function () { ingredientsTable.search($(this).val()).draw(); }, 350));
-                // Thiết lập sự kiện cho phân trang custom
                 setupCustomPaginationEvents(ingredientsTable, '#customPaginationIngredients');
             } catch (e) { console.error("Lỗi khởi tạo Ingredients DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Nguyên vật liệu."); }
 
-            // --- Bảng Nhà cung cấp ---
             try {
                 suppliersTable = $('#suppliersTable').DataTable({
                     language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
@@ -1404,7 +1313,6 @@
                     order: [[6, 'desc']], autoWidth: false, dom: 'rt',
                     drawCallback: function (settings) {
                         updateCustomPagination(this.api(), '#customPaginationSuppliers', '#suppliersTableInfo');
-                        // Xử lý Tooltip cho bảng Suppliers
                         var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#suppliersTable [title]'));
                         tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
                             var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
@@ -1420,8 +1328,6 @@
                 setupCustomPaginationEvents(suppliersTable, '#customPaginationSuppliers');
             } catch (e) { console.error("Lỗi khởi tạo Suppliers DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Nhà cung cấp."); }
 
-
-            // --- Bảng Lịch sử Giao dịch ---
             try {
                 transactionsHistoryTable = $('#transactionsHistoryTable').DataTable({
                     language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
@@ -1429,7 +1335,7 @@
                     paging: true, pageLength: parseInt($('#transactionsHistoryTableLength').val()) || 10, info: false,
                     ajax: {
                         url: '@Url.Action("GetInventoryTransactions", "Inventory")', type: 'POST',
-                        data: function (d) { // Gửi các tham số lọc custom
+                        data: function (d) {
                             d.length = parseInt($('#transactionsHistoryTableLength').val()) || 10;
                             d.fromDate = $('#historyFromDate').val();
                             d.toDate = $('#historyToDate').val();
@@ -1447,19 +1353,18 @@
                         { data: 'transactionDate', name: 'TransactionDate' },
                         { data: 'ingredientName', name: 'IngredientName', render: function (data, type, row) { return `<span class="dt-col-120-row-2" title="${row.ingredientName}">${data || '-'}</span>` } },
                         { data: 'transactionTypeDisplay', name: 'TransactionType', render: function (data, type, row) { return `<span class="dt-col-120-row-2" title="${row.transactionTypeDisplay}">${data || '-'}</span>` } },
-                        { data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) { return formatVnDynamicDecimal(data, 4); } }, // Cho phép 4 chữ số thập phân cho số lượng
+                        { data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) { return formatVnDynamicDecimal(data, 4); } },
                         { data: 'ingredientUnit', name: 'IngredientUnit', orderable: false, searchable: false, render: function (data) { return data || ''; } },
                         { data: 'unitPrice', name: 'UnitPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
                         { data: 'totalPrice', name: 'TotalPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
-                        { data: 'supplierName', name: 'SupplierName', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-100-row-2" title="${row.supplierName}">${data}</span>` : '-'; } },
-                        { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data || '-'; } },
+                        { data: 'supplierName', name: 'SupplierName', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-120-row-2" title="${row.supplierName}">${data}</span>` : '-'; } },
+                        { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data ? `<span class="dt-col-120-row-2" title="">${data}</span>` : '-'; } },
                         { data: 'notes', name: 'Notes', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-180-row-3" title="${row.notes}">${data}</span>` : '-'; } }
                     ],
-                    columnDefs: [{ targets: [0], width: '40px' }, { targets: [10], width: '150px' }], // Cột Ghi chú
-                    order: [[1, 'desc']], autoWidth: false, dom: 'rt', // Sắp xếp theo Ngày GD giảm dần
+                    columnDefs: [{ targets: [0], width: '40px' }, { targets: [10], width: '150px' }],
+                    order: [[1, 'desc']], autoWidth: false, dom: 'rt',
                     drawCallback: function (settings) {
                         updateCustomPagination(this.api(), '#customPaginationTransactions', '#transactionsHistoryTableInfo');
-                        // Xử lý Tooltip cho bảng Transactions History
                         var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#transactionsHistoryTable [title]'));
                         tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
                             var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
@@ -1470,7 +1375,6 @@
                         });
                     }
                 });
-                // Sự kiện cho các control lọc của bảng Lịch sử giao dịch
                 $('#transactionsHistoryTableLength').on('change', function () { transactionsHistoryTable.page.len(parseInt($(this).val()) || 10).draw(); });
                 $('#historyFromDate, #historyToDate, #historyTransactionTypeFilter, #historyIngredientFilterId').on('change', function () { transactionsHistoryTable.draw(); });
                 $('#transactionHistorySearch').on('keyup', debounce(function () { transactionsHistoryTable.search($(this).val()).draw(); }, 350));
@@ -1479,83 +1383,75 @@
             } catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
 
 
-            // =============== LOGIC TAB NGUYÊN VẬT LIỆU (INGREDIENTS CRUD) ===============
-            // Mở modal Thêm mới Nguyên vật liệu
             $('#btnAddIngredient').on('click', function () {
-                $('#ingredientForm')[0].reset(); // Reset form
-                $('#ingredientId').val('');      // Xóa ID (quan trọng cho việc phân biệt thêm mới/cập nhật)
-                $('#ingredientModalLabel').text('Thêm Nguyên vật liệu'); // Đặt tiêu đề modal
-                $('#ingredientIsActive').prop('checked', true);       // Mặc định là hoạt động
-                $('#ingredientUnitOfMeasure').val('').trigger('change'); // Reset Select2 ĐVT
-                $('#ingredientCurrentStockLevelDisplay').text('N/A'); // Reset hiển thị tồn kho
-                $('#ingredientLastPurchasePriceDisplay').text('N/A'); // Reset hiển thị giá nhập cuối
-                $('#ingredientForm').validate().resetForm(); // Reset trạng thái validation của form
-                $('.is-invalid').removeClass('is-invalid');   // Xóa class lỗi
-                $('.is-valid').removeClass('is-valid');     // Xóa class thành công
+                $('#ingredientForm')[0].reset();
+                $('#ingredientId').val('');
+                $('#ingredientModalLabel').text('Thêm Nguyên vật liệu');
+                $('#ingredientIsActive').prop('checked', true);
+                $('#ingredientUnitOfMeasure').val('').trigger('change');
+                $('#ingredientCurrentStockLevelDisplay').text('N/A');
+                $('#ingredientLastPurchasePriceDisplay').text('N/A');
+                $('#ingredientForm').validate().resetForm();
+                $('.is-invalid').removeClass('is-invalid');
+                $('.is-valid').removeClass('is-valid');
                 var ingredientModal = new bootstrap.Modal(document.getElementById('ingredientModal'));
-                ingredientModal.show(); // Hiển thị modal
+                ingredientModal.show();
             });
 
-            // Mở modal Sửa Nguyên vật liệu khi click nút Sửa trên bảng
             $('#ingredientsTable tbody').on('click', '.btn-edit-ingredient', function () {
-                const id = $(this).data('id'); // Lấy ID từ data attribute
+                const id = $(this).data('id');
                 if (!id) { showErrorAlert("Lỗi", "Không tìm thấy ID nguyên vật liệu."); return; }
-                showLoading('#ingredientModal .modal-body'); // Hiển thị loading trong modal
+                showLoading('#ingredientModal .modal-body');
                 $.ajax({
                     url: `@Url.Action("GetIngredient", "Inventory")/${id}`, type: 'GET',
                     success: function (response) {
                         if (response.success) {
-                            const data = response.data; // Dữ liệu NVL từ server
-                            // Điền dữ liệu vào form
+                            const data = response.data;
                             $('#ingredientId').val(data.id);
                             $('#ingredientName').val(data.name);
-                            $('#ingredientUnitOfMeasure').val(data.unitOfMeasure).trigger('change'); // Trigger change cho Select2
+                            $('#ingredientUnitOfMeasure').val(data.unitOfMeasure).trigger('change');
                             $('#ingredientMinimumStockLevel').val(data.minimumStockLevel !== null ? data.minimumStockLevel : '');
                             $('#ingredientDescription').val(data.description);
                             $('#ingredientIsActive').prop('checked', data.isActive);
                             $('#ingredientCurrentStockLevelDisplay').text(formatVnDynamicDecimal(data.currentStockLevel, 3) + ` ${data.unitOfMeasure || ''}`);
                             $('#ingredientLastPurchasePriceDisplay').text(formatVnCurrency(data.lastPurchasePrice));
-                            $('#ingredientModalLabel').text('Cập nhật Nguyên vật liệu'); // Cập nhật tiêu đề modal
+                            $('#ingredientModalLabel').text('Cập nhật Nguyên vật liệu');
                             $('#ingredientForm').validate().resetForm();
                             $('.is-invalid').removeClass('is-invalid');
                             $('.is-valid').removeClass('is-valid');
                             var ingredientModal = new bootstrap.Modal(document.getElementById('ingredientModal'));
                             ingredientModal.show();
                         } else { showErrorAlert('Lỗi tải dữ liệu', response.message || "Không thể tải chi tiết nguyên vật liệu."); }
-                        hideLoading('#ingredientModal .modal-body'); // Ẩn loading
+                        hideLoading('#ingredientModal .modal-body');
                     },
                     error: function (xhr) { handleAjaxError(xhr, 'lấy thông tin nguyên vật liệu'); hideLoading('#ingredientModal .modal-body'); }
                 });
             });
 
-            // Lưu Nguyên vật liệu (Thêm mới hoặc Cập nhật)
             $('#btnSaveIngredient').on('click', function () {
-                if (!$('#ingredientForm').valid()) { // Kiểm tra form hợp lệ
-                    // Validator sẽ tự hiển thị lỗi, không cần showErrorAlert ở đây trừ khi muốn thông báo chung
+                if (!$('#ingredientForm').valid()) {
                     return;
                 }
-                // Lấy dữ liệu từ form
                 const data = {
-                    Id: $('#ingredientId').val() ? parseInt($('#ingredientId').val()) : 0, // Nếu có ID là cập nhật, không thì là 0 (thêm mới)
+                    Id: $('#ingredientId').val() ? parseInt($('#ingredientId').val()) : 0,
                     Name: $('#ingredientName').val().trim(),
                     UnitOfMeasure: $('#ingredientUnitOfMeasure').val(),
                     MinimumStockLevel: $('#ingredientMinimumStockLevel').val() ? parseFloat($('#ingredientMinimumStockLevel').val()) : null,
                     Description: $('#ingredientDescription').val().trim(),
                     IsActive: $('#ingredientIsActive').is(':checked')
                 };
-                const url = data.Id ? '@Url.Action("UpdateIngredient", "Inventory")' : '@Url.Action("CreateIngredient", "Inventory")'; // URL tương ứng
+                const url = data.Id ? '@Url.Action("UpdateIngredient", "Inventory")' : '@Url.Action("CreateIngredient", "Inventory")';
                 const actionText = data.Id ? 'cập nhật nguyên vật liệu' : 'thêm nguyên vật liệu';
-                showLoading('#ingredientModal .modal-content'); // Hiển thị loading cho toàn modal
+                showLoading('#ingredientModal .modal-content');
                 $.ajax({
-                    url: url, type: 'POST', contentType: 'application/json', data: JSON.stringify(data), // Gửi dữ liệu JSON
+                    url: url, type: 'POST', contentType: 'application/json', data: JSON.stringify(data),
                     success: function (response) {
                         hideLoading('#ingredientModal .modal-content');
                         if (response.success) {
-                            showSuccessToast(response.message); // Thông báo thành công
-                            bootstrap.Modal.getInstance(document.getElementById('ingredientModal')).hide(); // Đóng modal
-                            if (ingredientsTable) ingredientsTable.draw(false); // Vẽ lại bảng (false để giữ nguyên trang hiện tại)
+                            showSuccessToast(response.message);
+                            bootstrap.Modal.getInstance(document.getElementById('ingredientModal')).hide();
+                            if (ingredientsTable) ingredientsTable.draw(false);
                         } else {
-                            // Nếu server trả về lỗi (ví dụ: trùng tên)
                             if (response.errors) { handleAjaxError({ responseText: JSON.stringify(response), status: 400 }, actionText); }
                             else { showErrorAlert('Lỗi lưu', response.message || "Có lỗi xảy ra khi lưu."); }
                         }
@@ -1564,18 +1460,16 @@
                 });
             });
 
-            // Xóa (mềm) Nguyên vật liệu
             $('#ingredientsTable tbody').on('click', '.btn-delete-ingredient', function () {
                 const id = $(this).data('id');
                 if (!id) { showErrorAlert("Lỗi", "Không tìm thấy ID nguyên vật liệu."); return; }
-                let ingredientName = "đang chọn"; // Tên NVL mặc định nếu không lấy được từ bảng
-                const $row = $(this).closest('tr'); // Lấy dòng hiện tại
-                if ($row.length > 0 && window.ingredientsTable) { // Kiểm tra có bảng và dòng
-                    const rowData = ingredientsTable.row($row).data(); // Lấy dữ liệu của dòng
-                    ingredientName = (rowData && rowData.name) ? rowData.name : ($row.find('td:eq(1)').text() || ingredientName); // Lấy tên từ dữ liệu hoặc từ cell
+                let ingredientName = "đang chọn";
+                const $row = $(this).closest('tr');
+                if ($row.length > 0 && window.ingredientsTable) {
+                    const rowData = ingredientsTable.row($row).data();
+                    ingredientName = (rowData && rowData.name) ? rowData.name : ($row.find('td:eq(1)').text() || ingredientName);
                 }
 
-                // Sử dụng SweetAlert2 để xác nhận
                 Swal.fire({
                     title: 'Xác nhận xóa?',
                     text: `Bạn có chắc muốn xóa tạm nguyên vật liệu "${ingredientName}" không? Hành động này có thể ảnh hưởng đến các báo cáo cũ.`,
@@ -1584,37 +1478,33 @@
                     confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
                     confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Vẫn xóa',
                     cancelButtonText: '<i class="bi bi-x-lg me-1"></i>Hủy',
-                    showLoaderOnConfirm: true, // Hiển thị loading trên nút confirm khi đang xử lý
-                    // Hàm preConfirm thực hiện AJAX request
+                    showLoaderOnConfirm: true,
                     preConfirm: () => {
                         return $.ajax({ url: `@Url.Action("DeleteIngredient", "Inventory")/${id}`, type: 'POST' })
-                            .catch(xhr => { // Xử lý lỗi AJAX trong preConfirm
-                                // Hiển thị thông báo lỗi của Swal dựa trên lỗi AJAX
+                            .catch(xhr => {
                                 Swal.showValidationMessage(`Yêu cầu thất bại: ${handleAjaxError(xhr, 'xóa').message}`);
                             });
                     },
-                    allowOutsideClick: () => !Swal.isLoading() // Không cho click ra ngoài khi đang loading
-                }).then((result) => { // Xử lý kết quả từ Swal
-                    if (result.isConfirmed && result.value) { // Nếu người dùng xác nhận và preConfirm thành công (có result.value)
-                        if (result.value.success) { // Nếu server trả về success: true
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value) {
+                        if (result.value.success) {
                             showSuccessToast(result.value.message || "Xóa thành công!");
-                            if (window.ingredientsTable) ingredientsTable.draw(false); // Vẽ lại bảng
-                        } else if (result.value && result.value.message) { // Nếu server trả về success: false với message
+                            if (window.ingredientsTable) ingredientsTable.draw(false);
+                        } else if (result.value && result.value.message) {
                             showErrorAlert('Lỗi xóa', result.value.message);
                         }
-                        // Nếu preConfirm thất bại, Swal.showValidationMessage đã xử lý hiển thị lỗi
                     }
                 });
             });
 
-            // Thay đổi trạng thái Active/Inactive của Nguyên vật liệu
             $('#ingredientsTable tbody').on('click', '.action-toggle-active', function () {
                 const id = $(this).data('id');
                 if (!id) { showErrorAlert("Lỗi", "Không tìm thấy ID nguyên vật liệu."); return; }
 
-                const $badge = $(this); // Badge đang được click
-                const isActive = $badge.hasClass('bg-success'); // Kiểm tra trạng thái hiện tại
-                const actionText = isActive ? 'vô hiệu hóa' : 'kích hoạt'; // Text cho hành động
+                const $badge = $(this);
+                const isActive = $badge.hasClass('bg-success');
+                const actionText = isActive ? 'vô hiệu hóa' : 'kích hoạt';
                 let ingredientName = "NVL này";
                 const $row = $(this).closest('tr');
                 if ($row.length > 0 && window.ingredientsTable) {
@@ -1626,7 +1516,7 @@
                     title: `Xác nhận ${actionText}?`,
                     text: `Bạn có muốn ${actionText} nguyên vật liệu "${ingredientName}" không?`,
                     icon: 'question', showCancelButton: true,
-                    confirmButtonColor: isActive ? '#dc3545' : '#198754', // Màu nút confirm tùy theo hành động
+                    confirmButtonColor: isActive ? '#dc3545' : '#198754',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: `<i class="bi ${isActive ? 'bi-slash-circle-fill' : 'bi-check-circle-fill'} me-1"></i> Đồng ý`,
                     cancelButtonText: '<i class="bi bi-x-lg me-1"></i>Hủy',
@@ -1640,17 +1530,14 @@
                     if (result.isConfirmed && result.value) {
                         if (result.value.success) {
                             showSuccessToast(result.value.message || "Thay đổi trạng thái thành công!");
-                            if (ingredientsTable) ingredientsTable.draw(false); // Vẽ lại bảng
-                        } else if (result.value && result.value.message) { // Nếu server trả về success: false
+                            if (ingredientsTable) ingredientsTable.draw(false);
+                        } else if (result.value && result.value.message) {
                             showErrorAlert('Thất bại', result.value.message);
                         }
                     }
                 });
             });
 
-
-            // =============== LOGIC TAB NHÀ CUNG CẤP (SUPPLIERS CRUD) ===============
-            // Mở modal Thêm mới Nhà cung cấp
             $('#btnAddSupplier').on('click', function () {
                 $('#supplierForm')[0].reset();
                 $('#supplierId').val('');
@@ -1662,7 +1549,6 @@
                 supplierModal.show();
             });
 
-            // Mở modal Sửa Nhà cung cấp
             $('#suppliersTable tbody').on('click', '.btn-edit-supplier', function () {
                 const id = $(this).data('id');
                 if (!id) { showErrorAlert("Lỗi", "Không tìm thấy ID nhà cung cấp."); return; }
@@ -1692,10 +1578,9 @@
                 });
             });
 
-            // Lưu Nhà cung cấp
             $('#btnSaveSupplier').on('click', function () {
-                if (!$('#supplierForm').valid()) { return; } // Kiểm tra form
-                const data = { // Lấy dữ liệu
+                if (!$('#supplierForm').valid()) { return; }
+                const data = {
                     Id: $('#supplierId').val() ? parseInt($('#supplierId').val()) : 0,
                     Name: $('#supplierName').val().trim(),
                     ContactPerson: $('#supplierContactPerson').val().trim() || null,
@@ -1724,7 +1609,6 @@
                 });
             });
 
-            // Xóa Nhà cung cấp
             $('#suppliersTable tbody').on('click', '.btn-delete-supplier', function () {
                 const id = $(this).data('id');
                 if (!id) { showErrorAlert("Lỗi", "Không tìm thấy ID nhà cung cấp."); return; }
@@ -1760,15 +1644,12 @@
                 });
             });
 
-
-            // =============== LOGIC TAB TẠO PHIẾU KHO (CREATE TRANSACTION) ===============
-            // Khởi tạo Select2 cho chọn Nguyên vật liệu trong tab Tạo phiếu
             $('#transactionIngredientId').select2({
                 theme: "bootstrap-5",
                 placeholder: 'Tìm & chọn nguyên vật liệu',
                 allowClear: true,
                 width: '100%',
-                dropdownParent: $('#createTransactionTabPane'), // Đảm bảo dropdown hiển thị đúng trong tab
+                dropdownParent: $('#createTransactionTabPane'),
                 ajax: {
                     url: '@Url.Action("GetIngredientsForDropdown", "Inventory")',
                     dataType: 'json', delay: 250,
@@ -1776,26 +1657,24 @@
                     processResults: function (data) { return { results: data.map(item => ({ id: item.id, text: item.text, unit: item.unit, currentStock: item.currentStock })) }; },
                     cache: true
                 }
-            }).on('select2:select', function (e) { // Khi chọn một NVL
+            }).on('select2:select', function (e) {
                 var data = e.params.data;
                 if (data) {
-                    // Hiển thị thông tin tồn kho và đơn vị tính
                     $('#ingredientInfo').text(`Tồn: ${formatVnDynamicDecimal(data.currentStock, 3)} ${data.unit || ''}`);
                     $('#transactionIngredientUnit').text(data.unit || '');
                 } else {
                     $('#ingredientInfo').text('');
                     $('#transactionIngredientUnit').text('');
                 }
-                calculateTransactionTotalPrice(); // Tính lại thành tiền
-                $(this).valid(); // Re-validate trường này
-            }).on('select2:unselect', function (e) { // Khi bỏ chọn NVL
+                calculateTransactionTotalPrice();
+                $(this).valid();
+            }).on('select2:unselect', function (e) {
                 $('#ingredientInfo').text('');
                 $('#transactionIngredientUnit').text('');
                 calculateTransactionTotalPrice();
-                $(this).valid(); // Re-validate
+                $(this).valid();
             });
 
-            // Khởi tạo Select2 cho chọn Nhà cung cấp
             $('#transactionSupplierId').select2({
                 theme: "bootstrap-5",
                 placeholder: 'Tìm & chọn nhà cung cấp',
@@ -1809,102 +1688,93 @@
                     cache: true
                 }
             }).on('select2:select select2:unselect', function () {
-                $(this).valid(); // Re-validate khi thay đổi
+                $(this).valid();
             });
 
-            // Sự kiện khi thay đổi Loại giao dịch
             $('#transactionType').on('change', function () {
                 const type = $(this).val();
                 const $supplierContainer = $('#transactionSupplierContainer');
-                const $unitPriceContainer = $('#transactionUnitPriceContainer');
-                const $totalPriceContainer = $('#transactionTotalPriceContainer');
-                const $supplierSelect = $('#transactionSupplierId');
                 const $unitPriceInput = $('#transactionUnitPrice');
+                const $supplierSelect = $('#transactionSupplierId');
                 const validator = $('#createTransactionForm').validate();
 
-                // Reset các trường và trạng thái validation của chúng
-                const fieldsToReset = [$supplierSelect, $unitPriceInput];
-                fieldsToReset.forEach($field => {
-                    if ($field.is('select')) $field.val(null).trigger('change.select2'); else $field.val('');
+                // Hàm tiện ích để xóa trạng thái lỗi của một trường
+                const resetFieldValidation = ($field) => {
+                    if (!$field || $field.length === 0) return;
                     $field.removeClass('is-invalid is-valid');
                     if ($field.hasClass('select2-hidden-accessible')) {
                         $field.next('.select2-container').find('.select2-selection').removeClass('is-invalid is-valid');
                     }
-                    validator.errorsFor($field[0]).remove(); // Xóa thông báo lỗi cũ
-                });
+                    $field.closest('.form-label-group').find('.invalid-feedback').remove();
+                };
 
-                // Ẩn/hiện các container và cập nhật thuộc tính 'required'
-                $supplierContainer.hide(); $unitPriceContainer.hide(); $totalPriceContainer.hide();
-                $supplierSelect.prop('required', false); $unitPriceInput.prop('required', false);
-
-                if (type === 'Purchase') { // Nhập mua hàng
-                    $supplierContainer.show(); $unitPriceContainer.show(); $totalPriceContainer.show();
-                    $supplierSelect.prop('required', true); $unitPriceInput.prop('required', true);
-                } else if (type === 'InitialStock') { // Tồn kho ban đầu
-                    $unitPriceContainer.show(); $totalPriceContainer.show();
-                    $unitPriceInput.prop('required', true);
-                } else if (type === 'AdjustmentIn' || type === 'AdjustmentOut') { // Điều chỉnh tăng/giảm
-                    $unitPriceContainer.show(); $totalPriceContainer.show();
-                    // Đơn giá là tùy chọn cho điều chỉnh nhưng có thể nhập
+                // 1. Xử lý hiển thị Nhà cung cấp
+                if (type === 'Purchase') {
+                    $supplierContainer.show();
+                    $supplierSelect.prop('required', true);
+                } else {
+                    $supplierContainer.hide();
+                    $supplierSelect.prop('required', false);
+                    $supplierSelect.val(null).trigger('change.select2');
+                    resetFieldValidation($supplierSelect);
                 }
-                // Các loại khác (ví dụ: SaleConsumption) có thể có logic riêng
-                calculateTransactionTotalPrice(); // Tính lại thành tiền
-                $(this).valid(); // Re-validate trường Loại giao dịch
-            }).trigger('change'); // Kích hoạt sự kiện change lần đầu để thiết lập form
 
-            // Sự kiện khi thay đổi Số lượng hoặc Đơn giá
-            $('#transactionQuantity, #transactionUnitPrice').on('input change', calculateTransactionTotalPrice);
+                // 2. Xử lý yêu cầu bắt buộc cho Đơn giá (KHÔNG thay đổi giao diện)
+                const isUnitPriceRequired = (type === 'Purchase' || type === 'InitialStock' || type === 'AdjustmentIn' || type === 'AdjustmentOut');
+                $unitPriceInput.prop('required', isUnitPriceRequired);
+                resetFieldValidation($unitPriceInput);
 
-            // Hàm tính Thành tiền
+                // 3. Validate lại chính dropdown loại giao dịch
+                $(this).valid();
+
+            }).trigger('change');
+
             function calculateTransactionTotalPrice() {
                 const quantity = parseFloat($('#transactionQuantity').val());
                 const unitPrice = parseFloat($('#transactionUnitPrice').val());
-                const type = $('#transactionType').val(); // Lấy loại giao dịch hiện tại
                 const $totalPriceInput = $('#transactionTotalPrice');
 
-                // Chỉ tính thành tiền nếu có đủ thông tin và loại giao dịch phù hợp
-                if (!isNaN(quantity) && quantity > 0 && !isNaN(unitPrice) && unitPrice >= 0 &&
-                    ['Purchase', 'InitialStock', 'AdjustmentIn', 'AdjustmentOut'].includes(type)) {
-                    $totalPriceInput.val(Math.round(quantity * unitPrice));
+                if (!isNaN(quantity) && quantity > 0 && !isNaN(unitPrice) && unitPrice >= 0) {
+                    const total = Math.round(quantity * unitPrice);
+                    // Sử dụng hàm format tiền tệ để hiển thị đẹp hơn
+                    $totalPriceInput.val(total.toLocaleString('vi-VN') + ' đ');
                 } else {
-                    $totalPriceInput.val(''); // Xóa thành tiền nếu không đủ điều kiện
+                    $totalPriceInput.val('');
                 }
             }
 
-            // Validate form Tạo phiếu kho
+            $('#transactionQuantity, #transactionUnitPrice').on('input', function () {
+                calculateTransactionTotalPrice();
+            });
+
             $('#createTransactionForm').validate({
-                rules: { // Định nghĩa các rule
+                rules: {
                     TransactionType: { required: true },
                     IngredientId: { required: true },
                     TransactionDate: { required: true },
                     Quantity: { required: true, number: true, min: 0.0001 },
-                    UnitPrice: { // Required được đặt động bằng JS
-                        number: true, // Phải là số
-                        min: 0        // Không được âm
-                    },
-                    SupplierId: { // Required được đặt động bằng JS
-                    }
+                    UnitPrice: { number: true, min: 0 },
+                    SupplierId: {}
                 },
-                messages: { // Thông báo lỗi tương ứng
+                messages: {
                     TransactionType: "Vui lòng chọn loại giao dịch.",
                     IngredientId: "Vui lòng chọn nguyên vật liệu.",
                     TransactionDate: "Vui lòng chọn ngày giao dịch.",
                     Quantity: { required: "Vui lòng nhập số lượng.", number: "Số lượng phải là số.", min: "Số lượng phải lớn hơn 0." },
-                    UnitPrice: { number: "Đơn giá phải là số.", min: "Đơn giá không được âm." },
-                    SupplierId: "Vui lòng chọn nhà cung cấp cho phiếu nhập mua hàng."
+                    UnitPrice: { required: "Vui lòng nhập đơn giá.", number: "Đơn giá phải là số.", min: "Đơn giá không được âm." },
+                    SupplierId: "Vui lòng chọn nhà cung cấp."
                 },
-                ignore: ":hidden:not(.select2-hidden-accessible)" // Bỏ qua các trường ẩn trừ Select2
+                ignore: ":hidden:not(.select2-hidden-accessible)"
             });
 
-            // Submit form Tạo phiếu kho
             $('#createTransactionForm').on('submit', function (e) {
-                e.preventDefault(); // Ngăn submit mặc định
-                // Cập nhật lại thuộc tính 'required' cho UnitPrice và SupplierId trước khi validate
+                e.preventDefault();
+
                 const type = $('#transactionType').val();
-                $('#transactionUnitPrice').prop('required', (type === 'Purchase' || type === 'InitialStock'));
+                $('#transactionUnitPrice').prop('required', (type === 'Purchase' || type === 'InitialStock' || type === 'AdjustmentIn' || type === 'AdjustmentOut'));
                 $('#transactionSupplierId').prop('required', type === 'Purchase');
 
-                if (!$(this).valid()) { // Kiểm tra form hợp lệ
+                if (!$(this).valid()) {
                     showErrorAlert("Dữ liệu không hợp lệ", "Vui lòng kiểm tra lại các trường thông tin được đánh dấu đỏ.");
                     return;
                 }
@@ -1914,7 +1784,6 @@
                     return;
                 }
 
-                // Lấy dữ liệu từ form
                 const formData = {
                     IngredientId: parseInt($('#transactionIngredientId').val()),
                     TransactionType: $('#transactionType').val(),
@@ -1922,11 +1791,11 @@
                     UnitPrice: $('#transactionUnitPrice').val() ? parseFloat($('#transactionUnitPrice').val()) : null,
                     TotalPrice: $('#transactionTotalPrice').val() ? parseFloat($('#transactionTotalPrice').val()) : null,
                     SupplierId: $('#transactionSupplierId').val() ? parseInt($('#transactionSupplierId').val()) : null,
-                    TransactionDate: transactionDateTimeLocalValue, // Gửi dạng string, server sẽ parse
+                    TransactionDate: transactionDateTimeLocalValue,
                     Notes: $('#transactionNotes').val().trim() || null
                 };
 
-                showLoading('#createTransactionTabPane .card-body'); // Hiển thị loading
+                showLoading('#createTransactionTabPane .card-body');
                 $.ajax({
                     url: '@Url.Action("CreateInventoryTransaction", "Inventory")', type: 'POST',
                     contentType: 'application/json', data: JSON.stringify(formData),
@@ -1934,27 +1803,8 @@
                         hideLoading('#createTransactionTabPane .card-body');
                         if (response.success) {
                             showSuccessToast(response.message);
-                            $('#createTransactionForm')[0].reset(); // Reset các trường input
-                            // Đặt lại ngày giờ mặc định
-                            const now = new Date();
-                            const year = now.getFullYear();
-                            const month = String(now.getMonth() + 1).padStart(2, '0');
-                            const day = String(now.getDate()).padStart(2, '0');
-                            const hours = String(now.getHours()).padStart(2, '0');
-                            const minutes = String(now.getMinutes()).padStart(2, '0');
-                            $('#transactionDate').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+                            $('#createTransactionForm button[type="reset"]').trigger('click');
 
-                            // Reset các Select2
-                            $('#transactionIngredientId').val(null).trigger('change');
-                            $('#transactionSupplierId').val(null).trigger('change');
-                            $('#transactionType').val("").trigger('change'); // Reset và trigger để cập nhật UI
-
-                            // Reset trạng thái validation của form
-                            $('#createTransactionForm').validate().resetForm();
-                            $('.is-invalid').removeClass('is-invalid');
-                            $('.is-valid').removeClass('is-valid');
-
-                            // Vẽ lại các bảng liên quan
                             if (transactionsHistoryTable) transactionsHistoryTable.draw();
                             if (ingredientsTable) ingredientsTable.draw(false);
                         } else {
@@ -1966,43 +1816,37 @@
                 });
             });
 
-            // Sự kiện cho nút "Làm lại" trên form Tạo phiếu kho
             $('#createTransactionForm button[type="reset"]').on('click', function () {
-                setTimeout(() => { // Dùng setTimeout để đảm bảo form đã reset xong trước khi thực hiện logic
+                setTimeout(() => {
                     const now = new Date();
                     const year = now.getFullYear();
                     const month = String(now.getMonth() + 1).padStart(2, '0');
                     const day = String(now.getDate()).padStart(2, '0');
                     const hours = String(now.getHours()).padStart(2, '0');
                     const minutes = String(now.getMinutes()).padStart(2, '0');
-                    $('#transactionDate').val(`${year}-${month}-${day}T${hours}:${minutes}`); // Đặt lại ngày giờ
+                    $('#transactionDate').val(`${year}-${month}-${day}T${hours}:${minutes}`);
 
-                    // Reset các Select2 và trigger change để cập nhật UI
                     $('#transactionIngredientId').val(null).trigger('change');
                     $('#transactionSupplierId').val(null).trigger('change');
                     $('#transactionType').val("").trigger('change');
 
-                    // Xóa thông tin phụ
                     $('#ingredientInfo').text('');
                     $('#transactionIngredientUnit').text('');
-                    // Reset trạng thái validation
                     $('#createTransactionForm').validate().resetForm();
                     $('.is-invalid').removeClass('is-invalid');
                     $('.is-valid').removeClass('is-valid');
                 }, 0);
             });
 
-            // =============== LOGIC NÚT XÓA BỘ LỌC (CLEAR FILTERS) ===============
             $('.btn-clear-filters').on('click', function () {
-                const targetTableId = $(this).data('target-table'); // Lấy ID của bảng mục tiêu
+                const targetTableId = $(this).data('target-table');
                 let tableInstance = null;
                 let searchInputId = '';
 
-                // Xác định bảng và input tìm kiếm tương ứng
                 if (targetTableId === 'ingredientsTable') {
                     tableInstance = ingredientsTable;
                     searchInputId = '#ingredientSearch';
-                    $(searchInputId).val(''); // Xóa giá trị ô tìm kiếm
+                    $(searchInputId).val('');
                 } else if (targetTableId === 'suppliersTable') {
                     tableInstance = suppliersTable;
                     searchInputId = '#supplierSearch';
@@ -2011,13 +1855,11 @@
                     tableInstance = transactionsHistoryTable;
                     searchInputId = '#transactionHistorySearch';
 
-                    // Reset các bộ lọc riêng của bảng Lịch sử giao dịch
                     $('#historyFromDate').val('');
                     $('#historyToDate').val('');
-                    $('#historyTransactionTypeFilter').val('').trigger('change'); // Reset select thường
-                    $('#historyIngredientFilterId').val(null).trigger('change'); // Reset Select2
+                    $('#historyTransactionTypeFilter').val('').trigger('change');
+                    $('#historyIngredientFilterId').val(null).trigger('change');
                     $(searchInputId).val('');
-                    // Xóa giá trị của Flatpickr
                     if (document.getElementById('historyFromDate')._flatpickr) {
                         document.getElementById('historyFromDate')._flatpickr.clear();
                     }
@@ -2027,42 +1869,33 @@
                 }
 
                 if (tableInstance) {
-                    // Xóa bộ lọc tìm kiếm nội bộ của DataTable và vẽ lại bảng
                     tableInstance.search('').draw();
                 }
             });
 
-
-            // =============== LOGIC MODAL XUẤT BÁO CÁO TỒN KHO ===============
             var inventoryReportModal = new bootstrap.Modal(document.getElementById('inventoryReportModal'));
+            var previewModal = new bootstrap.Modal(document.getElementById('previewReportModal'));
 
-            // Mở modal Xuất Báo cáo
             $('#btnOpenInventoryReportModal').on('click', function () {
-                $('#inventoryReportForm')[0].reset(); // Reset form
-                // Đặt ngày mặc định cho báo cáo (ví dụ: từ đầu tháng đến ngày hiện tại)
+                $('#inventoryReportForm')[0].reset();
                 const today = new Date();
                 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                 if (document.getElementById('reportFromDate')._flatpickr) document.getElementById('reportFromDate')._flatpickr.setDate(firstDayOfMonth, true);
                 if (document.getElementById('reportToDate')._flatpickr) document.getElementById('reportToDate')._flatpickr.setDate(today, true);
-
-                $('#reportIngredientIds').val(null).trigger('change'); // Xóa lựa chọn NVL cũ trong Select2
-                $('#inventoryReportForm').validate().resetForm(); // Reset validation
-                $('.is-invalid').removeClass('is-invalid');
-                $('.is-valid').removeClass('is-valid');
-                inventoryReportModal.show(); // Hiển thị modal
+                $('#reportIngredientIds').val(null).trigger('change');
+                inventoryReportModal.show();
             });
 
-            // Khởi tạo Select2 cho chọn Nguyên vật liệu trong modal báo cáo
             $('#reportIngredientIds').select2({
                 theme: "bootstrap-5",
                 width: '100%',
                 placeholder: $(this).data('placeholder') || '-- Chọn NVL (để trống là tất cả) --',
                 allowClear: true,
-                dropdownParent: $('#inventoryReportModal'), // Đảm bảo dropdown hiển thị trong modal
-                ajax: { // Tải danh sách NVL bằng AJAX
-                    url: '@Url.Action("GetAllIngredientsForReportFilter", "Inventory")', // Action mới để lấy tất cả NVL
+                dropdownParent: $('#inventoryReportModal'),
+                ajax: {
+                    url: '@Url.Action("GetAllIngredientsForReportFilter", "Inventory")',
                     dataType: 'json',
-                    processResults: function (data) { // Xử lý kết quả trả về
+                    processResults: function (data) {
                         return {
                             results: data.map(item => ({ id: item.id, text: item.text }))
                         };
@@ -2071,15 +1904,14 @@
                 }
             });
 
-            // Nút "Chọn tất cả" Nguyên vật liệu
             $('#btnSelectAllIngredients').on('click', function () {
                 showLoading('#inventoryReportModal .modal-body', 'Đang tải tất cả NVL...');
                 $.ajax({
                     url: '@Url.Action("GetAllIngredientsForReportFilter", "Inventory")',
                     type: 'GET',
                     success: function (data) {
-                        const ids = data.map(item => item.id); // Lấy mảng các ID
-                        $('#reportIngredientIds').val(ids).trigger('change'); // Chọn tất cả trong Select2
+                        const ids = data.map(item => item.id);
+                        $('#reportIngredientIds').val(ids).trigger('change');
                         hideLoading('#inventoryReportModal .modal-body');
                     },
                     error: function () {
@@ -2089,64 +1921,58 @@
                 });
             });
 
-            // Nút "Bỏ chọn tất cả" Nguyên vật liệu
             $('#btnClearAllIngredients').on('click', function () {
-                $('#reportIngredientIds').val(null).trigger('change'); // Xóa lựa chọn Select2
+                $('#reportIngredientIds').val(null).trigger('change');
             });
 
-            // Các nút chọn nhanh khoảng thời gian
             $('.time-shortcut-buttons .btn').on('click', function () {
-                const range = $(this).data('range'); // Lấy loại khoảng thời gian từ data attribute
-                let fromDate, toDate = new Date(); // Mặc định toDate là ngày hiện tại
+                const range = $(this).data('range');
+                let fromDate, toDate = new Date();
 
                 const today = new Date();
                 const currentYear = today.getFullYear();
-                const currentMonth = today.getMonth(); // 0-11
-                const currentDayOfWeek = today.getDay(); // 0 (Chủ Nhật) - 6 (Thứ Bảy)
+                const currentMonth = today.getMonth();
+                const currentDayOfWeek = today.getDay();
 
                 switch (range) {
-                    case 'thisWeek': // Tuần này (Thứ 2 - Chủ Nhật)
+                    case 'thisWeek':
                         fromDate = new Date(today);
-                        // Điều chỉnh để Thứ 2 là ngày đầu tuần
                         fromDate.setDate(today.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1));
                         toDate = new Date(fromDate);
-                        toDate.setDate(fromDate.getDate() + 6); // Chủ nhật của tuần đó
+                        toDate.setDate(fromDate.getDate() + 6);
                         break;
-                    case 'thisMonth': // Tháng này
-                        fromDate = new Date(currentYear, currentMonth, 1); // Ngày đầu tháng
-                        toDate = new Date(currentYear, currentMonth + 1, 0); // Ngày cuối tháng
+                    case 'thisMonth':
+                        fromDate = new Date(currentYear, currentMonth, 1);
+                        toDate = new Date(currentYear, currentMonth + 1, 0);
                         break;
-                    case 'thisYear': // Năm này
-                        fromDate = new Date(currentYear, 0, 1);  // Ngày 1 tháng 1
-                        toDate = new Date(currentYear, 11, 31); // Ngày 31 tháng 12
+                    case 'thisYear':
+                        fromDate = new Date(currentYear, 0, 1);
+                        toDate = new Date(currentYear, 11, 31);
                         break;
-                    case 'lastWeek': // Tuần trước
+                    case 'lastWeek':
                         toDate = new Date(today);
-                        // Ngày cuối của tuần trước (Chủ nhật)
-                        toDate.setDate(today.getDate() - currentDayOfWeek - (currentDayOfWeek === 0 ? 0 : 0) + (currentDayOfWeek === 0 ? -1 : 0));
+                        toDate.setDate(today.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -7 : 0));
                         fromDate = new Date(toDate);
-                        fromDate.setDate(toDate.getDate() - 6); // Ngày đầu của tuần trước (Thứ 2)
+                        fromDate.setDate(toDate.getDate() - 6);
                         break;
-                    case 'lastMonth': // Tháng trước
-                        fromDate = new Date(currentYear, currentMonth - 1, 1); // Ngày đầu tháng trước
-                        toDate = new Date(currentYear, currentMonth, 0);    // Ngày cuối tháng trước
+                    case 'lastMonth':
+                        fromDate = new Date(currentYear, currentMonth - 1, 1);
+                        toDate = new Date(currentYear, currentMonth, 0);
                         break;
-                    case 'lastYear': // Năm trước
+                    case 'lastYear':
                         fromDate = new Date(currentYear - 1, 0, 1);
                         toDate = new Date(currentYear - 1, 11, 31);
                         break;
                 }
 
-                // Cập nhật giá trị cho Flatpickr
                 if (fromDate && document.getElementById('reportFromDate')._flatpickr) {
-                    document.getElementById('reportFromDate')._flatpickr.setDate(fromDate, true); // true để trigger event change
+                    document.getElementById('reportFromDate')._flatpickr.setDate(fromDate, true);
                 }
                 if (toDate && document.getElementById('reportToDate')._flatpickr) {
                     document.getElementById('reportToDate')._flatpickr.setDate(toDate, true);
                 }
             });
 
-            // Validate form báo cáo
             $('#inventoryReportForm').validate({
                 rules: {
                     FromDate: { required: true },
@@ -2157,7 +1983,6 @@
                     ToDate: "Vui lòng chọn ngày kết thúc."
                 },
                 errorPlacement: function (error, element) {
-                    // Đặt lỗi sau input group nếu là date picker
                     if (element.hasClass('flatpickr-input-report')) {
                         error.insertAfter(element.closest('.form-label-group'));
                     } else {
@@ -2166,77 +1991,146 @@
                 }
             });
 
-            // Sự kiện click nút "Xuất Excel"
             $('#btnExportInventoryToExcel').on('click', function () {
-                if (!$('#inventoryReportForm').valid()) { // Kiểm tra form hợp lệ
+                if (!$('#inventoryReportForm').valid()) { return; }
+                const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
+                const fromDateParts = fromDateVal.split('/'), toDateParts = toDateVal.split('/');
+                const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
+                const toDateISO = `${toDateParts[2]}-${toDateParts[1]}-${toDateParts[0]}T23:59:59`;
+                const selectedIngredientIds = $('#reportIngredientIds').val();
+
+                showLoading('body', 'Đang tạo file Excel...');
+
+                var $form = $('<form>').attr({ method: "post", action: '@Url.Action("ExportInventoryDetailReport", "Inventory")' });
+                $form.append($("<input>", { type: "hidden", name: "fromDate", value: fromDateISO }));
+                $form.append($("<input>", { type: "hidden", name: "toDate", value: toDateISO }));
+                if (selectedIngredientIds && selectedIngredientIds.length > 0) {
+                    selectedIngredientIds.forEach(id => $form.append($("<input>", { type: "hidden", name: "ingredientIds", value: id })));
+                }
+                $form.appendTo('body').submit().remove();
+                setTimeout(() => hideLoading('body'), 3000);
+            });
+
+            // Nút "Xem trước" trong modal tùy chọn
+            $('#btnPreviewInventoryReport').on('click', function () {
+                if (!$('#inventoryReportForm').valid()) {
                     showErrorAlert("Thiếu thông tin", "Vui lòng chọn đầy đủ Từ ngày và Đến ngày.");
                     return;
                 }
 
-                const fromDateVal = $('#reportFromDate').val();
-                const toDateVal = $('#reportToDate').val();
+                const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
+                const fromDateParts = fromDateVal.split('/'), toDateParts = toDateVal.split('/');
+                const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
+                const toDateISO = `${toDateParts[2]}-${toDateParts[1]}-${toDateParts[0]}T23:59:59`;
+                const selectedIngredientIds = $('#reportIngredientIds').val();
 
-                // Chuyển đổi dd/mm/yyyy sang yyyy-mm-dd (hoặc định dạng server chấp nhận)
-                const fromDateParts = fromDateVal.split('/');
-                const toDateParts = toDateVal.split('/');
+                $('#previewReportModalBody').html('<div class="excel-preview-container"><div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div></div>');
+                previewModal.show();
+                inventoryReportModal.hide();
 
-                if (fromDateParts.length !== 3 || toDateParts.length !== 3) {
-                    showErrorAlert("Lỗi định dạng ngày", "Vui lòng chọn ngày hợp lệ (dd/mm/yyyy).");
-                    return;
-                }
+                $.ajax({
+                    url: '@Url.Action("PreviewInventoryReport", "Inventory")',
+                    type: 'POST',
+                    data: { fromDate: fromDateISO, toDate: toDateISO, ingredientIds: selectedIngredientIds },
+                    success: function (response) {
+                        $('#previewReportModalBody').html(`<div class="excel-preview-container">${response}</div>`);
+                    },
+                    error: function (xhr) {
+                        handleAjaxError(xhr, "tạo bản xem trước");
+                        $('#previewReportModalBody').html('<div class="alert alert-danger m-3">Không thể tạo bản xem trước.</div>');
+                    }
+                });
+            });
 
-                // Định dạng ISO để server dễ parse, bao gồm cả ngày
+            // Nút "Tải xuống" từ trong modal xem trước
+            $('#btnDownloadFromPreview').on('click', () => $('#btnExportInventoryToExcel').trigger('click'));
+
+            // Sự kiện click "Xem chi tiết" trong modal xem trước (sử dụng event delegation)
+            $('#previewReportModalBody').on('click', '.btn-view-detail', function () {
+                const ingredientId = $(this).data('id');
+                const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
+                const fromDateParts = fromDateVal.split('/'), toDateParts = toDateVal.split('/');
                 const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
                 const toDateISO = `${toDateParts[2]}-${toDateParts[1]}-${toDateParts[0]}T23:59:59`;
 
+                const $summaryView = $('#preview-summary-view');
+                const $detailView = $('#preview-detail-view');
 
-                const selectedIngredientIds = $('#reportIngredientIds').val(); // Mảng các ID NVL đã chọn
+                // [MỚI] Điều khiển các nút ở footer
+                $('#btnDownloadFromPreview').hide();
+                $('#btn-back-to-summary').show();
 
-                const exportUrl = '@Url.Action("ExportInventoryDetailReport", "Inventory")';
+                $detailView.html('<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" role="status"></div></div>').show();
+                $summaryView.hide();
 
-                showLoading('#inventoryReportModal .modal-content', 'Đang chuẩn bị báo cáo...');
-
-                // Tạo một form ẩn để gửi dữ liệu bằng POST (tránh giới hạn độ dài URL của GET)
-                var $form = $('<form></form>');
-                $form.attr("method", "post");
-                $form.attr("action", exportUrl);
-                // Thêm token chống giả mạo nếu có (quan trọng cho POST)
-                // $form.append($('<input>', { type: 'hidden', name: '__RequestVerificationToken', value: $('input[name="__RequestVerificationToken"]').val() }));
-
-
-                $form.append($("<input>", { type: "hidden", name: "fromDate", value: fromDateISO }));
-                $form.append($("<input>", { type: "hidden", name: "toDate", value: toDateISO }));
-
-                // Thêm các ID nguyên vật liệu vào form
-                if (selectedIngredientIds && selectedIngredientIds.length > 0) {
-                    selectedIngredientIds.forEach(function (id) {
-                        $form.append($("<input>", { type: "hidden", name: "ingredientIds", value: id }));
-                    });
-                }
-                // Nếu không có NVL nào được chọn, controller sẽ hiểu là "tất cả"
-
-                $form.appendTo('body').submit().remove(); // Gửi form và xóa nó đi
-
-                // Ẩn loading sau một khoảng trễ, vì việc tải file sẽ bắt đầu
-                // Đây là một cách tạm vì không có callback trực tiếp khi form submit tải file hoàn tất
-                setTimeout(function () {
-                    hideLoading('#inventoryReportModal .modal-content');
-                    // inventoryReportModal.hide(); // Tùy chọn: đóng modal sau khi kích hoạt tải
-                }, 3000); // Điều chỉnh thời gian nếu cần
+                $.ajax({
+                    url: '@Url.Action("PreviewIngredientDetail", "Inventory")',
+                    type: 'POST',
+                    data: { ingredientId: ingredientId, fromDate: fromDateISO, toDate: toDateISO },
+                    success: function (response) {
+                        $detailView.html(response);
+                    },
+                    error: function (xhr) {
+                        handleAjaxError(xhr, "tải chi tiết");
+                        $detailView.html('<div class="alert alert-danger m-3">Không thể tải chi tiết.</div>');
+                    }
+                });
             });
 
+            // Sự kiện click "Quay lại" từ footer của modal
+            // Lưu ý: đổi selector từ #previewReportModalBody sang #previewReportModal để bắt sự kiện ở footer
+            $('#previewReportModal').on('click', '#btn-back-to-summary', function () {
+                // [MỚI] Điều khiển các nút ở footer
+                $('#btnDownloadFromPreview').show();
+                $('#btn-back-to-summary').hide();
 
-            // =============== LOGIC CHUYỂN TAB (TAB SWITCHING) ===============
+                $('#preview-detail-view').hide().empty();
+                $('#preview-summary-view').show();
+            });
+
+            // Sự kiện reset modal khi bị đóng
+            var previewModalEl = document.getElementById('previewReportModal');
+            previewModalEl.addEventListener('hidden.bs.modal', function (event) {
+                // Xóa nội dung
+                $('#previewReportModalBody').empty();
+
+                // [MỚI] Reset lại trạng thái các nút ở footer về mặc định
+                $('#btnDownloadFromPreview').show();
+                $('#btn-back-to-summary').hide();
+            });
+
+            // Cập nhật và hiển thị thời gian thực cho trường Ngày giao dịch
+            function updateTransactionDateTime() {
+                const now = new Date();
+                const formattedDateTime =
+                    ('0' + now.getDate()).slice(-2) + '/' +
+                    ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                    now.getFullYear() + ' ' +
+                    ('0' + now.getHours()).slice(-2) + ':' +
+                    ('0' + now.getMinutes()).slice(-2) + ':' +
+                    ('0' + now.getSeconds()).slice(-2);
+                $('#transactionDate').val(formattedDateTime);
+            }
+
+            // Gọi lần đầu khi tải trang và sau đó cập nhật mỗi giây
+            updateTransactionDateTime();
+            setInterval(updateTransactionDateTime, 1000);
+
+            // Xử lý sự kiện reset form
+            $('#createTransactionForm').on('reset', function () {
+                setTimeout(() => {
+                    $('#createTransactionForm').validate().resetForm();
+                    $('.is-invalid').removeClass('is-invalid');
+                    $('.is-valid').removeClass('is-valid');
+                    $('#transactionIngredientId').val(null).trigger('change');
+                    $('#transactionSupplierId').val(null).trigger('change');
+                    $('#transactionType').val("").trigger('change');
+                    $('#ingredientInfo').text('');
+                }, 0);
+            });
+
             $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
                 let targetPaneId = $(e.target).attr('aria-controls');
-
-                // Ví dụ: Nếu chuyển sang tab có DataTable, vẽ lại để sửa độ rộng cột (nếu cần)
-                // if (targetPaneId === 'ingredientsTabPane' && ingredientsTable) {
-                //     ingredientsTable.columns.adjust().draw();
-                // }
-                // ... tương tự cho các bảng khác
-
-                // Đóng các dropdown Select2 đang mở khi chuyển tab để tránh lỗi hiển thị
                 if ($('.select2-custom.select2-hidden-accessible').data('select2')) {
                     $('.select2-custom.select2-hidden-accessible').select2('close');
                 }
@@ -2248,6 +2142,6 @@
                 }
             });
 
-        }); // Kết thúc $(document).ready
+        });
     </script>
 }

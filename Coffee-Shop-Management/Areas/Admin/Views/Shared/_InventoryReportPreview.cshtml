@@ -1,0 +1,148 @@
+﻿@* File: /Areas/Admin/Views/Inventory/_InventoryReportPreview.cshtml *@
+@model List<Coffee_Shop_Management.Areas.Admin.ViewModels.InventorySummaryReportItemVM>
+
+<style>
+    .excel-preview-container {
+        padding: 20px;
+        background-color: #f0f2f5;
+        overflow-x: auto;
+    }
+
+    .fixed-layout-wrapper {
+        min-width: 1200px;
+        padding-bottom: 15px;
+    }
+
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+        font-size: 14px;
+        font-family: Calibri, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+        .preview-table th, .preview-table td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .preview-table thead th {
+            background-color: #DDEBF7; /* Màu xanh header giống Excel */
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            position: sticky;
+            top: -21px;
+        }
+
+        .preview-table tfoot td {
+            font-weight: bold;
+            background-color: #FFF2CC; /* Màu vàng cho dòng tổng cộng */
+        }
+
+        .preview-table .text-right {
+            text-align: right;
+        }
+
+        .preview-table .text-center {
+            text-align: center;
+        }
+
+        .preview-table .action-cell {
+            width: 60px;
+            text-align: center;
+        }
+
+        .preview-table .btn-view-detail {
+            cursor: pointer;
+            color: #0d6efd;
+        }
+
+            .preview-table .btn-view-detail:hover {
+                color: #0a58ca;
+                text-decoration: underline;
+            }
+
+    #preview-detail-view {
+        display: none;
+    }
+</style>
+
+<div class="fixed-layout-wrapper">
+    <div id="preview-summary-view">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-warning">Không có dữ liệu để hiển thị.</div>
+        }
+        else
+        {
+            <h4 class="mb-3">Báo cáo tổng hợp Nhập-Xuất-Tồn (Xem trước)</h4>
+            <table class="preview-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">STT</th>
+                        <th rowspan="2" style="min-width: 100px;">Mã hàng</th>
+                        <th rowspan="2" style="min-width: 250px;">Tên hàng</th>
+                        <th rowspan="2" style="min-width: 60px;">ĐVT</th>
+                        <th colspan="2">Tồn đầu kỳ</th>
+                        <th colspan="2">Nhập trong kỳ</th>
+                        <th colspan="2">Xuất trong kỳ</th>
+                        <th colspan="2">Tồn cuối kỳ</th>
+                        <th rowspan="2">Hành động</th>
+                    </tr>
+                    <tr>
+                        <th style="min-width: 100px;">Số Lượng</th>
+                        <th style="min-width: 120px;">Thành Tiền</th>
+                        <th style="min-width: 100px;">Số Lượng</th>
+                        <th style="min-width: 120px;">Thành Tiền</th>
+                        <th style="min-width: 100px;">Số Lượng</th>
+                        <th style="min-width: 120px;">Thành Tiền</th>
+                        <th style="min-width: 100px;">Số Lượng</th>
+                        <th style="min-width: 120px;">Thành Tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-center">@item.STT</td>
+                            <td>@item.IngredientCode</td>
+                            <td>@item.IngredientName</td>
+                            <td class="text-center">@item.UnitOfMeasure</td>
+                            <td class="text-right">@item.OpeningStockQuantity.ToString("#,##0.###")</td>
+                            <td class="text-right">@item.OpeningStockValue.ToString("#,##0")</td>
+                            <td class="text-right">@item.PeriodQuantityIn.ToString("#,##0.###")</td>
+                            <td class="text-right">@item.PeriodValueIn.ToString("#,##0")</td>
+                            <td class="text-right">@item.PeriodQuantityOut.ToString("#,##0.###")</td>
+                            <td class="text-right">@item.PeriodValueOut.ToString("#,##0")</td>
+                            <td class="text-right">@item.ClosingStockQuantity.ToString("#,##0.###")</td>
+                            <td class="text-right">@item.ClosingStockValue.ToString("#,##0")</td>
+                            <td class="action-cell">
+                                <i class="bi bi-eye-fill btn-view-detail" title="Xem chi tiết" data-id="@item.IngredientId" data-name="@item.IngredientName"></i>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-center"><strong>Tổng cộng</strong></td>
+                        <td class="text-right">@Model.Sum(x => x.OpeningStockValue).ToString("#,##0")</td>
+                        <td></td>
+                        <td class="text-right">@Model.Sum(x => x.PeriodValueIn).ToString("#,##0")</td>
+                        <td></td>
+                        <td class="text-right">@Model.Sum(x => x.PeriodValueOut).ToString("#,##0")</td>
+                        <td></td>
+                        <td class="text-right">@Model.Sum(x => x.ClosingStockValue).ToString("#,##0")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        }
+    </div>
+
+    <div id="preview-detail-view">
+        @* Nội dung chi tiết sẽ được tải vào đây *@
+    </div>
+</div>

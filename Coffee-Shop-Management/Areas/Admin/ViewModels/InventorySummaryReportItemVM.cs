@@ -2,6 +2,7 @@
 {
     public class InventorySummaryReportItemVM
     {
+        public int IngredientId { get; set; } // ID của nguyên vật liệu, có thể dùng để lấy thông tin chi tiết
         public int STT { get; set; }
         public string IngredientCode { get; set; } // Mã hàng
         public string IngredientName { get; set; } // Tên hàng
@@ -20,5 +21,6 @@
 
         public decimal ClosingStockQuantity { get; set; }
         public decimal ClosingStockValue { get; set; }
+        public decimal? MinimumStockLevel { get; set; }
     }
 }

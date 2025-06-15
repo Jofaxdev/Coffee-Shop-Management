@@ -1,10 +1,14 @@
-﻿namespace Coffee_Shop_Management.Areas.Admin.ViewModels
+﻿using Coffee_Shop_Management.Models;
+
+namespace Coffee_Shop_Management.Areas.Admin.ViewModels
 {
     public class InventoryTransactionDetailVM
     {
         public DateTime TransactionDate { get; set; }
         public long TransactionId { get; set; }
         public string TransactionTypeDisplay { get; set; }
+        public AppDbContext.InventoryTransactionType TransactionType { get; set; }
+
         public string UserName { get; set; }
         public string SupplierName { get; set; }
         public decimal? QuantityIn { get; set; }

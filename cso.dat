@@ -18,3 +18,4 @@ V1
 2:EditArea,y
 2:ExportInventoryDetailReport,X
 2:ingredientIds,k
+2:RenderDetailSheetForItem,b

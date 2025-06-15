@@ -1,5 +1,6 @@
 ﻿using AspNetCoreHero.ToastNotification;
 using AspNetCoreHero.ToastNotification.Extensions;
+using Coffee_Shop_Management.Hubs;
 using Coffee_Shop_Management.Models;
 using Coffee_Shop_Management.Utilites;
 using Microsoft.AspNetCore.Identity;
@@ -30,6 +31,8 @@ namespace Coffee_Shop_Management
                 // Tùy chọn: Cho phép tên thuộc tính không phân biệt hoa thường khi deserialize (nếu cần)
                 // options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
             });
+
+            builder.Services.AddSignalR(); // <--- Thêm dòng này
 
             //Xử lý session từ View
             builder.Services.AddHttpContextAccessor(); // AddHttpContextAccessor phải ở sau
@@ -127,6 +130,8 @@ namespace Coffee_Shop_Management
             app.UseRouting();
 
             app.UseAuthorization();
+            // Thêm MapHub cho SignalR ở đây
+            app.MapHub<NotificationHub>("/notificationHub");
 
             app.MapControllerRoute(
                     name: "areas",
