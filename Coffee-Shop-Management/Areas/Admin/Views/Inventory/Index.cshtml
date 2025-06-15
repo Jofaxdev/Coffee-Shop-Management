@@ -682,6 +682,14 @@
                                     <label for="transactionUnitPrice" class="form-label" id="transactionUnitPriceLabel">Đơn giá <span class="text-danger">*</span></label>                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
                                 </div>
                             </div>
+
+                            <div class="col-md-4" id="transactionBatchContainer" style="display:none;">
+                                <div class="form-label-group">
+                                    <label for="transactionBatchId" class="form-label">Chọn lô hàng<span class="text-danger">*</span></label>
+                                    <select id="transactionBatchId" name="BatchId" class="form-select select2-custom" style="width:100%;"></select>
+                                </div>
+                            </div>
+
                             <div class="col-md-4" id="transactionTotalPriceContainer">
                                 <div class="form-label-group">
                                     <label for="transactionTotalPrice" class="form-label">Thành tiền</label>
@@ -1037,7 +1045,6 @@
             return showSymbol ? formattedNumber + ' đ' : formattedNumber;
         }
 
-
         function showSuccessToast(message) {
             if (typeof notyf !== 'undefined') {
                 notyf.success({ message: message || 'Thao tác thành công!', duration: 5000 });
@@ -1242,28 +1249,26 @@
                 errorElement: 'div',
                 errorClass: 'invalid-feedback d-block',
                 highlight: function (element, errorClass, validClass) {
-                    $(element).addClass('is-invalid').removeClass('is-valid');
-                    if ($(element).hasClass('select2-hidden-accessible')) {
-                        $(element).next('.select2-container').find('.select2-selection').addClass('is-invalid').removeClass('is-valid');
+                    const $element = $(element);
+                    $element.addClass('is-invalid').removeClass('is-valid');
+                    if ($element.hasClass('select2-hidden-accessible')) {
+                        $element.next('.select2-container').find('.select2-selection').addClass('is-invalid').removeClass('is-valid');
                     }
                 },
                 unhighlight: function (element, errorClass, validClass) {
-                    $(element).removeClass('is-invalid');
-                    if ($(element).val() || $(element).prop('required')) {
-                        $(element).addClass('is-valid');
-                    }
-                    if ($(element).hasClass('select2-hidden-accessible')) {
-                        const $selection = $(element).next('.select2-container').find('.select2-selection');
-                        $selection.removeClass('is-invalid');
-                        if ($(element).val()) {
-                            $selection.addClass('is-valid');
-                        }
+                    const $element = $(element);
+                    $element.removeClass('is-invalid');
+                    if ($element.hasClass('select2-hidden-accessible')) {
+                        $element.next('.select2-container').find('.select2-selection').removeClass('is-invalid');
                     }
                 },
                 success: function (label, element) {
-                    $(element).addClass('is-valid');
-                    if ($(element).hasClass('select2-hidden-accessible')) {
-                        $(element).next('.select2-container').find('.select2-selection').addClass('is-valid');
+                    const $element = $(element);
+                    if ($element.val()) {
+                        $element.addClass('is-valid');
+                        if ($element.hasClass('select2-hidden-accessible')) {
+                            $element.next('.select2-container').find('.select2-selection').addClass('is-valid');
+                        }
                     }
                     label.remove();
                 },
@@ -1284,16 +1289,6 @@
 
             flatpickr('.flatpickr-input', { dateFormat: 'd/m/Y', locale: 'vn', allowInput: true });
             flatpickr('.flatpickr-input-report', { dateFormat: 'd/m/Y', locale: 'vn', allowInput: true, monthSelectorType: 'static' });
-
-            $('.select2-custom').each(function () {
-                $(this).select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
-                    placeholder: $(this).data('placeholder') || "-- Chọn --",
-                    allowClear: true,
-                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : $(document.body)
-                });
-            });
 
             $('#historyIngredientFilterId').select2({
                 theme: "bootstrap-5",
@@ -1481,7 +1476,7 @@
 
             } catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
 
-
+            // ============== LOGIC CRUD NGUYÊN VẬT LIỆU ==============
             $('#btnAddIngredient').on('click', function () {
                 $('#ingredientForm')[0].reset();
                 $('#ingredientId').val('');
@@ -1491,8 +1486,7 @@
                 $('#ingredientCurrentStockLevelDisplay').text('N/A');
                 $('#ingredientLastPurchasePriceDisplay').text('N/A');
                 $('#ingredientForm').validate().resetForm();
-                $('.is-invalid').removeClass('is-invalid');
-                $('.is-valid').removeClass('is-valid');
+                $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
                 var ingredientModal = new bootstrap.Modal(document.getElementById('ingredientModal'));
                 ingredientModal.show();
             });
@@ -1516,8 +1510,7 @@
                             $('#ingredientLastPurchasePriceDisplay').text(formatVnCurrency(data.lastPurchasePrice));
                             $('#ingredientModalLabel').text('Cập nhật Nguyên vật liệu');
                             $('#ingredientForm').validate().resetForm();
-                            $('.is-invalid').removeClass('is-invalid');
-                            $('.is-valid').removeClass('is-valid');
+                            $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
                             var ingredientModal = new bootstrap.Modal(document.getElementById('ingredientModal'));
                             ingredientModal.show();
                         } else { showErrorAlert('Lỗi tải dữ liệu', response.message || "Không thể tải chi tiết nguyên vật liệu."); }
@@ -1637,13 +1630,13 @@
                 });
             });
 
+            // ============== LOGIC CRUD NHÀ CUNG CẤP ==============
             $('#btnAddSupplier').on('click', function () {
                 $('#supplierForm')[0].reset();
                 $('#supplierId').val('');
                 $('#supplierModalLabel').text('Thêm Nhà cung cấp');
                 $('#supplierForm').validate().resetForm();
-                $('.is-invalid').removeClass('is-invalid');
-                $('.is-valid').removeClass('is-valid');
+                $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
                 var supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
                 supplierModal.show();
             });
@@ -1666,8 +1659,7 @@
                             $('#supplierNotes').val(data.notes);
                             $('#supplierModalLabel').text('Cập nhật Nhà cung cấp');
                             $('#supplierForm').validate().resetForm();
-                            $('.is-invalid').removeClass('is-invalid');
-                            $('.is-valid').removeClass('is-valid');
+                            $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
                             var supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
                             supplierModal.show();
                         } else { showErrorAlert('Lỗi tải dữ liệu', response.message || "Không thể tải chi tiết."); }
@@ -1743,155 +1735,196 @@
                 });
             });
 
-            $('#transactionIngredientId').select2({
-                theme: "bootstrap-5",
-                placeholder: 'Tìm & chọn nguyên vật liệu',
-                allowClear: true,
-                width: '100%',
-                dropdownParent: $('#createTransactionTabPane'),
-                ajax: {
-                    url: '@Url.Action("GetIngredientsForDropdown", "Inventory")',
-                    dataType: 'json', delay: 250,
-                    data: function (params) { return { searchTerm: params.term }; },
-                    processResults: function (data) { return { results: data.map(item => ({ id: item.id, text: item.text, unit: item.unit, currentStock: item.currentStock })) }; },
-                    cache: true
-                }
-            }).on('select2:select', function (e) {
-                var data = e.params.data;
-                if (data) {
-                    $('#ingredientInfo').text(`Tồn: ${formatVnDynamicDecimal(data.currentStock, 3)} ${data.unit || ''}`);
-                    $('#transactionIngredientUnit').text(data.unit || '');
-                } else {
-                    $('#ingredientInfo').text('');
-                    $('#transactionIngredientUnit').text('');
-                }
-                calculateTransactionTotalPrice();
-                $(this).valid();
-            }).on('select2:unselect', function (e) {
-                $('#ingredientInfo').text('');
-                $('#transactionIngredientUnit').text('');
-                calculateTransactionTotalPrice();
-                $(this).valid();
-            });
+            // ========================================================
+            // === LOGIC CHO TAB TẠO PHIẾU KHO (ĐÃ REFACTOR) ===
+            // ========================================================
 
-            $('#transactionSupplierId').select2({
-                theme: "bootstrap-5",
-                placeholder: 'Tìm & chọn nhà cung cấp',
-                allowClear: true, width: '100%',
-                dropdownParent: $('#createTransactionTabPane'),
-                ajax: {
-                    url: '@Url.Action("GetSuppliersForDropdown", "Inventory")',
-                    dataType: 'json', delay: 250,
-                    data: function (params) { return { searchTerm: params.term }; },
-                    processResults: function (data) { return { results: data.map(item => ({ id: item.id, text: item.text })) }; },
-                    cache: true
-                }
-            }).on('select2:select select2:unselect', function () {
-                $(this).valid();
-            });
+            const $transactionForm = $('#createTransactionForm');
+            const $transactionType = $('#transactionType');
+            const $ingredientSelect = $('#transactionIngredientId');
+            const $batchSelect = $('#transactionBatchId');
+            const $supplierSelect = $('#transactionSupplierId');
+            const $unitPriceInput = $('#transactionUnitPrice');
+            const $quantityInput = $('#transactionQuantity');
+            const $supplierContainer = $('#transactionSupplierContainer');
+            const $batchContainer = $('#transactionBatchContainer');
 
-            $('#transactionType').on('change', function () {
-                const type = $(this).val();
-                const $supplierContainer = $('#transactionSupplierContainer');
-                const $unitPriceInput = $('#transactionUnitPrice');
-                const $supplierSelect = $('#transactionSupplierId');
-                const validator = $('#createTransactionForm').validate();
+            function updateTransactionFormUI(type) {
+                $supplierContainer.hide();
+                $batchContainer.hide();
+                $unitPriceInput.prop('readonly', false).val('');
+                $('#transactionUnitPriceLabel').html('Đơn giá <span class="text-danger">*</span>');
 
-                // Hàm tiện ích để xóa trạng thái lỗi của một trường
-                const resetFieldValidation = ($field) => {
-                    if (!$field || $field.length === 0) return;
-                    $field.removeClass('is-invalid is-valid');
-                    if ($field.hasClass('select2-hidden-accessible')) {
-                        $field.next('.select2-container').find('.select2-selection').removeClass('is-invalid is-valid');
-                    }
-                    $field.closest('.form-label-group').find('.invalid-feedback').remove();
-                };
+                $supplierSelect.rules('remove', 'required');
+                $batchSelect.rules('remove', 'required');
+                $unitPriceInput.rules('remove', 'required');
 
-                // 1. Xử lý hiển thị Nhà cung cấp
-                if (type === 'Purchase') {
-                    $supplierContainer.show();
-                    $supplierSelect.prop('required', true);
-                } else {
-                    $supplierContainer.hide();
-                    $supplierSelect.prop('required', false);
-                    $supplierSelect.val(null).trigger('change.select2');
-                    resetFieldValidation($supplierSelect);
+                switch (type) {
+                    case 'Purchase':
+                    case 'InitialStock':
+                        if (type === 'Purchase') {
+                            $supplierContainer.show();
+                            $supplierSelect.rules('add', { required: true });
+                        }
+                        $unitPriceInput.rules('add', { required: true });
+                        break;
+
+                    // *** SỬA LỖI: TÁCH RIÊNG LOGIC CHO XUẤT BÁN HÀNG ***
+                    case 'SaleConsumption':
+                        $batchContainer.show();
+                        $batchSelect.rules('add', { required: true });
+                        $unitPriceInput.prop('readonly', false).rules('add', { required: true }); // Cho phép sửa và bắt buộc nhập
+                        $('#transactionUnitPriceLabel').html('Đơn giá bán <span class="text-danger">*</span>'); // Đổi nhãn cho rõ ràng
+                        loadBatchesForIngredient();
+                        break;
+
+                    case 'AdjustmentIn':
+                    case 'AdjustmentOut':
+                        $batchContainer.show();
+                        $batchSelect.rules('add', { required: true });
+                        $unitPriceInput.prop('readonly', true); // Khóa lại vì dùng giá vốn
+                        $('#transactionUnitPriceLabel').text('Đơn giá (tự động)');
+                        loadBatchesForIngredient();
+                        break;
                 }
 
-                // 2. Xử lý yêu cầu bắt buộc cho Đơn giá (KHÔNG thay đổi giao diện)
-                const isUnitPriceRequired = (type === 'Purchase' || type === 'InitialStock' || type === 'AdjustmentIn' || type === 'AdjustmentOut');
-                $unitPriceInput.prop('required', isUnitPriceRequired);
-                resetFieldValidation($unitPriceInput);
-
-                // 3. Validate lại chính dropdown loại giao dịch
-                $(this).valid();
-
-            }).trigger('change');
-
-            function calculateTransactionTotalPrice() {
-                const quantity = parseFloat($('#transactionQuantity').val());
-                const unitPrice = parseFloat($('#transactionUnitPrice').val());
-                const $totalPriceInput = $('#transactionTotalPrice');
-
-                if (!isNaN(quantity) && quantity > 0 && !isNaN(unitPrice) && unitPrice >= 0) {
-                    const total = Math.round(quantity * unitPrice);
-                    // Sử dụng hàm format tiền tệ để hiển thị đẹp hơn
-                    $totalPriceInput.val(total.toLocaleString('vi-VN') + ' đ');
-                } else {
-                    $totalPriceInput.val('');
+                if ($transactionForm.data('validator')) {
+                    $transactionForm.validate().resetForm();
                 }
+                $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
             }
 
-            $('#transactionQuantity, #transactionUnitPrice').on('input', function () {
-                calculateTransactionTotalPrice();
+            function loadBatchesForIngredient() {
+                const ingredientId = $ingredientSelect.val();
+                const transactionType = $transactionType.val();
+                if ($batchSelect.hasClass("select2-hidden-accessible")) {
+                    $batchSelect.select2('destroy');
+                }
+                $batchSelect.empty().prop('disabled', true);
+                const shouldLoadBatches = ['AdjustmentIn', 'AdjustmentOut', 'SaleConsumption'].includes(transactionType) && ingredientId;
+                if (!shouldLoadBatches) {
+                    $batchContainer.hide();
+                    return;
+                }
+                $batchContainer.show();
+                $batchSelect.html($('<option>').text('Đang tải danh sách lô...'));
+                $.ajax({
+                    url: `@Url.Action("GetBatchesForIngredient", "Inventory")?ingredientId=${ingredientId}`,
+                    type: 'GET',
+                    success: function (batches) {
+                        $batchSelect.empty();
+                        const placeholderText = (batches && batches.length > 0) ? '-- Chọn lô hàng --' : 'Không có lô nào phù hợp';
+                        $batchSelect.append($('<option>', { value: '', text: placeholderText }));
+                        if (batches && batches.length > 0) {
+                            batches.forEach(batch => {
+                                const $option = $('<option>', { value: batch.id, text: batch.text });
+                                $option.data('price', batch.price);
+                                $batchSelect.append($option);
+                            });
+                            $batchSelect.prop('disabled', false);
+                        }
+                        $batchSelect.select2({
+                            theme: "bootstrap-5",
+                            placeholder: placeholderText,
+                            dropdownParent: $transactionForm
+                        });
+                    },
+                    error: function () {
+                        showErrorAlert('Lỗi tải lô hàng');
+                        $batchSelect.empty().append($('<option>', { value: '', text: 'Lỗi khi tải' }));
+                        $batchSelect.select2({
+                            theme: "bootstrap-5",
+                            placeholder: 'Lỗi khi tải',
+                            dropdownParent: $transactionForm
+                        });
+                    }
+                });
+            }
+
+            function calculateTotalPrice() {
+                const quantity = parseFloat($quantityInput.val());
+                const unitPrice = parseFloat($unitPriceInput.val());
+                $('#transactionTotalPrice').val((!isNaN(quantity) && !isNaN(unitPrice) && quantity > 0 && unitPrice >= 0) ? formatVnCurrency(quantity * unitPrice, false) : '');
+            }
+
+            $supplierSelect.select2({
+                theme: "bootstrap-5", placeholder: 'Tìm & chọn nhà cung cấp', allowClear: true, width: '100%', dropdownParent: $transactionForm,
+                ajax: { url: '@Url.Action("GetSuppliersForDropdown", "Inventory")', dataType: 'json', delay: 250, data: p => ({ searchTerm: p.term }), processResults: d => ({ results: d.map(i => ({ id: i.id, text: i.text })) }), cache: true }
             });
 
-            $('#createTransactionForm').validate({
+            $ingredientSelect.select2({
+                theme: "bootstrap-5", placeholder: 'Tìm & chọn nguyên vật liệu', allowClear: true, width: '100%', dropdownParent: $transactionForm,
+                ajax: { url: '@Url.Action("GetIngredientsForDropdown", "Inventory")', dataType: 'json', delay: 250, data: p => ({ searchTerm: p.term }), processResults: d => ({ results: d.map(i => ({ id: i.id, text: i.text, unit: i.unit, currentStock: i.currentStock })) }), cache: true }
+            }).on('select2:select', function (e) {
+                const selectedData = e.params.data;
+                if (selectedData) { $('#ingredientInfo').text(`Tồn: ${formatVnDynamicDecimal(selectedData.currentStock, 3)} ${selectedData.unit || ''}`); }
+                updateTransactionFormUI($transactionType.val());
+                $(this).valid();
+            }).on('select2:unselect', function () {
+                $('#ingredientInfo').text('');
+                updateTransactionFormUI($transactionType.val());
+                $unitPriceInput.val('');
+                calculateTotalPrice();
+            });
+
+            $transactionType.on('change', function () { updateTransactionFormUI($(this).val()); });
+
+            $batchSelect.on('change', function () {
+                // *** SỬA LỖI: Chỉ tự điền giá khi không phải là xuất bán hàng ***
+                const transactionType = $transactionType.val();
+                if (transactionType !== 'SaleConsumption') {
+                    const price = $(this).find('option:selected').data('price');
+                    $unitPriceInput.val(price !== undefined ? price : '');
+                }
+                calculateTotalPrice();
+                $(this).valid();
+            });
+
+            $quantityInput.on('input', calculateTotalPrice);
+            $unitPriceInput.on('input', function () { if (!$(this).is('[readonly]')) { calculateTotalPrice(); } });
+
+            function updateTransactionDateTime() {
+                const now = new Date();
+                const dt = ('0' + now.getDate()).slice(-2) + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + now.getFullYear() + ' ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+                $('#transactionDate').val(dt);
+            }
+            updateTransactionDateTime();
+            setInterval(updateTransactionDateTime, 1000);
+
+            $transactionForm.validate({
                 rules: {
                     TransactionType: { required: true },
                     IngredientId: { required: true },
-                    TransactionDate: { required: true },
                     Quantity: { required: true, number: true, min: 0.0001 },
-                    UnitPrice: { number: true, min: 0 },
-                    SupplierId: {}
+                    UnitPrice: { number: true, min: 0 }
                 },
                 messages: {
                     TransactionType: "Vui lòng chọn loại giao dịch.",
                     IngredientId: "Vui lòng chọn nguyên vật liệu.",
-                    TransactionDate: "Vui lòng chọn ngày giao dịch.",
                     Quantity: { required: "Vui lòng nhập số lượng.", number: "Số lượng phải là số.", min: "Số lượng phải lớn hơn 0." },
-                    UnitPrice: { required: "Vui lòng nhập đơn giá.", number: "Đơn giá phải là số.", min: "Đơn giá không được âm." },
-                    SupplierId: "Vui lòng chọn nhà cung cấp."
+                    UnitPrice: { required: "Vui lòng nhập đơn giá bán.", number: "Đơn giá phải là số.", min: "Đơn giá không được âm." },
+                    SupplierId: "Vui lòng chọn nhà cung cấp.",
+                    BatchId: "Vui lòng chọn lô hàng."
                 },
                 ignore: ":hidden:not(.select2-hidden-accessible)"
             });
+            updateTransactionFormUI('');
 
-            $('#createTransactionForm').on('submit', function (e) {
+            $transactionForm.on('submit', function (e) {
                 e.preventDefault();
-
-                const type = $('#transactionType').val();
-                $('#transactionUnitPrice').prop('required', (type === 'Purchase' || type === 'InitialStock' || type === 'AdjustmentIn' || type === 'AdjustmentOut'));
-                $('#transactionSupplierId').prop('required', type === 'Purchase');
-
-                if (!$(this).valid()) {
+                if (!$transactionForm.valid()) {
                     showErrorAlert("Dữ liệu không hợp lệ", "Vui lòng kiểm tra lại các trường thông tin được đánh dấu đỏ.");
                     return;
                 }
-
-                // Lấy giá trị TotalPrice và loại bỏ các ký tự không phải số
-                const totalPriceString = ($('#transactionTotalPrice').val() || '').replace(/[.đ\s]/g, '');
-
                 const formData = {
                     IngredientId: parseInt($('#transactionIngredientId').val()),
                     TransactionType: $('#transactionType').val(),
                     Quantity: parseFloat($('#transactionQuantity').val()),
                     UnitPrice: $('#transactionUnitPrice').val() ? parseFloat($('#transactionUnitPrice').val()) : null,
-                    TotalPrice: totalPriceString ? parseFloat(totalPriceString) : null, // Gửi đi giá trị số
                     SupplierId: $('#transactionSupplierId').val() ? parseInt($('#transactionSupplierId').val()) : null,
-                    TransactionDate: new Date().toISOString(), // SỬA LỖI: Gửi đi theo chuẩn ISO 8601
+                    BatchId: $('#transactionBatchId').val() ? parseInt($('#transactionBatchId').val()) : null,
                     Notes: $('#transactionNotes').val().trim() || null
                 };
-
                 showLoading('#createTransactionTabPane .card-body');
                 $.ajax({
                     url: '@Url.Action("CreateInventoryTransaction", "Inventory")', type: 'POST',
@@ -1900,10 +1933,10 @@
                         hideLoading('#createTransactionTabPane .card-body');
                         if (response.success) {
                             showSuccessToast(response.message);
-                            $('#createTransactionForm').trigger('reset'); // Dùng trigger thay vì click
-
+                            $transactionForm.trigger('reset');
                             if (transactionsHistoryTable) transactionsHistoryTable.draw();
                             if (ingredientsTable) ingredientsTable.draw(false);
+                            if (typeof loadDashboardData === 'function') loadDashboardData();
                         } else {
                             if (response.errors) { handleAjaxError({ responseText: JSON.stringify(response), status: 400 }, 'tạo phiếu kho'); }
                             else { showErrorAlert('Lỗi tạo phiếu', response.message || "Có lỗi xảy ra khi tạo phiếu kho."); }
@@ -1913,63 +1946,20 @@
                 });
             });
 
-            $('#createTransactionForm button[type="reset"]').on('click', function () {
+            $transactionForm.on('reset', function () {
                 setTimeout(() => {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    $('#transactionDate').val(`${year}-${month}-${day}T${hours}:${minutes}`);
-
-                    $('#transactionIngredientId').val(null).trigger('change');
-                    $('#transactionSupplierId').val(null).trigger('change');
-                    $('#transactionType').val("").trigger('change');
-
                     $('#ingredientInfo').text('');
-                    $('#transactionIngredientUnit').text('');
-                    $('#createTransactionForm').validate().resetForm();
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.is-valid').removeClass('is-valid');
+                    $ingredientSelect.val(null).trigger('change');
+                    $supplierSelect.val(null).trigger('change');
+                    if ($batchSelect.hasClass("select2-hidden-accessible")) {
+                        $batchSelect.select2('destroy');
+                    }
+                    $batchSelect.empty();
+                    updateTransactionFormUI('');
                 }, 0);
             });
 
-            $('.btn-clear-filters').on('click', function () {
-                const targetTableId = $(this).data('target-table');
-                let tableInstance = null;
-                let searchInputId = '';
-
-                if (targetTableId === 'ingredientsTable') {
-                    tableInstance = ingredientsTable;
-                    searchInputId = '#ingredientSearch';
-                    $(searchInputId).val('');
-                } else if (targetTableId === 'suppliersTable') {
-                    tableInstance = suppliersTable;
-                    searchInputId = '#supplierSearch';
-                    $(searchInputId).val('');
-                } else if (targetTableId === 'transactionsHistoryTable') {
-                    tableInstance = transactionsHistoryTable;
-                    searchInputId = '#transactionHistorySearch';
-
-                    $('#historyFromDate').val('');
-                    $('#historyToDate').val('');
-                    $('#historyTransactionTypeFilter').val('').trigger('change');
-                    $('#historyIngredientFilterId').val(null).trigger('change');
-                    $(searchInputId).val('');
-                    if (document.getElementById('historyFromDate')._flatpickr) {
-                        document.getElementById('historyFromDate')._flatpickr.clear();
-                    }
-                    if (document.getElementById('historyToDate')._flatpickr) {
-                        document.getElementById('historyToDate')._flatpickr.clear();
-                    }
-                }
-
-                if (tableInstance) {
-                    tableInstance.search('').draw();
-                }
-            });
-
+            // ============== LOGIC BÁO CÁO ==============
             var inventoryReportModal = new bootstrap.Modal(document.getElementById('inventoryReportModal'));
             var previewModal = new bootstrap.Modal(document.getElementById('previewReportModal'));
 
@@ -1984,8 +1974,7 @@
             });
 
             $('#reportIngredientIds').select2({
-                theme: "bootstrap-5",
-                width: '100%',
+                theme: "bootstrap-5", width: '100%',
                 placeholder: $(this).data('placeholder') || '-- Chọn NVL (để trống là tất cả) --',
                 allowClear: true,
                 dropdownParent: $('#inventoryReportModal'),
@@ -2046,20 +2035,6 @@
                         fromDate = new Date(currentYear, 0, 1);
                         toDate = new Date(currentYear, 11, 31);
                         break;
-                    case 'lastWeek':
-                        toDate = new Date(today);
-                        toDate.setDate(today.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -7 : 0));
-                        fromDate = new Date(toDate);
-                        fromDate.setDate(toDate.getDate() - 6);
-                        break;
-                    case 'lastMonth':
-                        fromDate = new Date(currentYear, currentMonth - 1, 1);
-                        toDate = new Date(currentYear, currentMonth, 0);
-                        break;
-                    case 'lastYear':
-                        fromDate = new Date(currentYear - 1, 0, 1);
-                        toDate = new Date(currentYear - 1, 11, 31);
-                        break;
                 }
 
                 if (fromDate && document.getElementById('reportFromDate')._flatpickr) {
@@ -2071,25 +2046,15 @@
             });
 
             $('#inventoryReportForm').validate({
-                rules: {
-                    FromDate: { required: true },
-                    ToDate: { required: true }
-                },
-                messages: {
-                    FromDate: "Vui lòng chọn ngày bắt đầu.",
-                    ToDate: "Vui lòng chọn ngày kết thúc."
-                },
-                errorPlacement: function (error, element) {
-                    if (element.hasClass('flatpickr-input-report')) {
-                        error.insertAfter(element.closest('.form-label-group'));
-                    } else {
-                        error.insertAfter(element);
-                    }
-                }
+                rules: { FromDate: { required: true }, ToDate: { required: true } },
+                messages: { FromDate: "Vui lòng chọn ngày bắt đầu.", ToDate: "Vui lòng chọn ngày kết thúc." }
             });
 
-            $('#btnExportInventoryToExcel').on('click', function () {
-                if (!$('#inventoryReportForm').valid()) { return; }
+            $('#btnExportInventoryToExcel, #btnDownloadFromPreview').on('click', function () {
+                if (!$('#inventoryReportForm').valid()) {
+                    showErrorAlert("Thiếu thông tin", "Vui lòng chọn đầy đủ Từ ngày và Đến ngày trong form tùy chọn báo cáo.");
+                    return;
+                }
                 const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
                 const fromDateParts = fromDateVal.split('/'), toDateParts = toDateVal.split('/');
                 const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
@@ -2108,29 +2073,26 @@
                 setTimeout(() => hideLoading('body'), 3000);
             });
 
-            // Nút "Xem trước" trong modal tùy chọn
             $('#btnPreviewInventoryReport').on('click', function () {
                 if (!$('#inventoryReportForm').valid()) {
                     showErrorAlert("Thiếu thông tin", "Vui lòng chọn đầy đủ Từ ngày và Đến ngày.");
                     return;
                 }
-
                 const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
                 const fromDateParts = fromDateVal.split('/'), toDateParts = toDateVal.split('/');
                 const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
                 const toDateISO = `${toDateParts[2]}-${toDateParts[1]}-${toDateParts[0]}T23:59:59`;
                 const selectedIngredientIds = $('#reportIngredientIds').val();
 
-                $('#previewReportModalBody').html('<div class="excel-preview-container"><div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div></div>');
+                $('#previewReportModalBody').html('<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" role="status"></div></div>');
                 previewModal.show();
                 inventoryReportModal.hide();
 
                 $.ajax({
-                    url: '@Url.Action("PreviewInventoryReport", "Inventory")',
-                    type: 'POST',
+                    url: '@Url.Action("PreviewInventoryReport", "Inventory")', type: 'POST',
                     data: { fromDate: fromDateISO, toDate: toDateISO, ingredientIds: selectedIngredientIds },
                     success: function (response) {
-                        $('#previewReportModalBody').html(`<div class="excel-preview-container">${response}</div>`);
+                        $('#previewReportModalBody').html(response);
                     },
                     error: function (xhr) {
                         handleAjaxError(xhr, "tạo bản xem trước");
@@ -2139,10 +2101,6 @@
                 });
             });
 
-            // Nút "Tải xuống" từ trong modal xem trước
-            $('#btnDownloadFromPreview').on('click', () => $('#btnExportInventoryToExcel').trigger('click'));
-
-            // Sự kiện click "Xem chi tiết" trong modal xem trước (sử dụng event delegation)
             $('#previewReportModalBody').on('click', '.btn-view-detail', function () {
                 const ingredientId = $(this).data('id');
                 const fromDateVal = $('#reportFromDate').val(), toDateVal = $('#reportToDate').val();
@@ -2150,331 +2108,107 @@
                 const fromDateISO = `${fromDateParts[2]}-${fromDateParts[1]}-${fromDateParts[0]}T00:00:00`;
                 const toDateISO = `${toDateParts[2]}-${toDateParts[1]}-${toDateParts[0]}T23:59:59`;
 
-                const $summaryView = $('#preview-summary-view');
-                const $detailView = $('#preview-detail-view');
-
-                // [MỚI] Điều khiển các nút ở footer
                 $('#btnDownloadFromPreview').hide();
                 $('#btn-back-to-summary').show();
-
-                $detailView.html('<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" role="status"></div></div>').show();
-                $summaryView.hide();
+                $('#previewReportModalBody').html('<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" role="status"></div></div>');
 
                 $.ajax({
-                    url: '@Url.Action("PreviewIngredientDetail", "Inventory")',
-                    type: 'POST',
+                    url: '@Url.Action("PreviewIngredientDetail", "Inventory")', type: 'POST',
                     data: { ingredientId: ingredientId, fromDate: fromDateISO, toDate: toDateISO },
-                    success: function (response) {
-                        $detailView.html(response);
-                    },
+                    success: function (response) { $('#previewReportModalBody').html(response); },
                     error: function (xhr) {
                         handleAjaxError(xhr, "tải chi tiết");
-                        $detailView.html('<div class="alert alert-danger m-3">Không thể tải chi tiết.</div>');
+                        $('#previewReportModalBody').html('<div class="alert alert-danger m-3">Không thể tải chi tiết.</div>');
                     }
                 });
             });
 
-            // Sự kiện click "Quay lại" từ footer của modal
-            // Lưu ý: đổi selector từ #previewReportModalBody sang #previewReportModal để bắt sự kiện ở footer
             $('#previewReportModal').on('click', '#btn-back-to-summary', function () {
-                // [MỚI] Điều khiển các nút ở footer
                 $('#btnDownloadFromPreview').show();
                 $('#btn-back-to-summary').hide();
-
-                $('#preview-detail-view').hide().empty();
-                $('#preview-summary-view').show();
+                $('#btnPreviewInventoryReport').trigger('click');
             });
 
-            // Sự kiện reset modal khi bị đóng
-            var previewModalEl = document.getElementById('previewReportModal');
-            previewModalEl.addEventListener('hidden.bs.modal', function (event) {
-                // Xóa nội dung
+            document.getElementById('previewReportModal').addEventListener('hidden.bs.modal', function (event) {
                 $('#previewReportModalBody').empty();
-
-                // [MỚI] Reset lại trạng thái các nút ở footer về mặc định
                 $('#btnDownloadFromPreview').show();
                 $('#btn-back-to-summary').hide();
             });
 
-            // Cập nhật và hiển thị thời gian thực cho trường Ngày giao dịch
-            function updateTransactionDateTime() {
-                const now = new Date();
-                const formattedDateTime =
-                    ('0' + now.getDate()).slice(-2) + '/' +
-                    ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
-                    now.getFullYear() + ' ' +
-                    ('0' + now.getHours()).slice(-2) + ':' +
-                    ('0' + now.getMinutes()).slice(-2) + ':' +
-                    ('0' + now.getSeconds()).slice(-2);
-                $('#transactionDate').val(formattedDateTime);
-            }
-
-            // Gọi lần đầu khi tải trang và sau đó cập nhật mỗi giây
-            updateTransactionDateTime();
-            setInterval(updateTransactionDateTime, 1000);
-
-            // Xử lý sự kiện reset form
-            $('#createTransactionForm').on('reset', function () {
-                setTimeout(() => {
-                    $('#createTransactionForm').validate().resetForm();
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.is-valid').removeClass('is-valid');
-                    $('#transactionIngredientId').val(null).trigger('change');
-                    $('#transactionSupplierId').val(null).trigger('change');
-                    $('#transactionType').val("").trigger('change');
-                    $('#ingredientInfo').text('');
-                }, 0);
-            });
-
-            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-                let targetPaneId = $(e.target).attr('aria-controls');
-                if ($('.select2-custom.select2-hidden-accessible').data('select2')) {
-                    $('.select2-custom.select2-hidden-accessible').select2('close');
-                }
-                if ($('.select2-report.select2-hidden-accessible').data('select2')) {
-                    $('.select2-report.select2-hidden-accessible').select2('close');
-                }
-                if ($('.select2-custom-filter.select2-hidden-accessible').data('select2')) {
-                    $('.select2-custom-filter.select2-hidden-accessible').select2('close');
-                }
-            });
-
-
-            // =================== DASHBOARD CHARTING LOGIC ===================
-            // Hàm định dạng số cho đẹp hơn
+            // ============== DASHBOARD LOGIC ==============
             const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
             const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value);
 
-            // Hàm để load tất cả dữ liệu cho dashboard
             function loadDashboardData() {
                 const kpiUrl = '@Url.Action("GetDashboardKpis", "Inventory")';
                 const pieChartUrl = '@Url.Action("GetInventoryValueDistribution", "Inventory")';
                 const barChartUrl = '@Url.Action("GetTopConsumedIngredients", "Inventory")';
                 const lineChartUrl = '@Url.Action("GetWasteTrend", "Inventory")';
-                const lowStockUrl = '@Url.Action("GetLowStockIngredients", "Inventory")'; // API mới
-                const topWastedUrl = '@Url.Action("GetTopWastedIngredients", "Inventory")'; // API mới
+                const lowStockUrl = '@Url.Action("GetLowStockIngredients", "Inventory")';
+                const topWastedUrl = '@Url.Action("GetTopWastedIngredients", "Inventory")';
 
-
-                // Gọi API cho KPI
                 $.get(kpiUrl, function (data) {
                     $('#kpiTotalValue').text(formatCurrency(data.totalInventoryValue));
                     $('#kpiLowStockItems').text(formatNumber(data.lowStockItemsCount) + ' loại');
                 });
 
-                // Gọi API và vẽ biểu đồ tròn
                 $.get(pieChartUrl, function (data) {
+                    if (window.inventoryValuePieChart instanceof Chart) { window.inventoryValuePieChart.destroy(); }
                     const ctx = document.getElementById('inventoryValuePieChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: data.map(d => d.label),
-                            datasets: [{
-                                data: data.map(d => d.value),
-                                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'],
-                            }],
-                        },
-                        options: {
-                            maintainAspectRatio: false,
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function (context) {
-                                            let label = context.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed !== null) {
-                                                label += formatCurrency(context.parsed);
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
-                            }
-                        },
+                    window.inventoryValuePieChart = new Chart(ctx, {
+                        type: 'doughnut', data: { labels: data.map(d => d.label), datasets: [{ data: data.map(d => d.value), backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'], }], },
+                        options: { maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: function (context) { return (context.label || '') + ': ' + formatCurrency(context.parsed); } } } } },
                     });
                 });
 
-                // Gọi API và vẽ biểu đồ cột
                 $.get(barChartUrl, function (data) {
+                    if (window.consumedIngredientsBarChart instanceof Chart) { window.consumedIngredientsBarChart.destroy(); }
                     const ctx = document.getElementById('consumedIngredientsBarChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.map(d => d.label),
-                            datasets: [{
-                                label: 'Số lượng tiêu thụ',
-                                data: data.map(d => d.value),
-                                backgroundColor: '#4e73df',
-                            }],
-                        },
-                        options: {
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: { beginAtZero: true }
-                            },
-                            plugins: {
-                                legend: { display: false }
-                            }
-                        },
+                    window.consumedIngredientsBarChart = new Chart(ctx, {
+                        type: 'bar', data: { labels: data.map(d => d.label), datasets: [{ label: 'Số lượng tiêu thụ', data: data.map(d => d.value), backgroundColor: '#4e73df', }], },
+                        options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } },
                     });
                 });
 
-                // Gọi API và vẽ biểu đồ đường
                 $.get(lineChartUrl, function (data) {
+                    if (window.wasteTrendLineChart instanceof Chart) { window.wasteTrendLineChart.destroy(); }
                     const ctx = document.getElementById('wasteTrendLineChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: data.map(d => d.month),
-                            datasets: [{
-                                label: 'Giá trị hủy',
-                                data: data.map(d => d.value),
-                                borderColor: '#e74a3b',
-                                backgroundColor: 'rgba(231, 74, 59, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            }],
-                        },
-                        options: {
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        callback: function (value, index, values) {
-                                            return formatCurrency(value);
-                                        }
-                                    }
-                                }
-                            },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function (context) {
-                                            return 'Hủy/Thất thoát: ' + formatCurrency(context.parsed.y);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    window.wasteTrendLineChart = new Chart(ctx, {
+                        type: 'line', data: { labels: data.map(d => d.month), datasets: [{ label: 'Giá trị hủy', data: data.map(d => d.value), borderColor: '#e74a3b', backgroundColor: 'rgba(231, 74, 59, 0.1)', fill: true, tension: 0.3 }], },
+                        options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: function (value) { return formatCurrency(value); } } } }, plugins: { tooltip: { callbacks: { label: function (context) { return 'Hủy/Thất thoát: ' + formatCurrency(context.parsed.y); } } } } }
                     });
                 });
-                // Gọi API và vẽ biểu đồ NVL dưới định mức
+
                 $.get(lowStockUrl, function (data) {
                     if (window.lowStockChart instanceof Chart) { window.lowStockChart.destroy(); }
                     const ctx = document.getElementById('lowStockChart');
                     if (!ctx) return;
-
-                    // Nếu không có dữ liệu, hiển thị thông báo
                     if (data.length === 0) {
                         ctx.parentElement.innerHTML = '<div class="text-center p-5 text-success"><i class="bi bi-check-circle-fill fs-2"></i><p>Tuyệt vời! Không có NVL nào dưới định mức.</p></div>';
                         return;
                     }
-
                     window.lowStockChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.map(d => d.name),
-                            datasets: [
-                                {
-                                    label: 'Tồn kho hiện tại',
-                                    data: data.map(d => d.currentStock),
-                                    backgroundColor: 'rgba(255, 193, 7, 0.7)', // Màu vàng cảnh báo
-                                    borderColor: 'rgba(255, 193, 7, 1)',
-                                    borderWidth: 1
-                                },
-                                {
-                                    label: 'Tồn kho tối thiểu',
-                                    data: data.map(d => d.minimumStock),
-                                    backgroundColor: 'rgba(220, 53, 69, 0.7)', // Màu đỏ nguy hiểm
-                                    borderColor: 'rgba(220, 53, 69, 1)',
-                                    borderWidth: 1
-                                }
-                            ]
-                        },
-                        options: {
-                            indexAxis: 'y', // Biến thành biểu đồ cột ngang
-                            maintainAspectRatio: false,
-                            scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        callback: (value) => formatNumber(value)
-                                    }
-                                }
-                            },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function (context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed.x !== null) {
-                                                label += formatNumber(context.parsed.x);
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        type: 'bar', data: { labels: data.map(d => d.name), datasets: [{ label: 'Tồn kho hiện tại', data: data.map(d => d.currentStock), backgroundColor: 'rgba(255, 193, 7, 0.7)', borderColor: 'rgba(255, 193, 7, 1)', borderWidth: 1 }, { label: 'Tồn kho tối thiểu', data: data.map(d => d.minimumStock), backgroundColor: 'rgba(220, 53, 69, 0.7)', borderColor: 'rgba(220, 53, 69, 1)', borderWidth: 1 }] },
+                        options: { indexAxis: 'y', maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { callback: (value) => formatNumber(value) } } }, plugins: { tooltip: { callbacks: { label: function (context) { return (context.dataset.label || '') + ': ' + formatNumber(context.parsed.x); } } } } }
                     });
                 });
 
-                // Gọi API và vẽ biểu đồ Top NVL bị hủy
                 $.get(topWastedUrl, function (data) {
                     if (window.topWastedItemsChart instanceof Chart) { window.topWastedItemsChart.destroy(); }
                     const ctx = document.getElementById('topWastedItemsChart');
                     if (!ctx) return;
-
                     window.topWastedItemsChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.map(d => d.name),
-                            datasets: [{
-                                label: 'Giá trị hủy',
-                                data: data.map(d => d.valueWasted),
-                                backgroundColor: '#fd7e14',
-                                // Đưa dữ liệu số lượng vào để dùng trong tooltip
-                                customData: data.map(d => d.quantityWasted)
-                            }]
-                        },
+                        type: 'bar', data: { labels: data.map(d => d.name), datasets: [{ label: 'Giá trị hủy', data: data.map(d => d.valueWasted), backgroundColor: '#fd7e14', customData: data.map(d => d.quantityWasted) }] },
                         options: {
                             maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: { callback: (value) => formatCurrency(value) }
-                                }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function (context) {
-                                            const value = formatCurrency(context.parsed.y);
-                                            const quantity = context.chart.data.datasets[0].customData[context.dataIndex];
-                                            return `Giá trị: ${value} (SL: ${formatNumber(quantity)})`;
-                                        }
-                                    }
-                                }
-                            }
+                            scales: { y: { beginAtZero: true, ticks: { callback: (value) => formatCurrency(value) } } },
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (context) { const value = formatCurrency(context.parsed.y); const quantity = context.chart.data.datasets[0].customData[context.dataIndex]; return `Giá trị: ${value} (SL: ${formatNumber(quantity)})`; } } } }
                         }
                     });
                 });
             }
 
-            // Gọi hàm load dashboard khi trang được tải
             loadDashboardData();
-
-            // Tùy chọn: Load lại dashboard khi người dùng click vào tab
-            $('#dashboard-tab-btn').on('shown.bs.tab', function (e) {
-                // Có thể thêm logic load lại ở đây nếu cần, nhưng hiện tại chỉ cần load 1 lần là đủ
-            });
-            // ================= END DASHBOARD LOGIC ===================
         });
     </script>
 }

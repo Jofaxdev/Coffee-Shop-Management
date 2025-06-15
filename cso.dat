@@ -19,3 +19,7 @@ V1
 2:ExportInventoryDetailReport,X
 2:ingredientIds,k
 2:RenderDetailSheetForItem,b
+2:GetBatchesForIngredient,R
+2:ingredientId,xD
+2:batches,K
+2:b,TZ

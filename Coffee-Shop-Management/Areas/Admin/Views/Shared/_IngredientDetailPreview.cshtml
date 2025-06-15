@@ -1,11 +1,33 @@
 ﻿@* File: /Areas/Admin/Views/Inventory/_IngredientDetailPreview.cshtml *@
 @model Coffee_Shop_Management.Areas.Admin.ViewModels.InventoryDetailReportItemVM
+@using Coffee_Shop_Management.Models
 
 @{
     var colorIn = "#E7F3E7";
     var colorOut = "#FFF0F0";
     var colorAdjIn = "#EBF5FF";
     var colorAdjOut = "#FFF9E6";
+
+    var culture = new System.Globalization.CultureInfo("vi-VN");
+}
+
+@functions {
+    // Hàm tiện ích để định dạng số ngay trong View cho nhất quán
+    private string FormatNumber(decimal? number, bool isQuantity = false)
+    {
+        if (!number.HasValue) return "-";
+        var culture = new System.Globalization.CultureInfo("vi-VN");
+
+        if (isQuantity)
+        {
+            if (number.Value == Math.Truncate(number.Value))
+            {
+                return number.Value.ToString("N0", culture);
+            }
+            return number.Value.ToString("N4", culture).TrimEnd('0').TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
+        }
+        return number.Value.ToString("N0", culture);
+    }
 }
 
 <style>
@@ -26,7 +48,7 @@
         background-color: #fff;
         font-size: 14px;
         font-family: Calibri, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        table-layout: fixed; /* Bắt buộc bảng tuân thủ chiều rộng đã đặt */
+        table-layout: fixed;
     }
 
         .preview-table th, .preview-table td {
@@ -37,10 +59,9 @@
             vertical-align: middle;
         }
 
-        /* [SỬA LỖI] Style cho các cột cần xuống dòng */
         .preview-table .wrap-text {
-            white-space: normal; /* Cho phép xuống dòng */
-            word-break: break-word; /* Tự động ngắt các từ quá dài */
+            white-space: normal;
+            word-break: break-word;
         }
 
         .preview-table thead th {
@@ -49,7 +70,7 @@
             text-align: center;
             vertical-align: middle;
             position: sticky;
-            top: -21px;
+            top: -1px;
         }
 
         .preview-table .text-right {
@@ -59,25 +80,26 @@
         .preview-table .text-center {
             text-align: center;
         }
+
 </style>
 
 <div class="fixed-layout-wrapper">
     <h4 class="mb-3">Thẻ kho: @Model.IngredientName (@Model.IngredientCode)</h4>
     <table class="preview-table">
         <colgroup>
-            <col style="width: 130px;">  @* Ngày GD *@
-            <col style="width: 80px;">   @* Số Phiếu *@
-            <col style="width: 120px;">  @* Loại GD/Diễn giải *@
-            <col style="width: 110px;">  @* Người TH *@
-            <col style="width: 150px;">  @* NCC *@
-            <col style="width: 90px;">   @* SL Nhập *@
-            <col style="width: 90px;">   @* ĐG Nhập *@
-            <col style="width: 100px;">  @* TT Nhập *@
-            <col style="width: 90px;">   @* SL Xuất *@
-            <col style="width: 90px;">   @* ĐG Xuất *@
-            <col style="width: 100px;">  @* TT Xuất *@
-            <col style="width: 100px;">  @* SL Tồn *@
-            <col style="width: 120px;">  @* Ghi Chú *@
+            <col style="width: 130px;" /> @* Ngày GD *@
+            <col style="width: 80px;" />  @* Số Phiếu *@
+            <col style="width: 120px;" /> @* Loại GD/Diễn giải *@
+            <col style="width: 110px;" /> @* Người TH *@
+            <col style="width: 150px;" /> @* NCC *@
+            <col style="width: 90px;" />  @* SL Nhập *@
+            <col style="width: 90px;" />  @* ĐG Nhập *@
+            <col style="width: 100px;" /> @* TT Nhập *@
+            <col style="width: 90px;" />  @* SL Xuất *@
+            <col style="width: 90px;" />  @* ĐG Xuất *@
+            <col style="width: 100px;" /> @* TT Xuất *@
+            <col style="width: 100px;" /> @* SL Tồn *@
+            <col style="width: 120px;" /> @* Ghi Chú *@
         </colgroup>
         <thead>
             <tr>
@@ -99,7 +121,7 @@
         <tbody>
             <tr style="font-weight: bold; font-style: italic;">
                 <td colspan="11" class="text-center">Tồn đầu kỳ</td>
-                <td class="text-right">@Model.OpeningStockQuantity.ToString("#,##0.###")</td>
+                <td class="text-right">@FormatNumber(Model.OpeningStockQuantity, true)</td>
                 <td></td>
             </tr>
 
@@ -128,29 +150,42 @@
                     <td class="wrap-text">@trans.TransactionTypeDisplay</td>
                     <td class="wrap-text">@trans.UserName</td>
                     <td class="wrap-text">@trans.SupplierName</td>
-                    <td class="text-right">@(trans.QuantityIn?.ToString("#,##0.###") ?? "-")</td>
-                    <td class="text-right">@(trans.UnitPriceIn?.ToString("#,##0") ?? "-")</td>
-                    <td class="text-right">@(trans.ValueIn?.ToString("#,##0") ?? "-")</td>
-                    <td class="text-right">@(trans.QuantityOut?.ToString("#,##0.###") ?? "-")</td>
-                    <td class="text-right">@(trans.UnitPriceOut?.ToString("#,##0") ?? "-")</td>
-                    <td class="text-right">@(trans.ValueOut?.ToString("#,##0") ?? "-")</td>
-                    <td class="text-right">@trans.StockAfterTransaction.ToString("#,##0.###")</td>
+                    <td class="text-right">@FormatNumber(trans.QuantityIn, true)</td>
+
+                    @* SỬA LOGIC HIỂN THỊ CỘT ĐƠN GIÁ NHẬP *@
+                    <td class="text-right">
+                        @if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption)
+                        {
+                            <span class="ref-cost-price" title="Giá vốn của lô hàng đã bán">@FormatNumber(trans.CostPriceOut)</span>
+                        }
+                        else
+                        {
+                            @FormatNumber(trans.UnitPriceIn)
+                        }
+                    </td>
+
+                    <td class="text-right">@FormatNumber(trans.ValueIn)</td>
+                    <td class="text-right">@FormatNumber(trans.QuantityOut, true)</td>
+                    <td class="text-right">@FormatNumber(trans.UnitPriceOut)</td>
+                    <td class="text-right">@FormatNumber(trans.ValueOut)</td>
+                    <td class="text-right">@FormatNumber(trans.StockAfterTransaction, true)</td>
                     <td class="wrap-text">@trans.Notes</td>
                 </tr>
             }
             <tr style="font-weight: bold; background-color: #FFF2CC;">
                 <td colspan="5" class="text-center">Tổng cộng phát sinh</td>
-                <td class="text-right">@Model.TotalQuantityIn.ToString("#,##0.###")</td>
+                <td class="text-right">@FormatNumber(Model.TotalQuantityIn, true)</td>
                 <td></td>
-                <td class="text-right">@Model.TotalValueIn.ToString("#,##0")</td>
-                <td class="text-right">@Model.TotalQuantityOut.ToString("#,##0.###")</td>
+                <td class="text-right">@FormatNumber(Model.TotalValueIn)</td>
+                <td class="text-right">@FormatNumber(Model.TotalQuantityOut, true)</td>
                 <td></td>
-                <td class="text-right">@Model.TotalValueOut.ToString("#,##0")</td>
+                <td class="text-right">@FormatNumber(Model.TotalValueOut)</td>
                 <td colspan="2"></td>
             </tr>
             <tr style="font-weight: bold; font-style: italic;">
-                <td colspan="12" class="text-center">Tồn cuối kỳ</td>
-                <td class="text-right">@Model.ClosingStockQuantity.ToString("#,##0.###")</td>
+                <td colspan="11" class="text-center">Tồn cuối kỳ</td>
+                <td class="text-right">@FormatNumber(Model.ClosingStockQuantity, true)</td>
+                <td></td>
             </tr>
         </tbody>
     </table>

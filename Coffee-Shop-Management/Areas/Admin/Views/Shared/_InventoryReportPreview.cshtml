@@ -1,6 +1,26 @@
 ﻿@* File: /Areas/Admin/Views/Inventory/_InventoryReportPreview.cshtml *@
 @model List<Coffee_Shop_Management.Areas.Admin.ViewModels.InventorySummaryReportItemVM>
 
+@functions {
+    // Hàm tiện ích để định dạng số ngay trong View cho nhất quán
+    private string FormatNumber(decimal number, bool isQuantity = false)
+    {
+        var culture = new System.Globalization.CultureInfo("vi-VN");
+        if (isQuantity)
+        {
+            // Nếu là số nguyên, không hiển thị phần thập phân
+            if (number == Math.Truncate(number))
+            {
+                return number.ToString("N0", culture);
+            }
+            // Ngược lại, hiển thị tối đa 4 chữ số thập phân và bỏ số 0 thừa
+            return number.ToString("N4", culture).TrimEnd('0').TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
+        }
+        // Mặc định cho tiền tệ, không có số thập phân
+        return number.ToString("N0", culture);
+    }
+}
+
 <style>
     .excel-preview-container {
         padding: 20px;
@@ -9,7 +29,7 @@
     }
 
     .fixed-layout-wrapper {
-        min-width: 1200px;
+        min-width: 1400px; /* Tăng chiều rộng tối thiểu để chứa cột mới */
         padding-bottom: 15px;
     }
 
@@ -26,20 +46,22 @@
             padding: 6px 8px;
             text-align: left;
             white-space: nowrap;
+            vertical-align: middle;
         }
 
         .preview-table thead th {
-            background-color: #DDEBF7; /* Màu xanh header giống Excel */
+            background-color: #DDEBF7;
             font-weight: bold;
             text-align: center;
             vertical-align: middle;
             position: sticky;
-            top: -21px;
+            top: -1px;
+            z-index: 2;
         }
 
         .preview-table tfoot td {
             font-weight: bold;
-            background-color: #FFF2CC; /* Màu vàng cho dòng tổng cộng */
+            background-color: #FFF2CC;
         }
 
         .preview-table .text-right {
@@ -58,11 +80,12 @@
         .preview-table .btn-view-detail {
             cursor: pointer;
             color: #0d6efd;
+            font-size: 1.2em;
         }
 
             .preview-table .btn-view-detail:hover {
                 color: #0a58ca;
-                text-decoration: underline;
+                text-decoration: none;
             }
 
     #preview-detail-view {
@@ -88,9 +111,10 @@
                         <th rowspan="2" style="min-width: 60px;">ĐVT</th>
                         <th colspan="2">Tồn đầu kỳ</th>
                         <th colspan="2">Nhập trong kỳ</th>
-                        <th colspan="2">Xuất trong kỳ</th>
+                        <th colspan="2">Xuất trong kỳ (Giá vốn)</th>
                         <th colspan="2">Tồn cuối kỳ</th>
-                        <th rowspan="2">Hành động</th>
+                        <th rowspan="2" style="min-width: 120px;">Doanh thu</th> @* Chuyển cột Doanh thu ra sau Tồn cuối kỳ *@
+                        <th rowspan="2">Chi tiết</th>
                     </tr>
                     <tr>
                         <th style="min-width: 100px;">Số Lượng</th>
@@ -111,31 +135,34 @@
                             <td>@item.IngredientCode</td>
                             <td>@item.IngredientName</td>
                             <td class="text-center">@item.UnitOfMeasure</td>
-                            <td class="text-right">@item.OpeningStockQuantity.ToString("#,##0.###")</td>
-                            <td class="text-right">@item.OpeningStockValue.ToString("#,##0")</td>
-                            <td class="text-right">@item.PeriodQuantityIn.ToString("#,##0.###")</td>
-                            <td class="text-right">@item.PeriodValueIn.ToString("#,##0")</td>
-                            <td class="text-right">@item.PeriodQuantityOut.ToString("#,##0.###")</td>
-                            <td class="text-right">@item.PeriodValueOut.ToString("#,##0")</td>
-                            <td class="text-right">@item.ClosingStockQuantity.ToString("#,##0.###")</td>
-                            <td class="text-right">@item.ClosingStockValue.ToString("#,##0")</td>
+                            <td class="text-right">@FormatNumber(item.OpeningStockQuantity, true)</td>
+                            <td class="text-right">@FormatNumber(item.OpeningStockValue)</td>
+                            <td class="text-right">@FormatNumber(item.PeriodQuantityIn, true)</td>
+                            <td class="text-right">@FormatNumber(item.PeriodValueIn)</td>
+                            <td class="text-right">@FormatNumber(item.PeriodQuantityOut, true)</td>
+                            <td class="text-right">@FormatNumber(item.PeriodValueOut)</td>
+                            <td class="text-right">@FormatNumber(item.ClosingStockQuantity, true)</td>
+                            <td class="text-right">@FormatNumber(item.ClosingStockValue)</td>
+                            <td class="text-right">@FormatNumber(item.PeriodRevenue)</td> @* Chuyển ô Doanh thu ra cuối *@
                             <td class="action-cell">
-                                <i class="bi bi-eye-fill btn-view-detail" title="Xem chi tiết" data-id="@item.IngredientId" data-name="@item.IngredientName"></i>
+                                <i class="bi bi-eye-fill btn-view-detail" title="Xem thẻ kho" data-id="@item.IngredientId" data-name="@item.IngredientName"></i>
                             </td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5" class="text-center"><strong>Tổng cộng</strong></td>
-                        <td class="text-right">@Model.Sum(x => x.OpeningStockValue).ToString("#,##0")</td>
-                        <td></td>
-                        <td class="text-right">@Model.Sum(x => x.PeriodValueIn).ToString("#,##0")</td>
-                        <td></td>
-                        <td class="text-right">@Model.Sum(x => x.PeriodValueOut).ToString("#,##0")</td>
-                        <td></td>
-                        <td class="text-right">@Model.Sum(x => x.ClosingStockValue).ToString("#,##0")</td>
-                        <td></td>
+                        <td colspan="4" class="text-center"><strong>Tổng cộng</strong></td>
+                        <td></td> @* Cột trống dưới Tồn đầu SL *@
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.OpeningStockValue))</td>
+                        <td></td> @* Cột trống dưới Nhập SL *@
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodValueIn))</td>
+                        <td></td> @* Cột trống dưới Xuất SL *@
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodValueOut))</td>
+                        <td></td> @* Cột trống dưới Tồn cuối SL *@
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.ClosingStockValue))</td>
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodRevenue))</td> @* Chuyển Tổng Doanh thu ra cuối *@
+                        <td></td> @* Cột trống dưới Chi tiết *@
                     </tr>
                 </tfoot>
             </table>
@@ -143,6 +170,6 @@
     </div>
 
     <div id="preview-detail-view">
-        @* Nội dung chi tiết sẽ được tải vào đây *@
+        @* Nội dung chi tiết Thẻ kho sẽ được tải vào đây bằng AJAX *@
     </div>
 </div>

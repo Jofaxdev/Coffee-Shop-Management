@@ -51,5 +51,8 @@ namespace Coffee_Shop_Management.Areas.Admin.ViewModels
         [MaxLength(500, ErrorMessage = "Ghi chú không được vượt quá 500 ký tự.")]
         [Display(Name = "Ghi chú")]
         public string? Notes { get; set; }
+
+        [Display(Name = "Lô hàng")]
+        public int? BatchId { get; set; } // ID của lô hàng được chọn khi xuất/giảm
     }
 }

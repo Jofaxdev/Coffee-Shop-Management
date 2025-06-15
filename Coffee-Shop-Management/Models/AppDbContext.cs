@@ -226,6 +226,8 @@ namespace Coffee_Shop_Management.Models
         public DbSet<EmployeeAssignment> EmployeeAssignments { get; set; }
         // DbSets cho quản lý kho mới
         public DbSet<Ingredient> Ingredients { get; set; }
+        public DbSet<InventoryBatch> InventoryBatches { get; set; }
+
         public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
         public DbSet<ProductIngredient> ProductIngredients { get; set; }
@@ -257,6 +259,35 @@ namespace Coffee_Shop_Management.Models
             public DateTime CreatedAt { get; set; } = DateTime.Now;
             public DateTime UpdatedAt { get; set; } = DateTime.Now;
             public bool DeleteTemp { get; set; } = false;
+        }
+
+        public class InventoryBatch
+        {
+            [Key]
+            public int Id { get; set; }
+
+            [Required]
+            public int IngredientId { get; set; }
+            [ForeignKey("IngredientId")]
+            public virtual Ingredient? Ingredient { get; set; }
+
+            [MaxLength(50)]
+            public string BatchNumber { get; set; } = string.Empty; // Mã lô hàng (có thể tự sinh)
+
+            [Required]
+            [Precision(18, 4)]
+            public decimal Quantity { get; set; } // Số lượng còn lại trong lô
+
+            [Required]
+            [Precision(18, 2)]
+            public decimal PurchasePrice { get; set; } // Giá nhập của riêng lô này
+
+            [Required]
+            public DateTime PurchaseDate { get; set; }
+
+            public DateTime? ExpiryDate { get; set; } // Ngày hết hạn (Rất quan trọng cho quán cafe)
+
+            public bool IsActive { get; set; } = true; // Đánh dấu lô đã hết hay chưa
         }
 
         public class ProductIngredient
@@ -347,6 +378,11 @@ namespace Coffee_Shop_Management.Models
             public string? Notes { get; set; } // Ghi chú (vd: "Hủy do bể vỡ", "Kiểm kê ngày X")
 
             public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+            // Liên kết đến lô hàng bị ảnh hưởng (chủ yếu cho giao dịch xuất)
+            public int? BatchId { get; set; }
+            [ForeignKey("BatchId")]
+            public virtual InventoryBatch? Batch { get; set; }
         }
         //Kho end
 

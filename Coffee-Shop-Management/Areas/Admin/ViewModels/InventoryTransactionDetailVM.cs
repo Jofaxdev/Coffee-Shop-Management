@@ -16,6 +16,7 @@ namespace Coffee_Shop_Management.Areas.Admin.ViewModels
         public decimal? ValueIn { get; set; }
         public decimal? QuantityOut { get; set; }
         public decimal? UnitPriceOut { get; set; }
+        public decimal? CostPriceOut { get; set; }
         public decimal? ValueOut { get; set; }
         public decimal StockAfterTransaction { get; set; }
         public string Notes { get; set; }

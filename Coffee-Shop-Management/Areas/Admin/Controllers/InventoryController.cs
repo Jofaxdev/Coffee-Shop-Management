@@ -219,14 +219,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
         }
         #endregion
 
-        #region Xuất Báo cáo Tồn Kho Chi Tiết Excel
+        #region Báo cáo & Xuất file
 
         [HttpPost]
         public async Task<IActionResult> ExportInventoryDetailReport(DateTime fromDate, DateTime toDate, List<int> ingredientIds = null)
         {
-            // ... Phần logic lấy dữ liệu giữ nguyên như cũ, không có thay đổi ...
-            _logger.LogInformation("Bắt đầu xuất báo cáo tồn kho tổng hợp và chi tiết từ {FromDate} đến {ToDate}", fromDate, toDate);
-
             if (toDate < fromDate)
             {
                 return BadRequest("Ngày kết thúc không thể sớm hơn ngày bắt đầu.");
@@ -260,6 +257,26 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             foreach (var ingredient in ingredientsToQuery)
             {
+                var transactionsBeforePeriod = await _context.InventoryTransactions
+                    .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate < fromDate)
+                    .ToListAsync();
+
+                decimal openingStockQuantity = transactionsBeforePeriod.Sum(t => t.QuantityChanged);
+                var lastPurchaseBefore = transactionsBeforePeriod
+                    .Where(t => t.QuantityChanged > 0 && t.UnitPrice.HasValue && t.UnitPrice > 0)
+                    .OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id)
+                    .FirstOrDefault();
+                decimal openingStockUnitPrice = lastPurchaseBefore?.UnitPrice ?? ingredient.LastPurchasePrice;
+                decimal openingStockValue = openingStockQuantity * openingStockUnitPrice;
+
+                var transactionsInPeriod = await _context.InventoryTransactions
+                    .Include(t => t.User)
+                    .Include(t => t.Supplier)
+                    .Include(t => t.Batch)
+                    .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate >= fromDate && t.TransactionDate <= reportTrueEndDate)
+                    .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
+                    .ToListAsync();
+
                 var detailItem = new InventoryDetailReportItemVM
                 {
                     IngredientId = ingredient.Id,
@@ -268,28 +285,12 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     UnitOfMeasure = ingredient.UnitOfMeasure,
                     MinimumStockLevel = ingredient.MinimumStockLevel,
                     PeriodStartDate = fromDate,
-                    PeriodEndDate = toDate.Date
+                    PeriodEndDate = toDate.Date,
+                    OpeningStockQuantity = openingStockQuantity,
+                    OpeningStockUnitPrice = openingStockUnitPrice
                 };
 
-                var transactionsBeforePeriod = await _context.InventoryTransactions
-                    .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate < fromDate)
-                    .ToListAsync();
-
-                detailItem.OpeningStockQuantity = transactionsBeforePeriod.Sum(t => t.QuantityChanged);
-                var lastPurchaseBefore = transactionsBeforePeriod
-                    .Where(t => t.QuantityChanged > 0 && t.UnitPrice.HasValue && t.UnitPrice > 0)
-                    .OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id)
-                    .FirstOrDefault();
-                detailItem.OpeningStockUnitPrice = lastPurchaseBefore?.UnitPrice ?? ingredient.LastPurchasePrice;
-
-                var transactionsInPeriod = await _context.InventoryTransactions
-                    .Include(t => t.User)
-                    .Include(t => t.Supplier)
-                    .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate >= fromDate && t.TransactionDate <= reportTrueEndDate)
-                    .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
-                    .ToListAsync();
-
-                decimal currentStockForDetail = detailItem.OpeningStockQuantity;
+                decimal currentStockForDetail = openingStockQuantity;
                 foreach (var trans in transactionsInPeriod)
                 {
                     var transVM = new InventoryTransactionDetailVM
@@ -307,13 +308,14 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     {
                         transVM.QuantityIn = trans.QuantityChanged;
                         transVM.UnitPriceIn = trans.UnitPrice;
-                        transVM.ValueIn = trans.QuantityChanged * (trans.UnitPrice ?? 0);
+                        transVM.ValueIn = trans.TotalPrice ?? trans.QuantityChanged * (trans.UnitPrice ?? 0);
                     }
                     else
                     {
                         transVM.QuantityOut = -trans.QuantityChanged;
-                        transVM.UnitPriceOut = trans.UnitPrice ?? ingredient.LastPurchasePrice;
-                        transVM.ValueOut = transVM.QuantityOut * transVM.UnitPriceOut;
+                        transVM.UnitPriceOut = trans.UnitPrice;
+                        transVM.ValueOut = trans.TotalPrice;
+                        transVM.CostPriceOut = trans.Batch?.PurchasePrice;
                     }
 
                     currentStockForDetail += trans.QuantityChanged;
@@ -325,7 +327,19 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 detailItem.ClosingStockUnitPrice = ingredient.LastPurchasePrice;
                 detailReportItems.Add(detailItem);
 
-                var closingStockValue = detailItem.OpeningStockValue + detailItem.TotalValueIn - detailItem.TotalValueOut;
+                decimal periodQuantityIn = detailItem.TotalQuantityIn;
+                decimal periodValueIn = detailItem.TotalValueIn;
+                decimal periodQuantityOut = detailItem.TotalQuantityOut;
+
+                decimal periodValueOut_COGS = transactionsInPeriod
+                    .Where(t => t.QuantityChanged < 0)
+                    .Sum(t => Math.Abs(t.QuantityChanged) * (t.Batch?.PurchasePrice ?? ingredient.LastPurchasePrice));
+
+                decimal periodRevenue = transactionsInPeriod
+                    .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption)
+                    .Sum(t => t.TotalPrice ?? 0);
+
+                decimal closingStockValue = openingStockValue + periodValueIn - periodValueOut_COGS;
 
                 summaryReportItems.Add(new InventorySummaryReportItemVM
                 {
@@ -333,13 +347,14 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     IngredientCode = detailItem.IngredientCode,
                     IngredientName = detailItem.IngredientName,
                     UnitOfMeasure = detailItem.UnitOfMeasure,
-                    OpeningStockQuantity = detailItem.OpeningStockQuantity,
-                    OpeningStockValue = detailItem.OpeningStockValue,
-                    PeriodQuantityIn = detailItem.TotalQuantityIn,
-                    PeriodValueIn = detailItem.TotalValueIn,
-                    PeriodQuantityOut = detailItem.TotalQuantityOut,
-                    PeriodValueOut = detailItem.TotalValueOut,
-                    ClosingStockQuantity = detailItem.ClosingStockQuantity,
+                    OpeningStockQuantity = openingStockQuantity,
+                    OpeningStockValue = openingStockValue,
+                    PeriodQuantityIn = periodQuantityIn,
+                    PeriodValueIn = periodValueIn,
+                    PeriodQuantityOut = periodQuantityOut,
+                    PeriodValueOut = periodValueOut_COGS,
+                    PeriodRevenue = periodRevenue,
+                    ClosingStockQuantity = currentStockForDetail,
                     ClosingStockValue = closingStockValue,
                     MinimumStockLevel = ingredient.MinimumStockLevel
                 });
@@ -355,6 +370,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     string rawSheetName = $"{detailItemData.IngredientCode}";
                     string validSheetName = new string(rawSheetName.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray()).Trim();
                     validSheetName = validSheetName.Length > 31 ? validSheetName.Substring(0, 31) : validSheetName;
+
                     if (workbook.Worksheets.Any(ws => ws.Name.Equals(validSheetName, StringComparison.OrdinalIgnoreCase)))
                     {
                         validSheetName = validSheetName.Substring(0, Math.Min(validSheetName.Length, 28)) + Guid.NewGuid().ToString().Substring(0, 3);
@@ -376,88 +392,73 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             }
         }
 
-        private string GetNumberFormat(decimal value)
-        {
-            return value == Math.Truncate(value) ? "#,##0" : "#,##0.###";
-        }
-
-        private void FormatCellAsNumber(IXLCell cell, decimal value)
-        {
-            cell.SetValue(value);
-            if (value % 1 == 0)
-            {
-                cell.Style.NumberFormat.Format = "#,##0";
-            }
-            else
-            {
-                cell.Style.NumberFormat.Format = "#,##0.###";
-            }
-        }
-
         private void RenderSummarySheet(IXLWorksheet sheet, List<InventorySummaryReportItemVM> items, DateTime fromDate, DateTime toDate)
         {
             const string formatVND = "#,##0";
+            const int totalColumns = 13;
+            sheet.Style.Font.FontName = "Calibri";
 
-            int currentRow = 1;
-            sheet.Cell(currentRow, 1).Value = "LAVY COFFEE & TEA";
-            var companyCell = sheet.Range(currentRow, 1, currentRow, 5).Merge();
-            companyCell.Style.Font.Bold = true;
-            companyCell.Style.Font.FontName = "Times New Roman";
+            var exportDateCell = sheet.Range(1, totalColumns - 2, 1, totalColumns).Merge();
+            exportDateCell.Value = $"Xuất: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            exportDateCell.Style.Font.Italic = true;
+            exportDateCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            exportDateCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-            var dateCell = sheet.Cell(currentRow, 11);
-            dateCell.Value = $"Xuất: {DateTime.Now:dd/MM/yyyy HH:mm}";
-            var dateCellRange = sheet.Range(currentRow, 11, currentRow, 12).Merge();
-            dateCellRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            dateCellRange.Style.Font.Italic = true;
-
-            currentRow = 3;
-            var titleCell = sheet.Cell(currentRow, 1);
+            sheet.Row(3).Height = 24;
+            var titleCell = sheet.Range(3, 1, 3, totalColumns).Merge();
             titleCell.Value = "BÁO CÁO TỔNG HỢP NHẬP XUẤT TỒN";
-            sheet.Range(currentRow, 1, currentRow, 12).Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             titleCell.Style.Font.Bold = true;
-            titleCell.Style.Font.FontSize = 16;
-            titleCell.Style.Font.FontName = "Times New Roman";
+            titleCell.Style.Font.FontSize = 18;
+            titleCell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            titleCell.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
-            currentRow++;
-            var dateRangeCell = sheet.Cell(currentRow, 1);
+            sheet.Row(4).Height = 18;
+            var dateRangeCell = sheet.Range(4, 1, 4, totalColumns).Merge();
             dateRangeCell.Value = $"Từ ngày {fromDate:dd/MM/yyyy} đến ngày {toDate:dd/MM/yyyy}";
-            sheet.Range(currentRow, 1, currentRow, 12).Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             dateRangeCell.Style.Font.Italic = true;
+            dateRangeCell.Style.Font.FontSize = 12;
+            dateRangeCell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            dateRangeCell.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
-            currentRow = 6;
-            sheet.Range(currentRow, 1, currentRow, 4).Merge().Value = "Thông tin hàng hóa";
-            sheet.Range(currentRow, 5, currentRow, 6).Merge().Value = "Tồn đầu kỳ";
-            sheet.Range(currentRow, 7, currentRow, 8).Merge().Value = "Nhập trong kỳ";
-            sheet.Range(currentRow, 9, currentRow, 10).Merge().Value = "Xuất trong kỳ";
-            sheet.Range(currentRow, 11, currentRow, 12).Merge().Value = "Tồn cuối kỳ";
+            int headerRow1 = 6;
+            int headerRow2 = 7;
+            sheet.Row(headerRow1).Height = 22;
+            sheet.Row(headerRow2).Height = 22;
 
-            var mainHeaderRange = sheet.Range(currentRow, 1, currentRow, 12);
-            mainHeaderRange.Style.Font.Bold = true;
-            mainHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            mainHeaderRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            mainHeaderRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#DDEBF7");
-            mainHeaderRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            sheet.Range(headerRow1, 1, headerRow2, 1).Merge().Value = "STT";
+            sheet.Range(headerRow1, 2, headerRow2, 2).Merge().Value = "Mã hàng";
+            sheet.Range(headerRow1, 3, headerRow2, 3).Merge().Value = "Tên hàng";
+            sheet.Range(headerRow1, 4, headerRow2, 4).Merge().Value = "ĐVT";
+            sheet.Range(headerRow1, 5, headerRow1, 6).Merge().Value = "Tồn đầu kỳ";
+            sheet.Range(headerRow1, 7, headerRow1, 8).Merge().Value = "Nhập trong kỳ";
+            sheet.Range(headerRow1, 9, headerRow1, 10).Merge().Value = "Xuất trong kỳ";
+            sheet.Range(headerRow1, 11, headerRow1, 12).Merge().Value = "Tồn cuối kỳ";
+            sheet.Range(headerRow1, 13, headerRow2, 13).Merge().Value = "Doanh thu";
 
-            currentRow++;
-            var headers2 = new[] { "STT", "Mã hàng", "Tên hàng", "ĐVT", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền" };
-            for (int i = 0; i < headers2.Length; i++) { sheet.Cell(currentRow, i + 1).Value = headers2[i]; }
+            var subHeaders = new[] { "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền" };
+            int currentCol = 5;
+            foreach (var header in subHeaders)
+            {
+                sheet.Cell(headerRow2, currentCol++).Value = header;
+            }
 
-            var detailHeaderRange = sheet.Range(currentRow, 1, currentRow, headers2.Length);
-            detailHeaderRange.Style.Font.Bold = true;
-            detailHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            detailHeaderRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            detailHeaderRange.Style.Alignment.WrapText = true;
-            detailHeaderRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#DDEBF7");
-            detailHeaderRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            detailHeaderRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            sheet.Row(currentRow).Height = 30;
+            var fullHeaderRange = sheet.Range(headerRow1, 1, headerRow2, totalColumns);
+            fullHeaderRange.Style.Font.Bold = true;
+            fullHeaderRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            fullHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            fullHeaderRange.Style.Alignment.WrapText = true;
+            fullHeaderRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#4472C4");
+            fullHeaderRange.Style.Font.FontColor = XLColor.White;
 
-            currentRow++;
-            int firstDataRow = currentRow;
+            int firstDataRow = headerRow2 + 1;
             for (int i = 0; i < items.Count; i++)
             {
+                int currentRow = firstDataRow + i;
                 var item = items[i];
                 int col = 1;
+
+                sheet.Row(currentRow).Height = 20;
+
                 sheet.Cell(currentRow, col++).SetValue(item.STT);
                 sheet.Cell(currentRow, col++).SetValue(item.IngredientCode);
                 sheet.Cell(currentRow, col++).SetValue(item.IngredientName);
@@ -471,214 +472,265 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 sheet.Cell(currentRow, col++).SetValue(item.PeriodValueOut).Style.NumberFormat.Format = formatVND;
                 FormatCellAsNumber(sheet.Cell(currentRow, col++), item.ClosingStockQuantity);
                 sheet.Cell(currentRow, col++).SetValue(item.ClosingStockValue).Style.NumberFormat.Format = formatVND;
+                sheet.Cell(currentRow, col++).SetValue(item.PeriodRevenue).Style.NumberFormat.Format = formatVND;
 
                 if (item.MinimumStockLevel.HasValue && item.ClosingStockQuantity < item.MinimumStockLevel.Value)
                 {
-                    sheet.Row(currentRow).Style.Font.FontColor = XLColor.Red;
+                    sheet.Range(currentRow, 1, currentRow, totalColumns).Style.Font.FontColor = XLColor.Red;
                 }
-
                 if (i % 2 != 0)
                 {
-                    sheet.Range(currentRow, 1, currentRow, 12).Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
+                    sheet.Range(currentRow, 1, currentRow, totalColumns).Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
                 }
-                currentRow++;
             }
 
-            var totalLabelRange = sheet.Range(currentRow, 1, currentRow, 4).Merge();
+            int lastDataRow = items.Any() ? firstDataRow + items.Count - 1 : firstDataRow;
+            int totalRow = lastDataRow >= firstDataRow ? lastDataRow + 1 : firstDataRow;
+
+            sheet.Row(totalRow).Height = 22;
+            var totalRowRange = sheet.Range(totalRow, 1, totalRow, totalColumns);
+            totalRowRange.Style.Font.Bold = true;
+            totalRowRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
+
+            var totalLabelRange = sheet.Range(totalRow, 1, totalRow, 4).Merge();
             totalLabelRange.Value = "Tổng cộng";
-            totalLabelRange.Style.Font.Bold = true;
-            totalLabelRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
             totalLabelRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            var cellsToSum = new[] { 6, 8, 10, 12 };
+            var cellsToSum = new[] { 6, 8, 10, 12, 13 };
             foreach (var colIndex in cellsToSum)
             {
-                var cell = sheet.Cell(currentRow, colIndex);
-                cell.FormulaA1 = $"=SUM({sheet.Cell(firstDataRow, colIndex).Address.ToStringFixed()}:{sheet.Cell(currentRow - 1, colIndex).Address.ToStringFixed()})";
+                var cell = sheet.Cell(totalRow, colIndex);
+                if (items.Any())
+                {
+                    cell.FormulaA1 = $"=SUM({sheet.Cell(firstDataRow, colIndex).Address.ToStringFixed()}:{sheet.Cell(lastDataRow, colIndex).Address.ToStringFixed()})";
+                }
+                else
+                {
+                    cell.SetValue(0);
+                }
                 cell.Style.NumberFormat.Format = formatVND;
-                cell.Style.Font.Bold = true;
-                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
             }
 
-            var tableRange = sheet.Range(firstDataRow - 1, 1, currentRow, 12);
+            var tableRange = sheet.Range(headerRow1, 1, totalRow, totalColumns);
             tableRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             tableRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            tableRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            sheet.Range(firstDataRow, 1, currentRow, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Range(firstDataRow, 5, currentRow, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
-            sheet.Columns().AdjustToContents();
-            sheet.Column(3).Width = 35;
+            tableRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            sheet.Column(3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+
+            sheet.Column(1).Width = 5;
+            sheet.Column(2).Width = 12;
+            sheet.Column(3).Width = 40;
+            sheet.Column(4).Width = 8;
+            sheet.Column(5).Width = 12;
+            sheet.Column(6).Width = 15;
+            sheet.Column(7).Width = 12;
+            sheet.Column(8).Width = 15;
+            sheet.Column(9).Width = 12;
+            sheet.Column(10).Width = 15;
+            sheet.Column(11).Width = 12;
+            sheet.Column(12).Width = 15;
+            sheet.Column(13).Width = 15;
         }
 
         private void RenderDetailSheetForItem(IXLWorksheet sheet, InventoryDetailReportItemVM itemData)
         {
             const string formatVND = "#,##0";
-            var colorPurchase = XLColor.FromHtml("#E7F3E7");
-            var colorSale = XLColor.FromHtml("#FFF0F0");
-            var colorAdjustmentIn = XLColor.FromHtml("#EBF5FF");
-            var colorAdjustmentOut = XLColor.FromHtml("#FFF9E6");
-
-            int currentRow = 1;
-            var titleCell = sheet.Cell(currentRow, 1);
-            titleCell.Value = "THẺ KHO (CHI TIẾT NHẬP XUẤT TỒN)";
-            sheet.Range(currentRow, 1, currentRow, 13).Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            titleCell.Style.Font.Bold = true;
-            titleCell.Style.Font.FontSize = 14;
-            titleCell.Style.Font.FontName = "Times New Roman";
-
-            currentRow += 2;
-            sheet.Cell(currentRow, 1).Value = $"Nguyên vật liệu: {itemData.IngredientName} ({itemData.IngredientCode})";
-            sheet.Range(currentRow, 1, currentRow, 5).Merge().Style.Font.Bold = true;
-            sheet.Cell(currentRow, 7).Value = $"ĐVT: {itemData.UnitOfMeasure}";
-            sheet.Cell(currentRow, 10).Value = $"Tồn tối thiểu: {(itemData.MinimumStockLevel.HasValue ? itemData.MinimumStockLevel.Value.ToString(GetNumberFormat(itemData.MinimumStockLevel.Value)) : "-")}";
-            currentRow++;
-            sheet.Cell(currentRow, 1).Value = $"Kỳ báo cáo: {itemData.PeriodStartDate:dd/MM/yyyy} - {itemData.PeriodEndDate:dd/MM/yyyy}";
-            sheet.Range(currentRow, 1, currentRow, 13).Merge().Style.Font.Italic = true;
-
-            currentRow += 2;
             var headers = new[] { "Ngày GD", "Số Phiếu", "Loại GD/Diễn giải", "Người TH", "NCC", "SL Nhập", "ĐG Nhập", "TT Nhập", "SL Xuất", "ĐG Xuất", "TT Xuất", "SL Tồn", "Ghi Chú" };
-            for (int i = 0; i < headers.Length; i++) { sheet.Cell(currentRow, i + 1).Value = headers[i]; }
+            sheet.Style.Font.FontName = "Calibri";
 
-            var headerRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
+            sheet.Row(1).Height = 24;
+            var titleCell = sheet.Range(1, 1, 1, headers.Length).Merge();
+            titleCell.Value = "CHI TIẾT NHẬP XUẤT TỒN";
+            titleCell.Style.Font.Bold = true;
+            titleCell.Style.Font.FontSize = 18;
+            titleCell.Style.Font.FontColor = XLColor.Black;
+            titleCell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            titleCell.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+            int infoRow = 3;
+            sheet.Row(infoRow).Height = 18;
+            sheet.Row(infoRow + 1).Height = 18;
+            sheet.Cell(infoRow, 1).Value = "Nguyên vật liệu:";
+            sheet.Cell(infoRow, 2).Value = $"{itemData.IngredientName} ({itemData.IngredientCode})";
+            sheet.Range(infoRow, 2, infoRow, 5).Merge();
+            sheet.Cell(infoRow, 9).Value = "ĐVT:";
+            sheet.Cell(infoRow, 10).Value = itemData.UnitOfMeasure;
+            sheet.Cell(infoRow + 1, 1).Value = "Kỳ báo cáo:";
+            sheet.Cell(infoRow + 1, 2).Value = $"{itemData.PeriodStartDate:dd/MM/yyyy} - {itemData.PeriodEndDate:dd/MM/yyyy}";
+            sheet.Range(infoRow + 1, 2, infoRow + 1, 5).Merge();
+            sheet.Cell(infoRow + 1, 9).Value = "Tồn tối thiểu:";
+            sheet.Cell(infoRow + 1, 10).Value = itemData.MinimumStockLevel.HasValue ? itemData.MinimumStockLevel.Value.ToString(GetNumberFormat(itemData.MinimumStockLevel.Value)) : "-";
+
+            var infoLabels = sheet.Range(infoRow, 1, infoRow + 1, 1);
+            infoLabels.Style.Font.Bold = true;
+            infoLabels.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Range(infoRow, 9, infoRow + 1, 9).Style.Font.Bold = true;
+            sheet.Range(infoRow, 9, infoRow + 1, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            int firstHeaderRow = infoRow + 3;
+            sheet.Row(firstHeaderRow).Height = 22;
+            for (int i = 0; i < headers.Length; i++) { sheet.Cell(firstHeaderRow, i + 1).Value = headers[i]; }
+
+            var headerRange = sheet.Range(firstHeaderRow, 1, firstHeaderRow, headers.Length);
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            headerRange.Style.Alignment.WrapText = true;
             headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#DDEBF7");
-            headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
 
+            int currentRow = firstHeaderRow + 1;
+            sheet.Row(currentRow).Height = 18;
+            var openingStockRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
+            openingStockRange.Style.Font.Italic = true;
+            openingStockRange.Style.Font.Bold = true;
+            openingStockRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            sheet.Range(currentRow, 1, currentRow, headers.Length - 2).Merge().SetValue("Tồn đầu kỳ").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            FormatCellAsNumber(sheet.Cell(currentRow, headers.Length - 1), itemData.OpeningStockQuantity);
             currentRow++;
-            sheet.Cell(currentRow, 1).SetValue(itemData.PeriodStartDate.AddDays(-1)).Style.DateFormat.Format = "dd/MM/yyyy";
-            sheet.Range(currentRow, 2, currentRow, 11).Merge().SetValue("Tồn đầu kỳ").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            FormatCellAsNumber(sheet.Cell(currentRow, 12), itemData.OpeningStockQuantity);
-            sheet.Row(currentRow).Style.Font.Italic = true;
-            sheet.Row(currentRow).Style.Font.Bold = true;
 
-            currentRow++;
-            int firstDataRow = currentRow;
-
-            Action<IXLCell, decimal?, bool> fillNullable = (cell, val, isQuantity) => {
-                if (val.HasValue)
-                {
-                    if (isQuantity)
-                    {
-                        FormatCellAsNumber(cell, val.Value);
-                    }
-                    else
-                    {
-                        cell.SetValue(val.Value).Style.NumberFormat.Format = formatVND;
-                    }
-                }
-                else
-                {
-                    cell.SetValue("-");
-                }
-            };
-
-            for (int i = 0; i < itemData.Transactions.Count; i++)
+            foreach (var trans in itemData.Transactions)
             {
-                var trans = itemData.Transactions[i];
-                sheet.Cell(currentRow, 1).SetValue(trans.TransactionDate);
-                sheet.Cell(currentRow, 2).SetValue(trans.TransactionId);
-                sheet.Cell(currentRow, 3).SetValue(trans.TransactionTypeDisplay);
-                sheet.Cell(currentRow, 4).SetValue(trans.UserName);
-                sheet.Cell(currentRow, 5).SetValue(trans.SupplierName);
-
-                var stockAfterCell = sheet.Cell(currentRow, 12);
-                FormatCellAsNumber(stockAfterCell, trans.StockAfterTransaction);
-
-                sheet.Cell(currentRow, 13).SetValue(trans.Notes);
-
-                if (trans.StockAfterTransaction < 0)
-                {
-                    stockAfterCell.Style.Font.FontColor = XLColor.Red;
-                }
-
-                fillNullable(sheet.Cell(currentRow, 6), trans.QuantityIn, true);
-                fillNullable(sheet.Cell(currentRow, 7), trans.UnitPriceIn, false);
-                fillNullable(sheet.Cell(currentRow, 8), trans.ValueIn, false);
-                fillNullable(sheet.Cell(currentRow, 9), trans.QuantityOut, true);
-                fillNullable(sheet.Cell(currentRow, 10), trans.UnitPriceOut, false);
-                fillNullable(sheet.Cell(currentRow, 11), trans.ValueOut, false);
-
-                var dataRange = sheet.Range(currentRow, 1, currentRow, 13);
+                // *** BỔ SUNG: Thêm màu nền chi tiết cho dòng giao dịch ***
+                var rowColor = XLColor.White;
                 switch (trans.TransactionType)
                 {
                     case AppDbContext.InventoryTransactionType.Purchase:
                     case AppDbContext.InventoryTransactionType.InitialStock:
-                        dataRange.Style.Fill.BackgroundColor = colorPurchase;
+                        rowColor = XLColor.FromHtml("#E7F3E7"); // Xanh lá cây nhạt
                         break;
                     case AppDbContext.InventoryTransactionType.AdjustmentIn:
-                        dataRange.Style.Fill.BackgroundColor = colorAdjustmentIn;
+                        rowColor = XLColor.FromHtml("#EBF5FF"); // Xanh da trời nhạt
                         break;
                     case AppDbContext.InventoryTransactionType.SaleConsumption:
-                        dataRange.Style.Fill.BackgroundColor = colorSale;
+                        rowColor = XLColor.FromHtml("#FFF0F0"); // Hồng nhạt
                         break;
                     case AppDbContext.InventoryTransactionType.AdjustmentOut:
-                        dataRange.Style.Fill.BackgroundColor = colorAdjustmentOut;
+                        rowColor = XLColor.FromHtml("#FFF9E6"); // Vàng kem
                         break;
                 }
 
+                if (!rowColor.Equals(XLColor.White)) // So sánh struct màu đúng cách
+                {
+                    sheet.Range(currentRow, 1, currentRow, headers.Length).Style.Fill.BackgroundColor = rowColor;
+                }
+
+                var dataRow = sheet.Row(currentRow);
+                dataRow.Cell(1).SetValue(trans.TransactionDate).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                dataRow.Cell(2).SetValue(trans.TransactionId);
+                dataRow.Cell(3).SetValue(trans.TransactionTypeDisplay);
+                dataRow.Cell(4).SetValue(trans.UserName);
+                dataRow.Cell(5).SetValue(trans.SupplierName);
+                dataRow.Cell(13).SetValue(trans.Notes);
+
+                fillNullable(dataRow.Cell(6), trans.QuantityIn, true);
+                fillNullable(dataRow.Cell(8), trans.ValueIn, false);
+                fillNullable(dataRow.Cell(9), trans.QuantityOut, true);
+                fillNullable(dataRow.Cell(10), trans.UnitPriceOut, false);
+                fillNullable(dataRow.Cell(11), trans.ValueOut, false);
+                FormatCellAsNumber(dataRow.Cell(12), trans.StockAfterTransaction);
+
+                var unitPriceInCell = dataRow.Cell(7);
+                if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption)
+                {
+                    fillNullable(unitPriceInCell, trans.CostPriceOut, false);
+                }
+                else
+                {
+                    fillNullable(unitPriceInCell, trans.UnitPriceIn, false);
+                }
                 currentRow++;
             }
 
-            var summaryLabelRange = sheet.Range(currentRow, 1, currentRow, 5).Merge();
-            summaryLabelRange.Value = "Tổng cộng phát sinh";
-            summaryLabelRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
-
+            sheet.Row(currentRow).Height = 22;
+            var summaryRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
+            summaryRange.Style.Font.Bold = true;
+            summaryRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
+            summaryRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            var summaryLabelCell = summaryRange.Cell(1, 1);
+            summaryLabelCell.Value = "Tổng cộng phát sinh";
+            sheet.Range(currentRow, 1, currentRow, 5).Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             FormatCellAsNumber(sheet.Cell(currentRow, 6), itemData.TotalQuantityIn);
             sheet.Cell(currentRow, 8).SetValue(itemData.TotalValueIn).Style.NumberFormat.Format = formatVND;
             FormatCellAsNumber(sheet.Cell(currentRow, 9), itemData.TotalQuantityOut);
             sheet.Cell(currentRow, 11).SetValue(itemData.TotalValueOut).Style.NumberFormat.Format = formatVND;
-
-            var summaryRow = sheet.Row(currentRow);
-            summaryRow.Style.Font.Bold = true;
-            summaryRow.Cells(6, 11).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
-
             currentRow++;
-            sheet.Range(currentRow, 1, currentRow, 11).Merge().Value = "Tồn cuối kỳ";
-            var closingStockCell = sheet.Cell(currentRow, 12);
-            FormatCellAsNumber(closingStockCell, itemData.ClosingStockQuantity);
-            sheet.Row(currentRow).Style.Font.Italic = true;
-            sheet.Row(currentRow).Style.Font.Bold = true;
 
-            var tableRange = sheet.Range(firstDataRow - 1, 1, currentRow, 13);
-            tableRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            sheet.Row(currentRow).Height = 18;
+            var closingRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
+            closingRange.Style.Font.Bold = true;
+            closingRange.Style.Font.Italic = true;
+            closingRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            var closingLabelCell = sheet.Cell(currentRow, 1);
+            closingLabelCell.Value = "Tồn cuối kỳ";
+            sheet.Range(currentRow, 1, currentRow, headers.Length - 2).Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            FormatCellAsNumber(sheet.Cell(currentRow, headers.Length - 1), itemData.ClosingStockQuantity);
+            currentRow++;
+
+            var tableRange = sheet.Range(firstHeaderRow, 1, currentRow - 1, headers.Length);
             tableRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            tableRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
             tableRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            //tableRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
 
-            sheet.Range(firstDataRow, 1, currentRow - 2, 1).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-            sheet.Range(firstDataRow, 2, currentRow - 2, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Range(firstDataRow - 1, 6, currentRow, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            sheet.Column(12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            if (itemData.QuantityToOrder.HasValue && itemData.QuantityToOrder.Value > 0)
-            {
-                currentRow += 2;
-                sheet.Cell(currentRow, 3).Value = "Số lượng cần nhập thêm (dự kiến):";
-                var quantityToOrderCell = sheet.Cell(currentRow, 6);
-                FormatCellAsNumber(quantityToOrderCell, itemData.QuantityToOrder.Value);
-                var rangeToColor = sheet.Range(currentRow, 3, currentRow, 6);
-                rangeToColor.Style.Font.Bold = true;
-                rangeToColor.Style.Font.FontColor = XLColor.Red;
-            }
+            sheet.Range(firstHeaderRow + 1, 6, currentRow - 1, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
-            // *** [SỬA LỖI] BẬT TÍNH NĂNG TỰ ĐỘNG XUỐNG DÒNG CHO CỘT GHI CHÚ ***
             sheet.Column(3).Style.Alignment.WrapText = true;
             sheet.Column(4).Style.Alignment.WrapText = true;
             sheet.Column(5).Style.Alignment.WrapText = true;
             sheet.Column(13).Style.Alignment.WrapText = true;
-            // Căn lề trên cho đẹp khi có nhiều dòng
-            sheet.Column(13).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+            sheet.Column(13).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-            sheet.Columns().AdjustToContents();
-            sheet.Column(3).Width = 15;
-            sheet.Column(4).Width = 15;
-            sheet.Column(5).Width = 20;
-            sheet.Column(13).Width = 25; // Giới hạn lại độ rộng cột ghi chú
+            sheet.Column(1).Width = 18;
+            sheet.Column(2).Width = 10;
+            sheet.Column(3).Width = 18;
+            sheet.Column(4).Width = 18;
+            sheet.Column(5).Width = 18;
+            sheet.Column(6).Width = 12;
+            sheet.Column(7).Width = 15;
+            sheet.Column(8).Width = 15;
+            sheet.Column(9).Width = 12;
+            sheet.Column(10).Width = 15;
+            sheet.Column(11).Width = 15;
+            sheet.Column(12).Width = 12;
+            sheet.Column(13).Width = 35;
         }
+
+
+        private string GetNumberFormat(decimal value) => value == Math.Truncate(value) ? "#,##0" : "#,##0.###";
+
+        private void FormatCellAsNumber(IXLCell cell, decimal value)
+        {
+            cell.SetValue(value);
+            if (value % 1 == 0) cell.Style.NumberFormat.Format = "#,##0";
+            else cell.Style.NumberFormat.Format = "#,##0.####";
+        }
+
+        private void fillNullable(IXLCell cell, decimal? val, bool isQuantity)
+        {
+            if (val.HasValue)
+            {
+                if (isQuantity) FormatCellAsNumber(cell, val.Value);
+                else cell.SetValue(val.Value).Style.NumberFormat.Format = "#,##0";
+            }
+            else cell.SetValue("-");
+        }
+
         #endregion
+
+        // Đặt phương thức này bên trong class InventoryController.cs
 
         [HttpPost]
         public async Task<IActionResult> PreviewInventoryReport(DateTime fromDate, DateTime toDate, List<int> ingredientIds = null)
@@ -717,7 +769,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
                 decimal openingStockQuantity = transactionsBeforePeriod.Sum(t => t.QuantityChanged);
 
-                // Lấy giá vốn cuối cùng trước kỳ
                 var lastPurchaseBefore = transactionsBeforePeriod
                     .Where(t => t.QuantityChanged > 0 && t.UnitPrice.HasValue && t.UnitPrice > 0)
                     .OrderByDescending(t => t.TransactionDate).ThenByDescending(t => t.Id)
@@ -728,16 +779,30 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 // Lấy giao dịch trong kỳ
                 var transactionsInPeriod = await _context.InventoryTransactions
                     .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate >= fromDate && t.TransactionDate <= reportTrueEndDate)
+                    .Include(t => t.Batch) // Include Batch để lấy giá vốn chính xác
                     .ToListAsync();
 
+                // Tính toán các giá trị trong kỳ
                 decimal periodQuantityIn = transactionsInPeriod.Where(t => t.QuantityChanged > 0).Sum(t => t.QuantityChanged);
                 decimal periodValueIn = transactionsInPeriod.Where(t => t.QuantityChanged > 0).Sum(t => t.TotalPrice ?? (t.QuantityChanged * (t.UnitPrice ?? 0)));
 
                 decimal periodQuantityOut = transactionsInPeriod.Where(t => t.QuantityChanged < 0).Sum(t => -t.QuantityChanged);
-                decimal periodValueOut = transactionsInPeriod.Where(t => t.QuantityChanged < 0).Sum(t => Math.Abs(t.TotalPrice ?? (-t.QuantityChanged * (t.UnitPrice ?? ingredient.LastPurchasePrice))));
 
+                // 1. Tính tổng giá trị XUẤT KHO theo GIÁ VỐN (COGS)
+                // Bằng cách lấy số lượng xuất nhân với giá vốn của lô hàng tại thời điểm xuất.
+                decimal periodValueOut_COGS = transactionsInPeriod
+                    .Where(t => t.QuantityChanged < 0)
+                    .Sum(t => Math.Abs(t.QuantityChanged) * (t.Batch?.PurchasePrice ?? ingredient.LastPurchasePrice));
+
+                // 2. Tính tổng DOANH THU từ các giao dịch xuất bán hàng
+                decimal periodRevenue = transactionsInPeriod
+                    .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption)
+                    .Sum(t => t.TotalPrice ?? 0);
+
+                // 3. Tính toán giá trị tồn cuối kỳ CHÍNH XÁC theo giá vốn
                 decimal closingStockQuantity = openingStockQuantity + periodQuantityIn - periodQuantityOut;
-                decimal closingStockValue = openingStockValue + periodValueIn - periodValueOut;
+                decimal closingStockValue = openingStockValue + periodValueIn - periodValueOut_COGS;
+
 
                 summaryReportItems.Add(new InventorySummaryReportItemVM
                 {
@@ -751,9 +816,10 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     PeriodQuantityIn = periodQuantityIn,
                     PeriodValueIn = periodValueIn,
                     PeriodQuantityOut = periodQuantityOut,
-                    PeriodValueOut = periodValueOut,
+                    PeriodValueOut = periodValueOut_COGS, // Giờ đây đã là giá vốn
+                    PeriodRevenue = periodRevenue,        // Gán giá trị doanh thu
                     ClosingStockQuantity = closingStockQuantity,
-                    ClosingStockValue = closingStockValue
+                    ClosingStockValue = closingStockValue // Giờ đây sẽ không bao giờ bị âm
                 });
             }
 
@@ -788,9 +854,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             detailItem.OpeningStockQuantity = transactionsBeforePeriod.Sum(t => t.QuantityChanged);
 
+            // *** SỬA ĐỔI: Thêm .Include(t => t.Batch) để lấy được thông tin lô hàng ***
             var transactionsInPeriod = await _context.InventoryTransactions
                 .Include(t => t.User)
                 .Include(t => t.Supplier)
+                .Include(t => t.Batch) // <-- THÊM DÒNG NÀY ĐỂ TRUY VẤN KÈM BATCH
                 .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate >= fromDate && t.TransactionDate <= reportTrueEndDate)
                 .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
                 .ToListAsync();
@@ -813,13 +881,19 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 {
                     transVM.QuantityIn = trans.QuantityChanged;
                     transVM.UnitPriceIn = trans.UnitPrice;
-                    transVM.ValueIn = trans.QuantityChanged * (trans.UnitPrice ?? 0);
+                    transVM.ValueIn = trans.TotalPrice ?? (trans.QuantityChanged * (trans.UnitPrice ?? 0));
                 }
-                else
+                else // Giao dịch xuất (bán hàng, điều chỉnh giảm)
                 {
                     transVM.QuantityOut = -trans.QuantityChanged;
-                    transVM.UnitPriceOut = trans.UnitPrice ?? ingredient.LastPurchasePrice;
-                    transVM.ValueOut = transVM.QuantityOut * transVM.UnitPriceOut;
+
+                    // Đối với xuất bán hàng, UnitPriceOut là GIÁ BÁN
+                    // Đối với điều chỉnh giảm, UnitPriceOut là GIÁ VỐN
+                    transVM.UnitPriceOut = trans.UnitPrice;
+                    transVM.ValueOut = trans.TotalPrice;
+
+                    // *** SỬA ĐỔI: Luôn lấy giá vốn từ lô hàng cho mọi giao dịch xuất ***
+                    transVM.CostPriceOut = trans.Batch?.PurchasePrice; // <-- GÁN GIÁ VỐN TỪ LÔ HÀNG
                 }
 
                 currentStockForDetail += trans.QuantityChanged;
@@ -827,9 +901,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 detailItem.Transactions.Add(transVM);
             }
 
-            // *** [SỬA LỖI] Gán giá trị tồn kho cuối kỳ đã tính được vào model ***
             detailItem.ClosingStockQuantity = currentStockForDetail;
-
             return PartialView("_IngredientDetailPreview", detailItem);
         }
 
@@ -940,6 +1012,57 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     ingredient.IsActive,
                 }
             });
+        }
+
+        // Thêm vào trong #region Dashboard API hoặc một region mới
+        [HttpGet]
+        public async Task<IActionResult> GetBatchesForIngredient(int ingredientId)
+        {
+            // BƯỚC 1: Lấy dữ liệu THÔ từ database vào một đối tượng tạm
+            // Câu Select này rất đơn giản, Entity Framework có thể dịch sang SQL dễ dàng.
+            var rawBatches = await _context.InventoryBatches
+                .Where(b => b.IngredientId == ingredientId && b.IsActive && b.Quantity > 0)
+                .OrderBy(b => b.PurchaseDate)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Quantity,
+                    b.PurchasePrice,
+                    b.ExpiryDate
+                })
+                .ToListAsync(); // <-- Thực thi câu lệnh SQL và lấy kết quả về bộ nhớ
+
+            // BƯỚC 2: Định dạng dữ liệu TRONG BỘ NHỚ C#
+            // Lúc này, rawBatches là một List bình thường, ta có thể dùng Select với logic phức tạp
+            var formattedBatches = rawBatches.Select(b => {
+                var culture = new CultureInfo("vi-VN");
+                string formattedQty;
+
+                // Kiểm tra xem số lượng có phải là số nguyên không
+                if (b.Quantity == Math.Truncate(b.Quantity))
+                {
+                    // Nếu là số nguyên, định dạng với dấu phân cách hàng nghìn
+                    formattedQty = b.Quantity.ToString("N0", culture);
+                }
+                else
+                {
+                    // Nếu là số thập phân, định dạng rồi cắt bỏ số 0 thừa
+                    formattedQty = b.Quantity.ToString("N4", culture).TrimEnd('0').TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
+                }
+
+                // Định dạng giá
+                string formattedPrice = b.PurchasePrice.ToString("N0", culture);
+
+                // Trả về đối tượng cuối cùng cho client
+                return new
+                {
+                    id = b.Id,
+                    text = $"Lô #{b.Id} | Tồn: {formattedQty} | Giá: {formattedPrice}đ" + (b.ExpiryDate.HasValue ? " | HSD: " + b.ExpiryDate.Value.ToString("dd/MM/yyyy") : ""),
+                    price = b.PurchasePrice
+                };
+            }).ToList(); // .ToList() để thực thi việc định dạng
+
+            return Ok(formattedBatches);
         }
 
         // POST: /Admin/Inventory/CreateIngredient
@@ -1229,6 +1352,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
         // POST: /Admin/Inventory/CreateInventoryTransaction
         // ##### PHẦN CODE ĐÃ ĐƯỢC CẬP NHẬT #####
+        // POST: /Admin/Inventory/CreateInventoryTransaction
         [HttpPost]
         public async Task<IActionResult> CreateInventoryTransaction([FromBody] InventoryTransactionVM model)
         {
@@ -1237,106 +1361,130 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 return BadRequest(new { success = false, errors = ModelState.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()) });
             }
 
-            var ingredient = await _context.Ingredients.FirstOrDefaultAsync(i => i.Id == model.IngredientId && !i.DeleteTemp && i.IsActive);
+            var ingredient = await _context.Ingredients.FindAsync(model.IngredientId);
             if (ingredient == null)
             {
-                return BadRequest(new { success = false, message = "Nguyên vật liệu không hợp lệ hoặc đã bị vô hiệu hóa." });
+                return BadRequest(new { success = false, message = "Nguyên vật liệu không hợp lệ." });
             }
-
-            // [START] === CẬP NHẬT LOGIC VALIDATION ===
-            // Bắt buộc nhập UnitPrice cho Nhập mua, Tồn đầu kỳ, và cả hai loại Điều chỉnh
-            if ((model.TransactionType == InventoryTransactionType.Purchase ||
-                 model.TransactionType == InventoryTransactionType.InitialStock ||
-                 model.TransactionType == InventoryTransactionType.AdjustmentIn ||
-                 model.TransactionType == InventoryTransactionType.AdjustmentOut)
-                 && !model.UnitPrice.HasValue)
-            {
-                ModelState.AddModelError("UnitPrice", "Đơn giá là bắt buộc cho loại giao dịch này.");
-            }
-
-            // Giữ nguyên validation cho SupplierId
-            if (model.TransactionType == InventoryTransactionType.Purchase && !model.SupplierId.HasValue)
-            {
-                ModelState.AddModelError("SupplierId", "Nhà cung cấp là bắt buộc cho loại giao dịch mua hàng.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, errors = ModelState.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()) });
-            }
-            // [END] === CẬP NHẬT LOGIC VALIDATION ===
 
             var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                return Unauthorized(new { success = false, message = "Yêu cầu đăng nhập." });
-            }
-
             var transaction = new InventoryTransaction
             {
                 IngredientId = model.IngredientId,
                 TransactionType = model.TransactionType,
                 TransactionDate = DateTime.Now,
-                QuantityChanged = model.Quantity, // Sẽ điều chỉnh dấu ở dưới
-                UnitPrice = model.UnitPrice,
-                SupplierId = model.TransactionType == InventoryTransactionType.Purchase ? model.SupplierId : null,
                 UserId = currentUser.Id,
-                Notes = model.Notes,
-                CreatedAt = DateTime.Now
+                Notes = model.Notes
             };
 
-            // [START] === CẬP NHẬT LOGIC XỬ LÝ GIAO DỊCH ===
             switch (model.TransactionType)
             {
-                case InventoryTransactionType.InitialStock:
+                // --- LOGIC TẠO LÔ MỚI: Áp dụng cho Mua hàng và Nhập tồn kho ban đầu ---
                 case InventoryTransactionType.Purchase:
-                case InventoryTransactionType.AdjustmentIn:
+                case InventoryTransactionType.InitialStock:
+                    if (!model.UnitPrice.HasValue || model.UnitPrice.Value <= 0)
+                        return BadRequest(new { success = false, message = "Đơn giá là bắt buộc cho việc nhập hàng." });
+
+                    var newBatch = new InventoryBatch
+                    {
+                        IngredientId = model.IngredientId,
+                        Quantity = model.Quantity,
+                        PurchasePrice = model.UnitPrice.Value,
+                        PurchaseDate = DateTime.Now,
+                        BatchNumber = $"PO-{DateTime.Now.Ticks}"
+                    };
+                    _context.InventoryBatches.Add(newBatch);
+
+                    transaction.QuantityChanged = model.Quantity;
+                    transaction.UnitPrice = model.UnitPrice;
+                    transaction.TotalPrice = model.Quantity * model.UnitPrice.Value;
+                    transaction.Batch = newBatch; // Gán lô mới vào giao dịch
+
+                    // Cập nhật tồn kho và giá vốn cuối cùng
                     ingredient.CurrentStockLevel += model.Quantity;
-                    transaction.QuantityChanged = model.Quantity; // Đảm bảo số lượng là dương
-
-                    // Với Nhập mua hoặc Nhập điều chỉnh có giá > 0, cập nhật LastPurchasePrice
-                    // Cả Tồn đầu kỳ cũng nên cập nhật LastPurchasePrice nếu đây là lần đầu tiên
-                    if (model.UnitPrice.HasValue && model.UnitPrice.Value > 0)
-                    {
-                        ingredient.LastPurchasePrice = model.UnitPrice.Value;
-                    }
-                    if (transaction.UnitPrice.HasValue)
-                    {
-                        transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice.Value;
-                    }
+                    ingredient.LastPurchasePrice = model.UnitPrice.Value;
+                    ingredient.UpdatedAt = DateTime.Now;
                     break;
 
-                case InventoryTransactionType.SaleConsumption:
+                // --- LOGIC THAO TÁC TRÊN LÔ HIỆN CÓ: Áp dụng cho Điều chỉnh Tăng/Giảm và Xuất bán ---
+                case InventoryTransactionType.AdjustmentIn:
                 case InventoryTransactionType.AdjustmentOut:
-                    if (ingredient.CurrentStockLevel < model.Quantity && model.TransactionType == InventoryTransactionType.SaleConsumption)
-                    {
-                        return BadRequest(new { success = false, message = $"Không đủ tồn kho cho '{ingredient.Name}'. Tồn kho hiện tại: {ingredient.CurrentStockLevel.ToString("N3", _vnCulture)} {ingredient.UnitOfMeasure}." });
-                    }
-                    ingredient.CurrentStockLevel -= model.Quantity;
-                    transaction.QuantityChanged = -model.Quantity; // Đảm bảo số lượng là âm
+                    // GIỮ NGUYÊN LOGIC CŨ CHO ĐIỀU CHỈNH (DÙNG GIÁ VỐN)
+                    if (!model.BatchId.HasValue)
+                        return BadRequest(new { success = false, message = "Vui lòng chọn lô hàng để thực hiện giao dịch." });
+                    var batchForAdjustment = await _context.InventoryBatches.FindAsync(model.BatchId.Value);
+                    if (batchForAdjustment == null || batchForAdjustment.IngredientId != model.IngredientId)
+                        return BadRequest(new { success = false, message = "Lô hàng không hợp lệ." });
 
-                    // Đối với AdjustmentOut, UnitPrice đã được validate là bắt buộc.
-                    // Đối với SaleConsumption, UnitPrice có thể không có và sẽ lấy giá vốn cuối cùng.
-                    if (!transaction.UnitPrice.HasValue)
+                    transaction.BatchId = batchForAdjustment.Id;
+                    transaction.UnitPrice = batchForAdjustment.PurchasePrice; // Giá điều chỉnh là giá vốn
+
+                    if (model.TransactionType == InventoryTransactionType.AdjustmentIn)
                     {
-                        transaction.UnitPrice = ingredient.LastPurchasePrice;
+                        batchForAdjustment.Quantity += model.Quantity;
+                        transaction.QuantityChanged = model.Quantity;
+                        transaction.TotalPrice = model.Quantity * batchForAdjustment.PurchasePrice;
+                        ingredient.CurrentStockLevel += model.Quantity;
                     }
-                    // Luôn tính TotalPrice dựa trên giá trị thực tế và đảm bảo nó là số âm.
-                    if (transaction.UnitPrice.HasValue)
+                    else // AdjustmentOut
                     {
-                        transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice.Value;
+                        if (batchForAdjustment.Quantity < model.Quantity)
+                            return BadRequest(new { success = false, message = $"Số lượng trong lô không đủ. Tồn kho của lô chỉ còn: {batchForAdjustment.Quantity}." });
+
+                        batchForAdjustment.Quantity -= model.Quantity;
+                        transaction.QuantityChanged = -model.Quantity;
+                        transaction.TotalPrice = -model.Quantity * batchForAdjustment.PurchasePrice; // Giá trị hàng hủy tính theo giá vốn
+                        ingredient.CurrentStockLevel -= model.Quantity;
                     }
+                    if (batchForAdjustment.Quantity == 0) batchForAdjustment.IsActive = false;
+                    ingredient.UpdatedAt = DateTime.Now;
                     break;
+
+                case InventoryTransactionType.SaleConsumption: // <<< TÁCH LOGIC XUẤT BÁN HÀNG RA RIÊNG
+                    if (!model.BatchId.HasValue)
+                        return BadRequest(new { success = false, message = "Vui lòng chọn lô hàng để bán." });
+                    if (!model.UnitPrice.HasValue || model.UnitPrice.Value < 0)
+                        return BadRequest(new { success = false, message = "Vui lòng nhập đơn giá bán hợp lệ." });
+
+                    var batchForSale = await _context.InventoryBatches.FindAsync(model.BatchId.Value);
+                    if (batchForSale == null || batchForSale.IngredientId != model.IngredientId)
+                        return BadRequest(new { success = false, message = "Lô hàng không hợp lệ." });
+
+                    if (batchForSale.Quantity < model.Quantity)
+                        return BadRequest(new { success = false, message = $"Số lượng trong lô không đủ. Tồn kho của lô chỉ còn: {batchForSale.Quantity}." });
+
+                    // Ghi nhận giao dịch với giá bán từ người dùng
+                    transaction.BatchId = batchForSale.Id;
+                    transaction.UnitPrice = model.UnitPrice.Value; // <-- Lấy đơn giá bán từ form
+                    transaction.QuantityChanged = -model.Quantity; // Số lượng xuất kho là số âm
+                    transaction.TotalPrice = model.Quantity * model.UnitPrice.Value; // <-- Tổng tiền là DOANH THU (số dương)
+
+                    // Cập nhật kho (vẫn trừ số lượng như bình thường)
+                    batchForSale.Quantity -= model.Quantity;
+                    ingredient.CurrentStockLevel -= model.Quantity;
+                    if (batchForSale.Quantity == 0) batchForSale.IsActive = false;
+                    ingredient.UpdatedAt = DateTime.Now;
+                    break;
+
+                default:
+                    return BadRequest(new { success = false, message = "Loại giao dịch không được hỗ trợ." });
             }
-            // [END] === CẬP NHẬT LOGIC XỬ LÝ GIAO DỊCH ===
 
-            ingredient.UpdatedAt = DateTime.Now; // Cập nhật ngày thay đổi của NVL
             _context.InventoryTransactions.Add(transaction);
-            _context.Entry(ingredient).State = EntityState.Modified;
-
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, message = "Tạo phiếu kho thành công!", data = transaction });
+            var resultData = new
+            {
+                success = true,
+                message = "Tạo phiếu kho thành công!",
+                updatedIngredient = new
+                {
+                    id = ingredient.Id,
+                    currentStockLevel = ingredient.CurrentStockLevel
+                }
+            };
+
+            return Ok(resultData);
         }
 
 
