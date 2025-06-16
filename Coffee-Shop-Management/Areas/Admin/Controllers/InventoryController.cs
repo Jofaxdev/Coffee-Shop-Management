@@ -290,7 +290,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
         #endregion
 
-
         #region Báo cáo & Xuất file
 
         [HttpPost]
@@ -411,6 +410,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption)
                     .Sum(t => t.TotalPrice ?? 0);
 
+                decimal periodProfit = periodRevenue - periodValueOut_COGS;
+
                 decimal closingStockValue = openingStockValue + periodValueIn - periodValueOut_COGS;
 
                 summaryReportItems.Add(new InventorySummaryReportItemVM
@@ -428,7 +429,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     PeriodRevenue = periodRevenue,
                     ClosingStockQuantity = currentStockForDetail,
                     ClosingStockValue = closingStockValue,
-                    MinimumStockLevel = ingredient.MinimumStockLevel
+                    MinimumStockLevel = ingredient.MinimumStockLevel,
+                    PeriodProfit = periodProfit
                 });
             }
 
@@ -467,7 +469,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
         private void RenderSummarySheet(IXLWorksheet sheet, List<InventorySummaryReportItemVM> items, DateTime fromDate, DateTime toDate)
         {
             const string formatVND = "#,##0";
-            const int totalColumns = 13;
+            const int totalColumns = 14;
             sheet.Style.Font.FontName = "Calibri";
 
             var exportDateCell = sheet.Range(1, totalColumns - 2, 1, totalColumns).Merge();
@@ -506,6 +508,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Range(headerRow1, 9, headerRow1, 10).Merge().Value = "Xuất trong kỳ";
             sheet.Range(headerRow1, 11, headerRow1, 12).Merge().Value = "Tồn cuối kỳ";
             sheet.Range(headerRow1, 13, headerRow2, 13).Merge().Value = "Doanh thu";
+            sheet.Range(headerRow1, 14, headerRow2, 14).Merge().Value = "Lợi nhuận";
 
             var subHeaders = new[] { "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền", "Số Lượng", "Thành Tiền" };
             int currentCol = 5;
@@ -546,6 +549,13 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 sheet.Cell(currentRow, col++).SetValue(item.ClosingStockValue).Style.NumberFormat.Format = formatVND;
                 sheet.Cell(currentRow, col++).SetValue(item.PeriodRevenue).Style.NumberFormat.Format = formatVND;
 
+                var profitCell = sheet.Cell(currentRow, col++);
+                profitCell.SetValue(item.PeriodProfit).Style.NumberFormat.Format = formatVND;
+                if (item.PeriodProfit < 0)
+                {
+                    profitCell.Style.Font.FontColor = XLColor.Red;
+                }
+
                 if (item.MinimumStockLevel.HasValue && item.ClosingStockQuantity < item.MinimumStockLevel.Value)
                 {
                     sheet.Range(currentRow, 1, currentRow, totalColumns).Style.Font.FontColor = XLColor.Red;
@@ -568,7 +578,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             totalLabelRange.Value = "Tổng cộng";
             totalLabelRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            var cellsToSum = new[] { 6, 8, 10, 12, 13 };
+            var cellsToSum = new[] { 6, 8, 10, 12, 13, 14 };
             foreach (var colIndex in cellsToSum)
             {
                 var cell = sheet.Cell(totalRow, colIndex);
@@ -581,6 +591,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     cell.SetValue(0);
                 }
                 cell.Style.NumberFormat.Format = formatVND;
+
+                if (colIndex == 14)
+                {
+                    cell.AddConditionalFormat().WhenLessThan(0).Font.FontColor = XLColor.Red;
+                }
             }
 
             var tableRange = sheet.Range(headerRow1, 1, totalRow, totalColumns);
@@ -603,6 +618,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Column(11).Width = 12;
             sheet.Column(12).Width = 15;
             sheet.Column(13).Width = 15;
+            sheet.Column(14).Width = 15;
         }
 
         private void RenderDetailSheetForItem(IXLWorksheet sheet, InventoryDetailReportItemVM itemData)
@@ -662,26 +678,25 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             foreach (var trans in itemData.Transactions)
             {
-                // *** BỔ SUNG: Thêm màu nền chi tiết cho dòng giao dịch ***
                 var rowColor = XLColor.White;
                 switch (trans.TransactionType)
                 {
                     case AppDbContext.InventoryTransactionType.Purchase:
                     case AppDbContext.InventoryTransactionType.InitialStock:
-                        rowColor = XLColor.FromHtml("#E7F3E7"); // Xanh lá cây nhạt
+                        rowColor = XLColor.FromHtml("#E7F3E7");
                         break;
                     case AppDbContext.InventoryTransactionType.AdjustmentIn:
-                        rowColor = XLColor.FromHtml("#EBF5FF"); // Xanh da trời nhạt
+                        rowColor = XLColor.FromHtml("#EBF5FF");
                         break;
                     case AppDbContext.InventoryTransactionType.SaleConsumption:
-                        rowColor = XLColor.FromHtml("#FFF0F0"); // Hồng nhạt
+                        rowColor = XLColor.FromHtml("#FFF0F0");
                         break;
                     case AppDbContext.InventoryTransactionType.AdjustmentOut:
-                        rowColor = XLColor.FromHtml("#FFF9E6"); // Vàng kem
+                        rowColor = XLColor.FromHtml("#FFF9E6");
                         break;
                 }
 
-                if (!rowColor.Equals(XLColor.White)) // So sánh struct màu đúng cách
+                if (!rowColor.Equals(XLColor.White))
                 {
                     sheet.Range(currentRow, 1, currentRow, headers.Length).Style.Fill.BackgroundColor = rowColor;
                 }
@@ -743,7 +758,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             tableRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
             tableRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            //tableRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
 
             sheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             sheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
