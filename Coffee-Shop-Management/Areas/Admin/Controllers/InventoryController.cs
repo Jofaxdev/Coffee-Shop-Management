@@ -41,183 +41,255 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return View();
         }
 
-        #region Dashboard API
 
-        // API cho các thẻ KPI
-        [HttpGet]
-        public async Task<IActionResult> GetDashboardKpis()
+        #region Dashboard API (Phiên bản cuối cùng)
+
+        // --- CÁC VIEWMODEL CHO DASHBOARD ---
+
+        /// <summary>
+        /// ViewModel chính chứa dữ liệu tổng quan cho dashboard.
+        /// </summary>
+        public class InventoryDashboardVM
         {
-            var ingredients = await _context.Ingredients
-                                            .Where(i => !i.DeleteTemp && i.IsActive)
-                                            .ToListAsync();
-
-            var kpi = new DashboardKpiVM
-            {
-                TotalInventoryValue = ingredients.Sum(i => i.CurrentStockLevel * i.LastPurchasePrice),
-                LowStockItemsCount = ingredients.Count(i => i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value)
-            };
-
-            return Ok(kpi);
-        }
-
-        // API cho biểu đồ tròn Phân bổ giá trị kho
-        [HttpGet]
-        public async Task<IActionResult> GetInventoryValueDistribution()
-        {
-            var data = await _context.Ingredients
-                .Where(i => !i.DeleteTemp && i.IsActive && i.CurrentStockLevel > 0)
-                .Select(i => new ChartItem
-                {
-                    Label = i.Name,
-                    Value = i.CurrentStockLevel * i.LastPurchasePrice
-                })
-                .OrderByDescending(x => x.Value)
-                .ToListAsync();
-
-            // Gom các mục nhỏ vào thành "Khác"
-            const int topN = 6;
-            if (data.Count > topN)
-            {
-                var topItems = data.Take(topN).ToList();
-                var otherValue = data.Skip(topN).Sum(x => x.Value);
-                if (otherValue > 0)
-                {
-                    topItems.Add(new ChartItem { Label = "Khác", Value = otherValue });
-                }
-                return Ok(topItems);
-            }
-
-            return Ok(data);
-        }
-
-        // API cho biểu đồ Top 10 NVL tiêu thụ
-        [HttpGet]
-        public async Task<IActionResult> GetTopConsumedIngredients()
-        {
-            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            var data = await _context.InventoryTransactions
-                .Where(t => (t.TransactionType == InventoryTransactionType.SaleConsumption || t.TransactionType == InventoryTransactionType.AdjustmentOut) && t.TransactionDate >= thirtyDaysAgo)
-                .Include(t => t.Ingredient)
-                .GroupBy(t => t.Ingredient.Name)
-                .Select(g => new ChartItem
-                {
-                    Label = g.Key,
-                    Value = g.Sum(t => Math.Abs(t.QuantityChanged)) // Lấy số dương
-                })
-                .OrderByDescending(x => x.Value)
-                .Take(10)
-                .ToListAsync();
-
-            return Ok(data);
-        }
-
-        // API cho biểu đồ xu hướng hàng hủy
-        [HttpGet]
-        public async Task<IActionResult> GetWasteTrend()
-        {
-            var sixMonthsAgo = DateTime.Now.AddMonths(-6);
-            var monthlyWaste = await _context.InventoryTransactions
-                .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut && t.TransactionDate >= sixMonthsAgo)
-                .GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
-                .Select(g => new
-                {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    TotalValue = g.Sum(t => Math.Abs(t.TotalPrice ?? 0))
-                })
-                .OrderBy(x => x.Year).ThenBy(x => x.Month)
-                .ToListAsync();
-
-            // Tạo danh sách 6 tháng gần nhất để đảm bảo không thiếu tháng
-            var result = new List<MonthlyData>();
-            for (int i = 5; i >= 0; i--)
-            {
-                var date = DateTime.Now.AddMonths(-i);
-                var wasteData = monthlyWaste.FirstOrDefault(w => w.Year == date.Year && w.Month == date.Month);
-                result.Add(new MonthlyData
-                {
-                    Month = date.ToString("MM/yyyy"),
-                    Value = wasteData?.TotalValue ?? 0
-                });
-            }
-
-            return Ok(result);
-        }
-
-        // API mới: Lấy danh sách các NVL dưới định mức
-        [HttpGet]
-        public async Task<IActionResult> GetLowStockIngredients()
-        {
-            var data = await _context.Ingredients
-                .Where(i => !i.DeleteTemp && i.IsActive && i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value)
-                .OrderBy(i => i.CurrentStockLevel / i.MinimumStockLevel) // Ưu tiên các mục cạn nhất
-                .Select(i => new LowStockIngredientVM
-                {
-                    Name = i.Name,
-                    CurrentStock = i.CurrentStockLevel,
-                    MinimumStock = i.MinimumStockLevel.Value
-                })
-                .Take(10) // Lấy 10 mục cần nhập gấp nhất
-                .ToListAsync();
-
-            return Ok(data);
-        }
-
-        // API mới: Lấy Top NVL bị hủy/thất thoát theo giá trị
-        [HttpGet]
-        public async Task<IActionResult> GetTopWastedIngredients()
-        {
-            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            var data = await _context.InventoryTransactions
-                .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut && t.TransactionDate >= thirtyDaysAgo)
-                .Include(t => t.Ingredient)
-                .GroupBy(t => t.Ingredient.Name)
-                .Select(g => new WastedItemVM
-                {
-                    Name = g.Key,
-                    QuantityWasted = g.Sum(t => Math.Abs(t.QuantityChanged)),
-                    ValueWasted = g.Sum(t => Math.Abs(t.TotalPrice ?? 0))
-                })
-                .OrderByDescending(x => x.ValueWasted)
-                .Take(7) // Lấy top 7
-                .ToListAsync();
-
-            return Ok(data);
-        }
-
-        // Các ViewModel cho Dashboard API
-        public class DashboardKpiVM
-        {
+            // KPIs
             public decimal TotalInventoryValue { get; set; }
             public int LowStockItemsCount { get; set; }
+            public decimal Last30DaysRevenue { get; set; }
+            public decimal Last30DaysProfit { get; set; }
+            public decimal WasteValueThisYear { get; set; }
+
+            // Dữ liệu cho các biểu đồ phụ
+            public List<ChartItem> InventoryValueDistribution { get; set; }
+            public List<LowStockIngredientVM> LowStockIngredients { get; set; }
         }
 
+        /// <summary>
+        /// ViewModel chung cho các biểu đồ (cột, tròn).
+        /// </summary>
         public class ChartItem
         {
             public string Label { get; set; } = string.Empty;
             public decimal Value { get; set; }
         }
 
-        public class MonthlyData
-        {
-            public string Month { get; set; } = string.Empty;
-            public decimal Value { get; set; }
-        }
-
+        /// <summary>
+        /// ViewModel cho danh sách NVL sắp hết hàng.
+        /// (Đã được cập nhật để có thêm Đơn vị tính)
+        /// </summary>
         public class LowStockIngredientVM
         {
             public string Name { get; set; } = string.Empty;
+            public string UnitOfMeasure { get; set; } // Đã thêm
             public decimal CurrentStock { get; set; }
             public decimal MinimumStock { get; set; }
         }
 
-        public class WastedItemVM
+        /// <summary>
+        /// ViewModel cho bảng chi tiết NVL thất thoát.
+        /// </summary>
+        public class WastedIngredientDetailVM
         {
-            public string Name { get; set; } = string.Empty;
-            public decimal QuantityWasted { get; set; }
-            public decimal ValueWasted { get; set; }
+            public string Name { get; set; }
+            public string UnitOfMeasure { get; set; }
+            public decimal Quantity { get; set; }
+            public decimal Value { get; set; }
         }
+
+
+        // --- CÁC API ACTION ---
+
+        /// <summary>
+        /// Lấy dữ liệu tổng hợp cho các KPI và biểu đồ chính trên dashboard.
+        /// Doanh thu, lợi nhuận và thất thoát được tính từ đầu năm đến ngày hiện tại.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetDashboardData()
+        {
+            try
+            {
+                var today = DateTime.Now;
+                var startOfYear = new DateTime(today.Year, 1, 1);
+
+                // --- TÍNH TOÁN CÁC KPI ---
+                var totalInventoryValue = await _context.InventoryBatches
+                    .Where(b => b.IsActive && b.Quantity > 0).SumAsync(b => b.Quantity * b.PurchasePrice);
+
+                var saleTransactionsInPeriod = await _context.InventoryTransactions
+                    .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption && t.TransactionDate >= startOfYear && t.TransactionDate <= today)
+                    .Include(t => t.Batch).ToListAsync();
+
+                var revenueThisYear = saleTransactionsInPeriod.Sum(t => t.TotalPrice ?? 0);
+                var cogsThisYear = saleTransactionsInPeriod.Sum(t => Math.Abs(t.QuantityChanged) * (t.Batch?.PurchasePrice ?? 0));
+                var profitThisYear = revenueThisYear - cogsThisYear;
+
+                var wasteValueThisYear = await _context.InventoryTransactions
+                    .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut && t.TransactionDate >= startOfYear && t.TransactionDate <= today)
+                    .SumAsync(t => Math.Abs(t.TotalPrice ?? 0));
+
+                // --- TÍNH TOÁN DỮ LIỆU BIỂU ĐỒ & BẢNG ---
+                var activeIngredients = await _context.Ingredients
+                    .Where(i => !i.DeleteTemp && i.IsActive).ToListAsync();
+                var lowStockItemsCount = activeIngredients.Count(i => i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value);
+
+                var distributionDataRaw = await _context.InventoryBatches
+                    .Where(b => b.IsActive && b.Quantity > 0 && b.Ingredient != null && b.Ingredient.Name != null)
+                    .GroupBy(b => b.Ingredient.Name)
+                    .Select(g => new ChartItem { Label = g.Key, Value = g.Sum(b => b.Quantity * b.PurchasePrice) })
+                    .OrderByDescending(x => x.Value).Take(7).ToListAsync();
+
+                // Cập nhật câu truy vấn để lấy thêm UnitOfMeasure
+                var lowStockIngredientsData = activeIngredients
+                    .Where(i => i.MinimumStockLevel.HasValue && i.CurrentStockLevel < i.MinimumStockLevel.Value)
+                    .OrderBy(i => i.CurrentStockLevel / i.MinimumStockLevel)
+                    .Select(i => new LowStockIngredientVM
+                    {
+                        Name = i.Name,
+                        UnitOfMeasure = i.UnitOfMeasure, // Thêm đơn vị tính
+                        CurrentStock = i.CurrentStockLevel,
+                        MinimumStock = i.MinimumStockLevel.Value
+                    })
+                    .Take(10).ToList();
+
+                // --- TẠO VIEWMODEL TRẢ VỀ ---
+                var viewModel = new InventoryDashboardVM
+                {
+                    TotalInventoryValue = totalInventoryValue,
+                    LowStockItemsCount = lowStockItemsCount,
+                    Last30DaysRevenue = revenueThisYear,
+                    Last30DaysProfit = profitThisYear,
+                    WasteValueThisYear = wasteValueThisYear,
+                    InventoryValueDistribution = distributionDataRaw,
+                    LowStockIngredients = lowStockIngredientsData,
+                };
+
+                return Ok(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi nghiêm trọng trong GetDashboardData");
+                return StatusCode(500, $"Lỗi từ máy chủ: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// API lấy lợi nhuận theo từng tháng của một năm cụ thể.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetMonthlyProfitByYear(int year)
+        {
+            try
+            {
+                var startDate = new DateTime(year, 1, 1);
+                var endDate = startDate.AddYears(1).AddTicks(-1);
+
+                var saleTransactions = await _context.InventoryTransactions
+                    .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption
+                                && t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+                    .Include(t => t.Batch)
+                    .ToListAsync();
+
+                var monthlyProfits = saleTransactions
+                    .GroupBy(t => t.TransactionDate.Month)
+                    .Select(g => new
+                    {
+                        Month = g.Key,
+                        Profit = g.Sum(t => t.TotalPrice ?? 0) - g.Sum(t => Math.Abs(t.QuantityChanged) * (t.Batch?.PurchasePrice ?? 0))
+                    })
+                    .ToDictionary(x => x.Month, x => x.Profit);
+
+                var result = new List<ChartItem>();
+                for (int i = 1; i <= 12; i++)
+                {
+                    result.Add(new ChartItem
+                    {
+                        Label = $"Thg {i}",
+                        Value = monthlyProfits.ContainsKey(i) ? monthlyProfits[i] : 0
+                    });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi trong GetMonthlyProfitByYear cho năm {Year}", year);
+                return StatusCode(500, $"Lỗi từ máy chủ: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// API lấy danh sách chi tiết các NVL thất thoát theo năm.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetWasteDetailsByYear(int year)
+        {
+            try
+            {
+                var startDate = new DateTime(year, 1, 1);
+                var endDate = startDate.AddYears(1).AddTicks(-1);
+
+                var wasteDetails = await _context.InventoryTransactions
+                    .Where(t => t.TransactionType == InventoryTransactionType.AdjustmentOut
+                                && t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+                    .Include(t => t.Ingredient)
+                    .Where(t => t.Ingredient != null && t.Ingredient.Name != null)
+                    .GroupBy(t => new { t.Ingredient.Name, t.Ingredient.UnitOfMeasure })
+                    .Select(g => new WastedIngredientDetailVM
+                    {
+                        Name = g.Key.Name,
+                        UnitOfMeasure = g.Key.UnitOfMeasure,
+                        Quantity = g.Sum(t => Math.Abs(t.QuantityChanged)),
+                        Value = g.Sum(t => Math.Abs(t.TotalPrice ?? 0))
+                    })
+                    .OrderByDescending(x => x.Value)
+                    .ToListAsync();
+
+                return Ok(wasteDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi trong GetWasteDetailsByYear cho năm {Year}", year);
+                return StatusCode(500, $"Lỗi từ máy chủ: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// API lấy tổng lợi nhuận theo từng năm có giao dịch.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAnnualProfitSummary()
+        {
+            try
+            {
+                var saleTransactions = await _context.InventoryTransactions
+                    .Where(t => t.TransactionType == InventoryTransactionType.SaleConsumption && t.Batch != null)
+                    .Select(t => new {
+                        Year = t.TransactionDate.Year,
+                        Revenue = t.TotalPrice ?? 0,
+                        Cost = Math.Abs(t.QuantityChanged) * (t.Batch.PurchasePrice)
+                    })
+                    .ToListAsync();
+
+                var annualProfits = saleTransactions
+                    .GroupBy(t => t.Year)
+                    .Select(g => new ChartItem
+                    {
+                        Label = g.Key.ToString(),
+                        Value = g.Sum(t => t.Revenue) - g.Sum(t => t.Cost)
+                    })
+                    .OrderBy(x => x.Label)
+                    .ToList();
+
+                return Ok(annualProfits);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi trong GetAnnualProfitSummary");
+                return StatusCode(500, $"Lỗi từ máy chủ: {ex.Message}");
+            }
+        }
+
         #endregion
+
 
         #region Báo cáo & Xuất file
 
@@ -730,8 +802,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
         #endregion
 
-        // Đặt phương thức này bên trong class InventoryController.cs
-
         [HttpPost]
         public async Task<IActionResult> PreviewInventoryReport(DateTime fromDate, DateTime toDate, List<int> ingredientIds = null)
         {
@@ -754,6 +824,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             if (!ingredientsToQuery.Any())
             {
+                // Trả về một PartialView với model rỗng để hiển thị thông báo "Không có dữ liệu"
                 return PartialView("_InventoryReportPreview", new List<InventorySummaryReportItemVM>());
             }
 
@@ -789,7 +860,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 decimal periodQuantityOut = transactionsInPeriod.Where(t => t.QuantityChanged < 0).Sum(t => -t.QuantityChanged);
 
                 // 1. Tính tổng giá trị XUẤT KHO theo GIÁ VỐN (COGS)
-                // Bằng cách lấy số lượng xuất nhân với giá vốn của lô hàng tại thời điểm xuất.
                 decimal periodValueOut_COGS = transactionsInPeriod
                     .Where(t => t.QuantityChanged < 0)
                     .Sum(t => Math.Abs(t.QuantityChanged) * (t.Batch?.PurchasePrice ?? ingredient.LastPurchasePrice));
@@ -803,6 +873,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 decimal closingStockQuantity = openingStockQuantity + periodQuantityIn - periodQuantityOut;
                 decimal closingStockValue = openingStockValue + periodValueIn - periodValueOut_COGS;
 
+                // 4. Tính toán LỢI NHUẬN
+                decimal periodProfit = periodRevenue - periodValueOut_COGS;
 
                 summaryReportItems.Add(new InventorySummaryReportItemVM
                 {
@@ -816,10 +888,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     PeriodQuantityIn = periodQuantityIn,
                     PeriodValueIn = periodValueIn,
                     PeriodQuantityOut = periodQuantityOut,
-                    PeriodValueOut = periodValueOut_COGS, // Giờ đây đã là giá vốn
-                    PeriodRevenue = periodRevenue,        // Gán giá trị doanh thu
+                    PeriodValueOut = periodValueOut_COGS,
+                    PeriodRevenue = periodRevenue,
+                    PeriodProfit = periodProfit, // Gán giá trị lợi nhuận đã tính
                     ClosingStockQuantity = closingStockQuantity,
-                    ClosingStockValue = closingStockValue // Giờ đây sẽ không bao giờ bị âm
+                    ClosingStockValue = closingStockValue
                 });
             }
 
@@ -1351,7 +1424,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
         }
 
         // POST: /Admin/Inventory/CreateInventoryTransaction
-        // ##### PHẦN CODE ĐÃ ĐƯỢC CẬP NHẬT #####
         // POST: /Admin/Inventory/CreateInventoryTransaction
         [HttpPost]
         public async Task<IActionResult> CreateInventoryTransaction([FromBody] InventoryTransactionVM model)
@@ -1379,7 +1451,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             switch (model.TransactionType)
             {
-                // --- LOGIC TẠO LÔ MỚI: Áp dụng cho Mua hàng và Nhập tồn kho ban đầu ---
                 case InventoryTransactionType.Purchase:
                 case InventoryTransactionType.InitialStock:
                     if (!model.UnitPrice.HasValue || model.UnitPrice.Value <= 0)
@@ -1398,7 +1469,13 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     transaction.QuantityChanged = model.Quantity;
                     transaction.UnitPrice = model.UnitPrice;
                     transaction.TotalPrice = model.Quantity * model.UnitPrice.Value;
-                    transaction.Batch = newBatch; // Gán lô mới vào giao dịch
+                    transaction.Batch = newBatch;
+
+                    // *** SỬA LỖI: Bổ sung dòng gán SupplierId ***
+                    if (model.TransactionType == InventoryTransactionType.Purchase)
+                    {
+                        transaction.SupplierId = model.SupplierId;
+                    }
 
                     // Cập nhật tồn kho và giá vốn cuối cùng
                     ingredient.CurrentStockLevel += model.Quantity;
@@ -1406,10 +1483,9 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     ingredient.UpdatedAt = DateTime.Now;
                     break;
 
-                // --- LOGIC THAO TÁC TRÊN LÔ HIỆN CÓ: Áp dụng cho Điều chỉnh Tăng/Giảm và Xuất bán ---
+                // --- Các case còn lại giữ nguyên ---
                 case InventoryTransactionType.AdjustmentIn:
                 case InventoryTransactionType.AdjustmentOut:
-                    // GIỮ NGUYÊN LOGIC CŨ CHO ĐIỀU CHỈNH (DÙNG GIÁ VỐN)
                     if (!model.BatchId.HasValue)
                         return BadRequest(new { success = false, message = "Vui lòng chọn lô hàng để thực hiện giao dịch." });
                     var batchForAdjustment = await _context.InventoryBatches.FindAsync(model.BatchId.Value);
@@ -1417,7 +1493,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                         return BadRequest(new { success = false, message = "Lô hàng không hợp lệ." });
 
                     transaction.BatchId = batchForAdjustment.Id;
-                    transaction.UnitPrice = batchForAdjustment.PurchasePrice; // Giá điều chỉnh là giá vốn
+                    transaction.UnitPrice = batchForAdjustment.PurchasePrice;
 
                     if (model.TransactionType == InventoryTransactionType.AdjustmentIn)
                     {
@@ -1433,14 +1509,14 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
                         batchForAdjustment.Quantity -= model.Quantity;
                         transaction.QuantityChanged = -model.Quantity;
-                        transaction.TotalPrice = -model.Quantity * batchForAdjustment.PurchasePrice; // Giá trị hàng hủy tính theo giá vốn
+                        transaction.TotalPrice = -model.Quantity * batchForAdjustment.PurchasePrice;
                         ingredient.CurrentStockLevel -= model.Quantity;
                     }
                     if (batchForAdjustment.Quantity == 0) batchForAdjustment.IsActive = false;
                     ingredient.UpdatedAt = DateTime.Now;
                     break;
 
-                case InventoryTransactionType.SaleConsumption: // <<< TÁCH LOGIC XUẤT BÁN HÀNG RA RIÊNG
+                case InventoryTransactionType.SaleConsumption:
                     if (!model.BatchId.HasValue)
                         return BadRequest(new { success = false, message = "Vui lòng chọn lô hàng để bán." });
                     if (!model.UnitPrice.HasValue || model.UnitPrice.Value < 0)
@@ -1453,13 +1529,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     if (batchForSale.Quantity < model.Quantity)
                         return BadRequest(new { success = false, message = $"Số lượng trong lô không đủ. Tồn kho của lô chỉ còn: {batchForSale.Quantity}." });
 
-                    // Ghi nhận giao dịch với giá bán từ người dùng
                     transaction.BatchId = batchForSale.Id;
-                    transaction.UnitPrice = model.UnitPrice.Value; // <-- Lấy đơn giá bán từ form
-                    transaction.QuantityChanged = -model.Quantity; // Số lượng xuất kho là số âm
-                    transaction.TotalPrice = model.Quantity * model.UnitPrice.Value; // <-- Tổng tiền là DOANH THU (số dương)
+                    transaction.UnitPrice = model.UnitPrice.Value;
+                    transaction.QuantityChanged = -model.Quantity;
+                    transaction.TotalPrice = model.Quantity * model.UnitPrice.Value;
 
-                    // Cập nhật kho (vẫn trừ số lượng như bình thường)
                     batchForSale.Quantity -= model.Quantity;
                     ingredient.CurrentStockLevel -= model.Quantity;
                     if (batchForSale.Quantity == 0) batchForSale.IsActive = false;
@@ -1486,7 +1560,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             return Ok(resultData);
         }
-
 
         // POST: /Admin/Inventory/GetInventoryTransactions
         [HttpPost]

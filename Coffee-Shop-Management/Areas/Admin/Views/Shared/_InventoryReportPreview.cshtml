@@ -1,5 +1,4 @@
-﻿@* File: /Areas/Admin/Views/Inventory/_InventoryReportPreview.cshtml *@
-@model List<Coffee_Shop_Management.Areas.Admin.ViewModels.InventorySummaryReportItemVM>
+﻿@model List<Coffee_Shop_Management.Areas.Admin.ViewModels.InventorySummaryReportItemVM>
 
 @functions {
     // Hàm tiện ích để định dạng số ngay trong View cho nhất quán
@@ -8,32 +7,28 @@
         var culture = new System.Globalization.CultureInfo("vi-VN");
         if (isQuantity)
         {
-            // Nếu là số nguyên, không hiển thị phần thập phân
             if (number == Math.Truncate(number))
             {
                 return number.ToString("N0", culture);
             }
-            // Ngược lại, hiển thị tối đa 4 chữ số thập phân và bỏ số 0 thừa
             return number.ToString("N4", culture).TrimEnd('0').TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
         }
-        // Mặc định cho tiền tệ, không có số thập phân
         return number.ToString("N0", culture);
     }
 }
 
 <style>
+    /* SỬA LỖI GIAO DIỆN MOBILE */
     .excel-preview-container {
-        padding: 20px;
+        padding: 15px; /* Giảm padding trên mobile */
         background-color: #f0f2f5;
-        overflow-x: auto;
-    }
-
-    .fixed-layout-wrapper {
-        min-width: 1400px; /* Tăng chiều rộng tối thiểu để chứa cột mới */
-        padding-bottom: 15px;
+        overflow-x: auto; /* Đây là thuộc tính quan trọng nhất để cho phép cuộn ngang */
+        -webkit-overflow-scrolling: touch; /* Giúp cuộn mượt hơn trên iOS */
     }
 
     .preview-table {
+        /* Đặt chiều rộng tối thiểu cho bảng để không bị vỡ layout trên màn hình hẹp */
+        min-width: 1450px;
         width: 100%;
         border-collapse: collapse;
         background-color: #fff;
@@ -43,10 +38,15 @@
 
         .preview-table th, .preview-table td {
             border: 1px solid #ccc;
-            padding: 6px 8px;
+            padding: 6px 8px; /* Trả lại padding hợp lý */
             text-align: left;
-            white-space: nowrap;
             vertical-align: middle;
+        }
+
+        /* Class để cho phép text xuống dòng một cách thông minh */
+        .preview-table .wrap-text {
+            white-space: normal; /* Cho phép xuống dòng tự nhiên */
+            /* word-break: break-word; Bỏ thuộc tính này để tránh ngắt chữ tùy tiện */
         }
 
         .preview-table thead th {
@@ -57,6 +57,7 @@
             position: sticky;
             top: -1px;
             z-index: 2;
+            white-space: normal; /* Cho phép header dài có thể xuống dòng */
         }
 
         .preview-table tfoot td {
@@ -64,6 +65,7 @@
             background-color: #FFF2CC;
         }
 
+        /* Các style khác giữ nguyên */
         .preview-table .text-right {
             text-align: right;
         }
@@ -73,7 +75,6 @@
         }
 
         .preview-table .action-cell {
-            width: 60px;
             text-align: center;
         }
 
@@ -83,48 +84,52 @@
             font-size: 1.2em;
         }
 
-            .preview-table .btn-view-detail:hover {
-                color: #0a58ca;
-                text-decoration: none;
-            }
+    .profit-negative {
+        color: red;
+    }
 
     #preview-detail-view {
         display: none;
     }
 </style>
 
-<div class="fixed-layout-wrapper">
+<div class="excel-preview-container">
     <div id="preview-summary-view">
         @if (Model == null || !Model.Any())
         {
-            <div class="alert alert-warning">Không có dữ liệu để hiển thị.</div>
+            <div class="alert alert-warning text-center">
+                <h4 class="alert-heading">Không có dữ liệu</h4>
+                <p>Không tìm thấy dữ liệu phù hợp với các tiêu chí đã chọn.</p>
+            </div>
         }
         else
         {
             <h4 class="mb-3">Báo cáo tổng hợp Nhập-Xuất-Tồn (Xem trước)</h4>
             <table class="preview-table">
                 <thead>
+                    @* Quay lại sử dụng width cố định (px) để đảm bảo layout ổn định trên mọi màn hình *@
                     <tr>
-                        <th rowspan="2">STT</th>
-                        <th rowspan="2" style="min-width: 100px;">Mã hàng</th>
-                        <th rowspan="2" style="min-width: 250px;">Tên hàng</th>
-                        <th rowspan="2" style="min-width: 60px;">ĐVT</th>
+                        <th rowspan="2" style="width: 40px;">STT</th>
+                        <th rowspan="2" style="width: 100px;">Mã hàng</th>
+                        <th rowspan="2" class="wrap-text" style="width: 220px;">Tên hàng</th>
+                        <th rowspan="2" style="width: 60px;">ĐVT</th>
                         <th colspan="2">Tồn đầu kỳ</th>
                         <th colspan="2">Nhập trong kỳ</th>
                         <th colspan="2">Xuất trong kỳ (Giá vốn)</th>
                         <th colspan="2">Tồn cuối kỳ</th>
-                        <th rowspan="2" style="min-width: 120px;">Doanh thu</th> @* Chuyển cột Doanh thu ra sau Tồn cuối kỳ *@
-                        <th rowspan="2">Chi tiết</th>
+                        <th rowspan="2" style="width: 110px;">Doanh thu</th>
+                        <th rowspan="2" style="width: 110px;">Lợi nhuận</th>
+                        <th rowspan="2" style="width: 60px;">Chi tiết</th>
                     </tr>
                     <tr>
-                        <th style="min-width: 100px;">Số Lượng</th>
-                        <th style="min-width: 120px;">Thành Tiền</th>
-                        <th style="min-width: 100px;">Số Lượng</th>
-                        <th style="min-width: 120px;">Thành Tiền</th>
-                        <th style="min-width: 100px;">Số Lượng</th>
-                        <th style="min-width: 120px;">Thành Tiền</th>
-                        <th style="min-width: 100px;">Số Lượng</th>
-                        <th style="min-width: 120px;">Thành Tiền</th>
+                        <th style="width: 90px;">Số Lượng</th>
+                        <th style="width: 110px;">Thành Tiền</th>
+                        <th style="width: 90px;">Số Lượng</th>
+                        <th style="width: 110px;">Thành Tiền</th>
+                        <th style="width: 90px;">Số Lượng</th>
+                        <th style="width: 110px;">Thành Tiền</th>
+                        <th style="width: 90px;">Số Lượng</th>
+                        <th style="width: 110px;">Thành Tiền</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,7 +138,7 @@
                         <tr>
                             <td class="text-center">@item.STT</td>
                             <td>@item.IngredientCode</td>
-                            <td>@item.IngredientName</td>
+                            <td class="wrap-text">@item.IngredientName</td>
                             <td class="text-center">@item.UnitOfMeasure</td>
                             <td class="text-right">@FormatNumber(item.OpeningStockQuantity, true)</td>
                             <td class="text-right">@FormatNumber(item.OpeningStockValue)</td>
@@ -143,7 +148,10 @@
                             <td class="text-right">@FormatNumber(item.PeriodValueOut)</td>
                             <td class="text-right">@FormatNumber(item.ClosingStockQuantity, true)</td>
                             <td class="text-right">@FormatNumber(item.ClosingStockValue)</td>
-                            <td class="text-right">@FormatNumber(item.PeriodRevenue)</td> @* Chuyển ô Doanh thu ra cuối *@
+                            <td class="text-right">@FormatNumber(item.PeriodRevenue)</td>
+                            <td class="text-right @(item.PeriodProfit < 0 ? "profit-negative" : "")">
+                                @FormatNumber(item.PeriodProfit)
+                            </td>
                             <td class="action-cell">
                                 <i class="bi bi-eye-fill btn-view-detail" title="Xem thẻ kho" data-id="@item.IngredientId" data-name="@item.IngredientName"></i>
                             </td>
@@ -153,16 +161,22 @@
                 <tfoot>
                     <tr>
                         <td colspan="4" class="text-center"><strong>Tổng cộng</strong></td>
-                        <td></td> @* Cột trống dưới Tồn đầu SL *@
+                        <td class="text-right"></td>
                         <td class="text-right">@FormatNumber(Model.Sum(x => x.OpeningStockValue))</td>
-                        <td></td> @* Cột trống dưới Nhập SL *@
+                        <td class="text-right"></td>
                         <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodValueIn))</td>
-                        <td></td> @* Cột trống dưới Xuất SL *@
+                        <td class="text-right"></td>
                         <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodValueOut))</td>
-                        <td></td> @* Cột trống dưới Tồn cuối SL *@
+                        <td class="text-right"></td>
                         <td class="text-right">@FormatNumber(Model.Sum(x => x.ClosingStockValue))</td>
-                        <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodRevenue))</td> @* Chuyển Tổng Doanh thu ra cuối *@
-                        <td></td> @* Cột trống dưới Chi tiết *@
+                        <td class="text-right">@FormatNumber(Model.Sum(x => x.PeriodRevenue))</td>
+                        @{
+                            var totalProfit = Model.Sum(x => x.PeriodProfit);
+                        }
+                        <td class="text-right @(totalProfit < 0 ? "profit-negative" : "")">
+                            @FormatNumber(totalProfit)
+                        </td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>

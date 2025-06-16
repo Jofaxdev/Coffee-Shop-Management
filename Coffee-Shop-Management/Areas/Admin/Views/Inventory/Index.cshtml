@@ -411,6 +411,83 @@
         #inventoryReportModal .select2-container {
             width: 100% !important;
         }
+
+        /* === BẢNG MÀU MỚI CHO CÁC THẺ KPI === */
+        /* === CSS MỚI CHO CÁC THẺ KPI TRÔNG ĐẸP VÀ CÂN ĐỐI HƠN === */
+        .dashboard-kpi-card {
+            transition: all 0.3s ease-in-out;
+            border: none;
+        }
+
+            .dashboard-kpi-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px -8px var(--card-color, #999) !important;
+            }
+
+            .dashboard-kpi-card .card-body {
+                padding: 1.25rem;
+            }
+
+            .dashboard-kpi-card .card-title {
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.85);
+                font-size: 0.9rem;
+            }
+
+            .dashboard-kpi-card .kpi-value {
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: #fff;
+                white-space: nowrap; 
+            }
+
+            .dashboard-kpi-card .kpi-icon {
+                font-size: 3.5rem;
+                position: absolute;
+                right: -15px;
+                bottom: -15px;
+                opacity: 0.2;
+                transform: rotate(-15deg);
+            }
+
+        /* CSS để thu nhỏ font chữ cho các thẻ KPI */
+        .kpi-value.kpi-value-medium {
+            font-size: 1.8rem; /* Cỡ chữ trung bình */
+        }
+
+        .kpi-value.kpi-value-small {
+            font-size: 1.5rem; /* Cỡ chữ nhỏ nhất */
+        }
+
+        /* Định nghĩa màu cho từng thẻ */
+        .card-custom-blue {
+            --card-color: #5d87ff;
+            background: linear-gradient(45deg, #5d87ff, #769dff);
+        }
+
+        .card-custom-green {
+            --card-color: #13deb9;
+            background: linear-gradient(45deg, #13deb9, #29e8c3);
+        }
+
+        .card-custom-orange {
+            --card-color: #ffab00;
+            background: linear-gradient(45deg, #ffab00, #ffbe3b);
+        }
+
+        .card-custom-red {
+            --card-color: #ff5449;
+            background: linear-gradient(45deg, #ff5449, #ff7269);
+        }
+
+        .card-custom-purple {
+            --card-color: #986dff;
+            background: linear-gradient(45deg, #986dff, #ad8eff);
+        }
+
+        .dashboard-title {
+            text-transform: capitalize;
+        }
     </style>
 }
 <div class="container-fluid">
@@ -440,94 +517,117 @@
     </ul>
 
     <div class="tab-content" id="inventoryTabsContent">
-        @* --- TAB DASHBOARD (MỚI) --- *@
-        @* --- TAB DASHBOARD (ĐÃ CẬP NHẬT) --- *@
+        @* --- TAB DASHBOARD (PHIÊN BẢN HOÀN THIỆN VỚI GIAO DIỆN CHUYÊN NGHIỆP) --- *@
         <div class="tab-pane fade show active" id="dashboardTabPane" role="tabpanel" aria-labelledby="dashboard-tab-btn">
-            <div class="row mt-3">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow h-100 py-2">
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-4 mt-2">
+                <div class="col">
+                    <div class="card dashboard-kpi-card card-custom-blue text-white shadow-sm overflow-hidden h-100">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng giá trị tồn kho</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiTotalValue"><div class="spinner-border spinner-border-sm"></div></div>
-                                </div>
-                                <div class="col-auto"><i class="bi bi-cash-coin fs-2 text-gray-300"></i></div>
-                            </div>
+                            <div class="card-title dashboard-title">Tổng Giá Trị Kho</div>
+                            <div class="kpi-value" id="kpiTotalValue"><div class="spinner-border spinner-border-sm"></div></div>
+                            <i class="bi bi-archive-fill kpi-icon"></i>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-danger shadow h-100 py-2">
+                <div class="col">
+                    <div class="card dashboard-kpi-card card-custom-green text-white shadow-sm overflow-hidden h-100">
                         <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">NVL dưới định mức</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiLowStockItems"><div class="spinner-border spinner-border-sm"></div></div>
-                                </div>
-                                <div class="col-auto"><i class="bi bi-exclamation-triangle-fill fs-2 text-gray-300"></i></div>
+                            <div class="card-title dashboard-title" id="kpi-revenue-title">Doanh Thu (Năm Nay)</div>
+                            <div class="kpi-value" id="kpiRevenue"><div class="spinner-border spinner-border-sm"></div></div>
+                            <i class="bi bi-graph-up-arrow kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card dashboard-kpi-card card-custom-orange text-white shadow-sm overflow-hidden h-100">
+                        <div class="card-body">
+                            <div class="card-title dashboard-title" id="kpi-profit-title">Lợi Nhuận (Năm Nay)</div>
+                            <div class="kpi-value" id="kpiProfit"><div class="spinner-border spinner-border-sm"></div></div>
+                            <i class="bi bi-piggy-bank-fill kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card dashboard-kpi-card card-custom-purple text-white shadow-sm overflow-hidden h-100">
+                        <div class="card-body">
+                            <div class="card-title dashboard-title" id="kpi-waste-title">Thất Thoát (Năm Nay)</div>
+                            <div class="kpi-value" id="kpiWasteValue"><div class="spinner-border spinner-border-sm"></div></div>
+                            <i class="bi bi-trash3-fill kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card dashboard-kpi-card card-custom-red text-white shadow-sm overflow-hidden h-100">
+                        <div class="card-body">
+                            <div class="card-title dashboard-title">NVL Dưới Định Mức</div>
+                            <div class="kpi-value" id="kpiLowStockItems"><div class="spinner-border spinner-border-sm"></div></div>
+                            <i class="bi bi-exclamation-triangle-fill kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-lg-8 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title m-0 me-2 dashboard-title">Lợi Nhuận Theo Tháng</h5>
+                            <div class="d-flex align-items-center">
+                                <label for="profit-chart-year-select" class="form-label me-2 mb-0 small">Năm:</label>
+                                <select class="form-select form-select-sm w-auto" id="profit-chart-year-select"></select>
                             </div>
+                        </div>
+                        <div class="card-body">
+                            <div style="height: 350px;" id="monthlyProfitChartContainer"><canvas id="monthlyProfitChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="card-title m-0 dashboard-title">Tỷ Trọng Giá Trị Tồn Kho</h5></div>
+                        <div class="card-body d-flex align-items-center justify-content-center">
+                            <div style="height: 350px; width: 100%;"><canvas id="inventoryValuePieChart"></canvas></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-danger">Cảnh báo: Các NVL cần nhập hàng</h6>
-                        </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="card-title m-0 dashboard-title">Tổng Lợi Nhuận Qua Các Năm</h5></div>
                         <div class="card-body">
-                            <div class="chart-bar" style="height: 320px;">
-                                <canvas id="lowStockChart"></canvas>
-                            </div>
+                            <div style="height: 320px;" id="annualProfitChartContainer"><canvas id="annualProfitChart"></canvas></div>
                         </div>
                     </div>
                 </div>
-
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Tỷ trọng Giá trị Tồn kho</h6>
-                        </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="card-title m-0 dashboard-title">Cảnh Báo: NVL Cần Nhập Hàng</h5></div>
                         <div class="card-body">
-                            <div class="chart-pie pt-4" style="height: 320px;">
-                                <canvas id="inventoryValuePieChart"></canvas>
-                            </div>
+                            <div style="height: 320px;" id="lowStockChartContainer"><canvas id="lowStockChart"></canvas></div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Top 10 NVL Tiêu thụ (30 ngày qua)</h6>
-                        </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="card-title m-0 dashboard-title" id="waste-details-title">Chi Tiết NVL Thất Thoát (Năm Nay)</h5></div>
                         <div class="card-body">
-                            <div class="chart-bar" style="height: 350px;">
-                                <canvas id="consumedIngredientsBarChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-warning">Phân tích Hàng hủy/Thất thoát (30 ngày qua)</h6>
-                        </div>
-                        <div class="card-body">
-                            <p class="small">Top các mặt hàng bị hủy nhiều nhất tính theo giá trị:</p>
-                            <div class="chart-bar mb-4" style="height: 200px;">
-                                <canvas id="topWastedItemsChart"></canvas>
-                            </div>
-                            <hr>
-                            <p class="small">Xu hướng tổng giá trị hàng hủy theo tháng:</p>
-                            <div class="chart-area" style="height: 150px;">
-                                <canvas id="wasteTrendLineChart"></canvas>
+                            <div id="topWastedContainer" class="table-responsive" style="height: 320px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light" style="position: sticky; top: 0;">
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Tên NVL</th>
+                                            <th scope="col" class="text-end">SL</th>
+                                            <th scope="col">ĐVT</th>
+                                            <th scope="col" class="text-end">Giá trị</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topWastedTableBody">
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -631,7 +731,6 @@
         </div>
 
         @* --- TAB TẠO PHIẾU KHO --- *@
-        @* --- TAB TẠO PHIẾU KHO --- *@
         <div class="tab-pane fade" id="createTransactionTabPane" role="tabpanel" aria-labelledby="create-transaction-tab-btn">
             <div class="card card-inventory">
                 <div class="card-header">
@@ -679,7 +778,8 @@
 
                             <div class="col-md-4" id="transactionUnitPriceContainer">
                                 <div class="form-label-group">
-                                    <label for="transactionUnitPrice" class="form-label" id="transactionUnitPriceLabel">Đơn giá <span class="text-danger">*</span></label>                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
+                                    <label for="transactionUnitPrice" class="form-label" id="transactionUnitPriceLabel">Đơn giá <span class="text-danger">*</span></label>
+                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
                                 </div>
                             </div>
 
@@ -932,10 +1032,11 @@
                         <div class="col-12">
                             <div class="form-label-group">
                                 <label for="reportIngredientIds" class="form-label">Chọn Nguyên vật liệu</label>
-                                <select id="reportIngredientIds" name="IngredientIds" class="form-select select2-report" multiple="multiple" data-placeholder="-- Chọn một hoặc nhiều NVL (để trống là tất cả) --"></select>
+                                <select id="reportIngredientIds" name="IngredientIds" class="form-select select2-report" multiple="multiple" data-placeholder="-- Chọn một hoặc nhiều NVL (để trống là tất cả) --">
+                                    <option></option>
+                                </select>                                
                                 <div class="mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnSelectAllIngredients">Chọn tất cả</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="btnClearAllIngredients">Bỏ chọn tất cả</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearAllIngredients">Bỏ chọn tất cả</button>
                                 </div>
                             </div>
                         </div>
@@ -984,14 +1085,9 @@
             </div>
             <div class="modal-body" id="previewReportModalBody" style="background-color: #f8f9fa;"></div>
             <div class="modal-footer">
-                @* Nút Quay lại, mặc định sẽ ẩn đi *@
                 <button type="button" class="btn btn-outline-secondary" id="btn-back-to-summary" style="display: none;">
                     <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
                 </button>
-
-                @* Dùng div này để đẩy 2 nút còn lại sang phải *@
-                @* <div class="me-auto"></div> *@
-
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 <button type="button" class="btn btn-success" id="btnDownloadFromPreview">
                     <i class="bi bi-file-earmark-excel me-1"></i>Tải xuống Excel
@@ -1002,7 +1098,6 @@
 </div>
 
 @section Scripts {
-    @* Các thư viện JS cần thiết *@
     <script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -1959,25 +2054,20 @@
                 }, 0);
             });
 
-            // ============== LOGIC BÁO CÁO ==============
-            var inventoryReportModal = new bootstrap.Modal(document.getElementById('inventoryReportModal'));
+            // ============== LOGIC BÁO CÁO (ĐÃ SỬA LỖI VÀ TÁI CẤU TRÚC) ==============
+
+            // --- 1. Khai báo biến và khởi tạo các đối tượng ---
+            var inventoryReportModalEl = document.getElementById('inventoryReportModal');
+            var inventoryReportModal = new bootstrap.Modal(inventoryReportModalEl);
             var previewModal = new bootstrap.Modal(document.getElementById('previewReportModal'));
 
-            $('#btnOpenInventoryReportModal').on('click', function () {
-                $('#inventoryReportForm')[0].reset();
-                const today = new Date();
-                const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                if (document.getElementById('reportFromDate')._flatpickr) document.getElementById('reportFromDate')._flatpickr.setDate(firstDayOfMonth, true);
-                if (document.getElementById('reportToDate')._flatpickr) document.getElementById('reportToDate')._flatpickr.setDate(today, true);
-                $('#reportIngredientIds').val(null).trigger('change');
-                inventoryReportModal.show();
-            });
-
+            // --- 2. Khởi tạo các thư viện (Select2, Validate) ---
             $('#reportIngredientIds').select2({
-                theme: "bootstrap-5", width: '100%',
-                placeholder: $(this).data('placeholder') || '-- Chọn NVL (để trống là tất cả) --',
+                theme: "bootstrap-5",
+                width: '100%',
+                placeholder: "-- Chọn một hoặc nhiều NVL (để trống là tất cả) --",
                 allowClear: true,
-                dropdownParent: $('#inventoryReportModal'),
+                dropdownParent: $('#inventoryReportModal'), // Rất quan trọng để dropdown hiển thị đúng trong modal
                 ajax: {
                     url: '@Url.Action("GetAllIngredientsForReportFilter", "Inventory")',
                     dataType: 'json',
@@ -1990,23 +2080,46 @@
                 }
             });
 
-            $('#btnSelectAllIngredients').on('click', function () {
-                showLoading('#inventoryReportModal .modal-body', 'Đang tải tất cả NVL...');
-                $.ajax({
-                    url: '@Url.Action("GetAllIngredientsForReportFilter", "Inventory")',
-                    type: 'GET',
-                    success: function (data) {
-                        const ids = data.map(item => item.id);
-                        $('#reportIngredientIds').val(ids).trigger('change');
-                        hideLoading('#inventoryReportModal .modal-body');
-                    },
-                    error: function () {
-                        hideLoading('#inventoryReportModal .modal-body');
-                        showErrorAlert('Lỗi', 'Không thể tải danh sách tất cả nguyên vật liệu.');
-                    }
-                });
+            $('#inventoryReportForm').validate({
+                rules: { FromDate: { required: true }, ToDate: { required: true } },
+                messages: { FromDate: "Vui lòng chọn ngày bắt đầu.", ToDate: "Vui lòng chọn ngày kết thúc." }
             });
 
+
+            // --- 3. Gán các sự kiện (Event Listeners) ---
+
+            // Sự kiện khi modal Báo cáo ĐÃ hiển thị xong
+            $(inventoryReportModalEl).one('shown.bs.modal', function (event) {
+                // Reset Select2 tại đây là cách đáng tin cậy nhất
+                $('#reportIngredientIds').val(null).trigger('change');
+            });
+
+            // Sự kiện khi modal Xem trước bị đóng
+            document.getElementById('previewReportModal').addEventListener('hidden.bs.modal', function (event) {
+                $('#previewReportModalBody').empty();
+                $('#btnDownloadFromPreview').show();
+                $('#btn-back-to-summary').hide();
+            });
+
+            // Sự kiện click cho nút "Báo cáo & Xuất file"
+            $('#btnOpenInventoryReportModal').on('click', function () {
+                $('#inventoryReportForm')[0].reset();
+                const today = new Date();
+                const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+                // Set ngày mặc định cho flatpickr
+                if (document.getElementById('reportFromDate')._flatpickr) {
+                    document.getElementById('reportFromDate')._flatpickr.setDate(firstDayOfMonth, true);
+                }
+                if (document.getElementById('reportToDate')._flatpickr) {
+                    document.getElementById('reportToDate')._flatpickr.setDate(today, true);
+                }
+
+                // Chỉ cần show modal, việc reset Select2 đã có 'shown.bs.modal' xử lý
+                inventoryReportModal.show();
+            });
+
+            // Các sự kiện click khác
             $('#btnClearAllIngredients').on('click', function () {
                 $('#reportIngredientIds').val(null).trigger('change');
             });
@@ -2014,7 +2127,6 @@
             $('.time-shortcut-buttons .btn').on('click', function () {
                 const range = $(this).data('range');
                 let fromDate, toDate = new Date();
-
                 const today = new Date();
                 const currentYear = today.getFullYear();
                 const currentMonth = today.getMonth();
@@ -2043,11 +2155,6 @@
                 if (toDate && document.getElementById('reportToDate')._flatpickr) {
                     document.getElementById('reportToDate')._flatpickr.setDate(toDate, true);
                 }
-            });
-
-            $('#inventoryReportForm').validate({
-                rules: { FromDate: { required: true }, ToDate: { required: true } },
-                messages: { FromDate: "Vui lòng chọn ngày bắt đầu.", ToDate: "Vui lòng chọn ngày kết thúc." }
             });
 
             $('#btnExportInventoryToExcel, #btnDownloadFromPreview').on('click', function () {
@@ -2129,86 +2236,280 @@
                 $('#btnPreviewInventoryReport').trigger('click');
             });
 
-            document.getElementById('previewReportModal').addEventListener('hidden.bs.modal', function (event) {
-                $('#previewReportModalBody').empty();
-                $('#btnDownloadFromPreview').show();
-                $('#btn-back-to-summary').hide();
-            });
+            // ========================================================
+            // === LOGIC CHO TAB TỔNG QUAN (DASHBOARD) ===
+            // ========================================================
 
-            // ============== DASHBOARD LOGIC ==============
-            const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-            const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value);
+            // --- A. KHỞI TẠO TIÊU ĐỀ ĐỘNG ---
+            function initializeDynamicTitles() {
+                const year = new Date().getFullYear();
+                $('#kpi-revenue-title').text(`Doanh Thu (${year})`);
+                $('#kpi-profit-title').text(`Lợi Nhuận (${year})`);
+                $('#kpi-waste-title').text(`Thất Thoát (${year})`);
+                $('#waste-details-title').text(`Chi Tiết NVL Thất Thoát (${year})`);
+            }
 
-            function loadDashboardData() {
-                const kpiUrl = '@Url.Action("GetDashboardKpis", "Inventory")';
-                const pieChartUrl = '@Url.Action("GetInventoryValueDistribution", "Inventory")';
-                const barChartUrl = '@Url.Action("GetTopConsumedIngredients", "Inventory")';
-                const lineChartUrl = '@Url.Action("GetWasteTrend", "Inventory")';
-                const lowStockUrl = '@Url.Action("GetLowStockIngredients", "Inventory")';
-                const topWastedUrl = '@Url.Action("GetTopWastedIngredients", "Inventory")';
+            // --- B. KHAI BÁO BIẾN TOÀN CỤC CHO CÁC BIỂU ĐỒ ---
+            var inventoryValuePieChart, lowStockChart, monthlyProfitChart, annualProfitChart;
 
-                $.get(kpiUrl, function (data) {
-                    $('#kpiTotalValue').text(formatCurrency(data.totalInventoryValue));
-                    $('#kpiLowStockItems').text(formatNumber(data.lowStockItemsCount) + ' loại');
-                });
+            // --- C. CÁC HÀM TIỆN ÍCH VÀ ĐỊNH DẠNG ---
 
-                $.get(pieChartUrl, function (data) {
-                    if (window.inventoryValuePieChart instanceof Chart) { window.inventoryValuePieChart.destroy(); }
-                    const ctx = document.getElementById('inventoryValuePieChart').getContext('2d');
-                    window.inventoryValuePieChart = new Chart(ctx, {
-                        type: 'doughnut', data: { labels: data.map(d => d.label), datasets: [{ data: data.map(d => d.value), backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'], }], },
-                        options: { maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: function (context) { return (context.label || '') + ': ' + formatCurrency(context.parsed); } } } } },
-                    });
-                });
+            const formatCurrencyFull = (value) => {
+                if (value === null || typeof value === 'undefined') return '0 ₫';
+                return new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+            };
 
-                $.get(barChartUrl, function (data) {
-                    if (window.consumedIngredientsBarChart instanceof Chart) { window.consumedIngredientsBarChart.destroy(); }
-                    const ctx = document.getElementById('consumedIngredientsBarChart').getContext('2d');
-                    window.consumedIngredientsBarChart = new Chart(ctx, {
-                        type: 'bar', data: { labels: data.map(d => d.label), datasets: [{ label: 'Số lượng tiêu thụ', data: data.map(d => d.value), backgroundColor: '#4e73df', }], },
-                        options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } },
-                    });
-                });
+            const formatCurrencySmart = (value) => {
+                const num = Number(value);
+                if (isNaN(num)) return '0 ₫';
+                if (Math.abs(num) < 1000000) return formatCurrencyFull(num);
+                const suffixes = [{ value: 1e9, symbol: " tỷ" }, { value: 1e6, symbol: " triệu" }];
+                const selectedSuffix = suffixes.find(s => Math.abs(num) >= s.value);
+                if (selectedSuffix) {
+                    const scaled = num / selectedSuffix.value;
+                    const formatted = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(scaled);
+                    return formatted.replace(/\,0$/, '') + selectedSuffix.symbol;
+                }
+                return formatCurrencyFull(num);
+            };
 
-                $.get(lineChartUrl, function (data) {
-                    if (window.wasteTrendLineChart instanceof Chart) { window.wasteTrendLineChart.destroy(); }
-                    const ctx = document.getElementById('wasteTrendLineChart').getContext('2d');
-                    window.wasteTrendLineChart = new Chart(ctx, {
-                        type: 'line', data: { labels: data.map(d => d.month), datasets: [{ label: 'Giá trị hủy', data: data.map(d => d.value), borderColor: '#e74a3b', backgroundColor: 'rgba(231, 74, 59, 0.1)', fill: true, tension: 0.3 }], },
-                        options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: function (value) { return formatCurrency(value); } } } }, plugins: { tooltip: { callbacks: { label: function (context) { return 'Hủy/Thất thoát: ' + formatCurrency(context.parsed.y); } } } } }
-                    });
-                });
+            const formatNumber = (value, decimals = 0) => {
+                if (value === null || typeof value === 'undefined') return '0';
+                return new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+            };
 
-                $.get(lowStockUrl, function (data) {
-                    if (window.lowStockChart instanceof Chart) { window.lowStockChart.destroy(); }
-                    const ctx = document.getElementById('lowStockChart');
-                    if (!ctx) return;
-                    if (data.length === 0) {
-                        ctx.parentElement.innerHTML = '<div class="text-center p-5 text-success"><i class="bi bi-check-circle-fill fs-2"></i><p>Tuyệt vời! Không có NVL nào dưới định mức.</p></div>';
-                        return;
-                    }
-                    window.lowStockChart = new Chart(ctx, {
-                        type: 'bar', data: { labels: data.map(d => d.name), datasets: [{ label: 'Tồn kho hiện tại', data: data.map(d => d.currentStock), backgroundColor: 'rgba(255, 193, 7, 0.7)', borderColor: 'rgba(255, 193, 7, 1)', borderWidth: 1 }, { label: 'Tồn kho tối thiểu', data: data.map(d => d.minimumStock), backgroundColor: 'rgba(220, 53, 69, 0.7)', borderColor: 'rgba(220, 53, 69, 1)', borderWidth: 1 }] },
-                        options: { indexAxis: 'y', maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { callback: (value) => formatNumber(value) } } }, plugins: { tooltip: { callbacks: { label: function (context) { return (context.dataset.label || '') + ': ' + formatNumber(context.parsed.x); } } } } }
-                    });
-                });
-
-                $.get(topWastedUrl, function (data) {
-                    if (window.topWastedItemsChart instanceof Chart) { window.topWastedItemsChart.destroy(); }
-                    const ctx = document.getElementById('topWastedItemsChart');
-                    if (!ctx) return;
-                    window.topWastedItemsChart = new Chart(ctx, {
-                        type: 'bar', data: { labels: data.map(d => d.name), datasets: [{ label: 'Giá trị hủy', data: data.map(d => d.valueWasted), backgroundColor: '#fd7e14', customData: data.map(d => d.quantityWasted) }] },
-                        options: {
-                            maintainAspectRatio: false,
-                            scales: { y: { beginAtZero: true, ticks: { callback: (value) => formatCurrency(value) } } },
-                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (context) { const value = formatCurrency(context.parsed.y); const quantity = context.chart.data.datasets[0].customData[context.dataIndex]; return `Giá trị: ${value} (SL: ${formatNumber(quantity)})`; } } } }
-                        }
-                    });
+            function formatDynamicNumber(value) {
+                if (value == null) return '-';
+                const num = Number(value);
+                if (isNaN(num)) return '-';
+                // toLocaleString tự động xử lý việc bỏ các số 0 không cần thiết ở cuối
+                return num.toLocaleString('vi-VN', {
+                    maximumFractionDigits: 3 // Hiển thị tối đa 3 chữ số thập phân nếu có
                 });
             }
 
+            function updateKpiCard(elementId, value) {
+                const element = $(elementId);
+                const formattedText = formatCurrencySmart(value);
+                element.text(formattedText);
+            }
+
+            // --- D. CÁC HÀM TẢI DỮ LIỆU VÀ VẼ/TẠO GIAO DIỆN ---
+
+            function loadDashboardData() {
+                showLoading('#dashboardTabPane .row-cols-1');
+                const url = '@Url.Action("GetDashboardData", "Inventory")';
+                $.get(url).done(function (data) {
+                    updateKpiCard('#kpiTotalValue', data.totalInventoryValue);
+                    updateKpiCard('#kpiRevenue', data.last30DaysRevenue);
+                    updateKpiCard('#kpiProfit', data.last30DaysProfit);
+                    updateKpiCard('#kpiWasteValue', data.wasteValueThisYear);
+                    $('#kpiLowStockItems').text(formatNumber(data.lowStockItemsCount) + ' loại');
+                    drawPieChart(data.inventoryValueDistribution);
+                    drawLowStockChart(data.lowStockIngredients);
+                }).fail(function () {
+                    showErrorAlert("Lỗi tải dữ liệu", "Không thể tải dữ liệu KPIs.");
+                }).always(function () {
+                    hideLoading('#dashboardTabPane .row-cols-1');
+                });
+            }
+
+            function loadAnnualProfitChart(year) {
+                if (!year) return;
+                showLoading('#monthlyProfitChartContainer');
+                const url = `@Url.Action("GetMonthlyProfitByYear", "Inventory")?year=${year}`;
+                $.get(url).done(function (data) {
+                    if (monthlyProfitChart instanceof Chart) monthlyProfitChart.destroy();
+                    const ctx = document.getElementById('monthlyProfitChart').getContext('2d');
+                    monthlyProfitChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.label),
+                            datasets: [{ label: `Lợi nhuận năm ${year}`, data: data.map(d => d.value), backgroundColor: '#5d87ff', borderRadius: 5, barThickness: 20 }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, ticks: { callback: (value) => formatCurrencySmart(value).replace(' ₫', '') } },
+                                x: { grid: { display: false } }
+                            },
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `Lợi nhuận: ${formatCurrencyFull(context.parsed.y)}` } } }
+                        }
+                    });
+                }).fail(function () {
+                    showErrorAlert("Lỗi", `Không thể tải dữ liệu lợi nhuận cho năm ${year}.`);
+                }).always(function () {
+                    hideLoading('#monthlyProfitChartContainer');
+                });
+            }
+
+            function loadAnnualProfitSummaryChart() {
+                showLoading('#annualProfitChartContainer');
+                const url = '@Url.Action("GetAnnualProfitSummary", "Inventory")';
+                $.get(url).done(function (data) {
+                    if (annualProfitChart instanceof Chart) annualProfitChart.destroy();
+                    const ctx = document.getElementById('annualProfitChart').getContext('2d');
+                    annualProfitChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(d => d.label),
+                            datasets: [{ label: 'Tổng lợi nhuận', data: data.map(d => d.value), backgroundColor: data.map(d => d.label === new Date().getFullYear().toString() ? '#13deb9' : '#ffab00'), borderRadius: 5, barThickness: 30 }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, ticks: { callback: (value) => formatCurrencySmart(value).replace(' ₫', '') } },
+                                x: { grid: { display: false } }
+                            },
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `Năm ${context.label}: ${formatCurrencyFull(context.parsed.y)}` } } }
+                        }
+                    });
+                }).fail(function () {
+                    showErrorAlert("Lỗi", "Không thể tải dữ liệu lợi nhuận qua các năm.");
+                }).always(function () {
+                    hideLoading('#annualProfitChartContainer');
+                });
+            }
+
+            function loadWasteData(year) {
+                if (!year) return;
+                showLoading('#topWastedContainer');
+                const url = `@Url.Action("GetWasteDetailsByYear", "Inventory")?year=${year}`;
+                $.get(url).done(function (data) {
+                    populateWastedIngredientsTable(data);
+                }).fail(function () {
+                    showErrorAlert("Lỗi", `Không thể tải dữ liệu thất thoát cho năm ${year}.`);
+                }).always(function () {
+                    hideLoading('#topWastedContainer');
+                });
+            }
+
+            function drawPieChart(data) {
+                if (inventoryValuePieChart instanceof Chart) inventoryValuePieChart.destroy();
+                const ctx = document.getElementById('inventoryValuePieChart').getContext('2d');
+                inventoryValuePieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.map(d => d.label),
+                        datasets: [{ data: data.map(d => d.value), backgroundColor: ['#5d87ff', '#13deb9', '#ffab00', '#ff5449', '#986dff', '#36b9cc', '#f6c23e'] }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }, tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrencyFull(c.parsed)}` } } }
+                    }
+                });
+            }
+
+            function drawLowStockChart(data) {
+                if (lowStockChart instanceof Chart) lowStockChart.destroy();
+                const container = $('#lowStockChartContainer');
+                container.empty().html('<canvas id="lowStockChart"></canvas>');
+                const ctx = document.getElementById('lowStockChart').getContext('2d');
+                if (!data || data.length === 0) {
+                    container.html('<div class="d-flex align-items-center justify-content-center h-100"><div class="alert alert-success text-center p-4 m-0"><i class="bi bi-check-circle-fill fs-2"></i><p class="mt-2 mb-0">Tuyệt vời! Không có NVL nào dưới định mức.</p></div></div>');
+                    return;
+                }
+                const chartData = data.slice(0, 7).reverse();
+                lowStockChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.map(d => `${d.name} (${d.unitOfMeasure || ''})`),
+                        datasets: [
+                            { label: 'Tồn kho hiện tại', data: chartData.map(d => d.currentStock), backgroundColor: 'rgba(255, 171, 0, 0.7)' },
+                            { label: 'Tồn tối thiểu', data: chartData.map(d => d.minimumStock), backgroundColor: 'rgba(255, 84, 73, 0.7)' }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value, index, ticks) {
+                                        return formatDynamicNumber(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (c) => {
+                                        const dataIndex = c.dataIndex;
+                                        const unit = chartData[dataIndex].unitOfMeasure || '';
+                                        return `${c.dataset.label}: ${formatDynamicNumber(c.parsed.x)} ${unit}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function populateWastedIngredientsTable(data) {
+                const container = $('#topWastedContainer');
+                const tableHtml = `<table class="table table-sm table-hover">
+                                   <thead class="table-light" style="position: sticky; top: 0;">
+                                       <tr>
+                                           <th scope="col">#</th>
+                                           <th scope="col">Tên NVL</th>
+                                           <th scope="col" class="text-end">SL</th>
+                                           <th scope="col">ĐVT</th>
+                                           <th scope="col" class="text-end">Giá trị</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody id="topWastedTableBody"></tbody>
+                               </table>`;
+                container.html(tableHtml);
+                const tbody = $('#topWastedTableBody');
+
+                if (!data || data.length === 0) {
+                    const noDataHtml = '<tr><td colspan="5"><div class="alert alert-info text-center p-4 m-0"><i class="bi bi-shield-check fs-2"></i><p class="mt-2 mb-0">Không có dữ liệu thất thoát trong năm đã chọn.</p></div></td></tr>';
+                    tbody.html(noDataHtml);
+                    return;
+                }
+
+                $.each(data, function (index, item) {
+                    const row = `<tr>
+                                <th scope="row">${index + 1}</th>
+                                <td>${item.name}</td>
+                                <td class="text-end">${formatDynamicNumber(item.quantity)}</td>
+                                <td>${item.unitOfMeasure || ''}</td>
+                                <td class="text-end text-danger fw-semibold">${formatCurrencyFull(item.value)}</td>
+                           </tr>`;
+                    tbody.append(row);
+                });
+            }
+
+
+            // --- E. KHỞI TẠO VÀ GÁN SỰ KIỆN KHI TRANG TẢI XONG ---
+
+            initializeDynamicTitles();
+
+            const currentYear = new Date().getFullYear();
+            for (let i = 0; i < 5; i++) {
+                $('#profit-chart-year-select').append(`<option value="${currentYear - i}">${currentYear - i}</option>`);
+            }
+
+            $('#profit-chart-year-select').on('change', function () {
+                const selectedYear = $(this).val();
+                loadAnnualProfitChart(selectedYear);
+                loadWasteData(selectedYear);
+            });
+
+            $('#dashboard-tab-btn').on('shown.bs.tab', function (e) {
+                loadDashboardData();
+                const selectedYear = $('#profit-chart-year-select').val();
+                loadAnnualProfitChart(selectedYear);
+                loadWasteData(selectedYear);
+                loadAnnualProfitSummaryChart();
+            });
+
+            // Tải dữ liệu lần đầu khi trang được mở
             loadDashboardData();
+            loadAnnualProfitChart(currentYear);
+            loadWasteData(currentYear);
+            loadAnnualProfitSummaryChart();
         });
     </script>
 }

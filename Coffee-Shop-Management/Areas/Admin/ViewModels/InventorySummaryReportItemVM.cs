@@ -19,6 +19,7 @@
         public decimal PeriodQuantityOut { get; set; }
         public decimal PeriodValueOut { get; set; } // Giá trị vốn hàng xuất
         public decimal PeriodRevenue { get; set; } // Doanh thu bán hàng trong kỳ
+        public decimal PeriodProfit { get; set; } // Lợi nhuận = Doanh thu - Giá vốn hàng xuất
 
         public decimal ClosingStockQuantity { get; set; }
         public decimal ClosingStockValue { get; set; }
