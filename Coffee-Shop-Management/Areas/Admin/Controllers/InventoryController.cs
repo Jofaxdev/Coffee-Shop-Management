@@ -367,7 +367,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     var transVM = new InventoryTransactionDetailVM
                     {
                         TransactionDate = trans.TransactionDate,
-                        TransactionId = trans.Id,
+                        VoucherCode = trans.VoucherCode ?? trans.Id.ToString(), // Dùng Mã phiếu, nếu không có thì dùng ID cũ
                         TransactionTypeDisplay = GetTransactionTypeDisplayName(trans.TransactionType),
                         TransactionType = trans.TransactionType,
                         UserName = trans.User?.Name ?? (trans.UserId == null ? "Hệ thống" : "N/A"),
@@ -532,7 +532,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 var item = items[i];
                 int col = 1;
 
-                sheet.Row(currentRow).Height = 20;
+                //sheet.Row(currentRow).Height = 20;
 
                 sheet.Cell(currentRow, col++).SetValue(item.STT);
                 sheet.Cell(currentRow, col++).SetValue(item.IngredientCode);
@@ -569,7 +569,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             int lastDataRow = items.Any() ? firstDataRow + items.Count - 1 : firstDataRow;
             int totalRow = lastDataRow >= firstDataRow ? lastDataRow + 1 : firstDataRow;
 
-            sheet.Row(totalRow).Height = 22;
             var totalRowRange = sheet.Range(totalRow, 1, totalRow, totalColumns);
             totalRowRange.Style.Font.Bold = true;
             totalRowRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF2CC");
@@ -603,7 +602,9 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             tableRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
 
             tableRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            sheet.Column(3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
+            sheet.Column(3).Style.Alignment.WrapText = true;
+
+            //sheet.Column(3).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
 
             sheet.Column(1).Width = 5;
             sheet.Column(2).Width = 12;
@@ -624,15 +625,14 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
         private void RenderDetailSheetForItem(IXLWorksheet sheet, InventoryDetailReportItemVM itemData)
         {
             const string formatVND = "#,##0";
-            var headers = new[] { "Ngày GD", "Số Phiếu", "Loại GD/Diễn giải", "Người TH", "NCC", "SL Nhập", "ĐG Nhập", "TT Nhập", "SL Xuất", "ĐG Xuất", "TT Xuất", "SL Tồn", "Ghi Chú" };
+            var headers = new[] { "Ngày GD", "Mã Phiếu", "Loại GD/Diễn giải", "Người TH", "NCC", "SL Nhập", "ĐG Nhập / Giá vốn", "TT Nhập", "SL Xuất", "ĐG Bán", "TT Xuất", "SL Tồn", "Ghi Chú" };
             sheet.Style.Font.FontName = "Calibri";
 
             sheet.Row(1).Height = 24;
             var titleCell = sheet.Range(1, 1, 1, headers.Length).Merge();
-            titleCell.Value = "CHI TIẾT NHẬP XUẤT TỒN";
+            titleCell.Value = "CHI TIẾT NHẬP XUẤT TỒN (THẺ KHO)";
             titleCell.Style.Font.Bold = true;
             titleCell.Style.Font.FontSize = 18;
-            titleCell.Style.Font.FontColor = XLColor.Black;
             titleCell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
             titleCell.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
@@ -669,7 +669,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             int currentRow = firstHeaderRow + 1;
             sheet.Row(currentRow).Height = 18;
             var openingStockRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
-            openingStockRange.Style.Font.Italic = true;
             openingStockRange.Style.Font.Bold = true;
             openingStockRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             sheet.Range(currentRow, 1, currentRow, headers.Length - 2).Merge().SetValue("Tồn đầu kỳ").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -703,7 +702,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
                 var dataRow = sheet.Row(currentRow);
                 dataRow.Cell(1).SetValue(trans.TransactionDate).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-                dataRow.Cell(2).SetValue(trans.TransactionId);
+                dataRow.Cell(2).SetValue(trans.VoucherCode);
                 dataRow.Cell(3).SetValue(trans.TransactionTypeDisplay);
                 dataRow.Cell(4).SetValue(trans.UserName);
                 dataRow.Cell(5).SetValue(trans.SupplierName);
@@ -717,7 +716,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 FormatCellAsNumber(dataRow.Cell(12), trans.StockAfterTransaction);
 
                 var unitPriceInCell = dataRow.Cell(7);
-                if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption)
+                if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption || trans.TransactionType == AppDbContext.InventoryTransactionType.AdjustmentOut)
                 {
                     fillNullable(unitPriceInCell, trans.CostPriceOut, false);
                 }
@@ -745,7 +744,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Row(currentRow).Height = 18;
             var closingRange = sheet.Range(currentRow, 1, currentRow, headers.Length);
             closingRange.Style.Font.Bold = true;
-            closingRange.Style.Font.Italic = true;
             closingRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             var closingLabelCell = sheet.Cell(currentRow, 1);
             closingLabelCell.Value = "Tồn cuối kỳ";
@@ -763,15 +761,13 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             sheet.Column(4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             sheet.Column(5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            sheet.Column(12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-
-            sheet.Range(firstHeaderRow + 1, 6, currentRow - 1, 12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(10).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(11).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            sheet.Column(12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
             sheet.Column(3).Style.Alignment.WrapText = true;
             sheet.Column(4).Style.Alignment.WrapText = true;
@@ -780,7 +776,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Column(13).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
             sheet.Column(1).Width = 18;
-            sheet.Column(2).Width = 10;
+            sheet.Column(2).Width = 14;
             sheet.Column(3).Width = 18;
             sheet.Column(4).Width = 18;
             sheet.Column(5).Width = 18;
@@ -793,7 +789,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             sheet.Column(12).Width = 12;
             sheet.Column(13).Width = 35;
         }
-
 
         private string GetNumberFormat(decimal value) => value == Math.Truncate(value) ? "#,##0" : "#,##0.###";
 
@@ -941,11 +936,10 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
             detailItem.OpeningStockQuantity = transactionsBeforePeriod.Sum(t => t.QuantityChanged);
 
-            // *** SỬA ĐỔI: Thêm .Include(t => t.Batch) để lấy được thông tin lô hàng ***
             var transactionsInPeriod = await _context.InventoryTransactions
                 .Include(t => t.User)
                 .Include(t => t.Supplier)
-                .Include(t => t.Batch) // <-- THÊM DÒNG NÀY ĐỂ TRUY VẤN KÈM BATCH
+                .Include(t => t.Batch)
                 .Where(t => t.IngredientId == ingredient.Id && t.TransactionDate >= fromDate && t.TransactionDate <= reportTrueEndDate)
                 .OrderBy(t => t.TransactionDate).ThenBy(t => t.Id)
                 .ToListAsync();
@@ -953,10 +947,11 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             decimal currentStockForDetail = detailItem.OpeningStockQuantity;
             foreach (var trans in transactionsInPeriod)
             {
+                // ----- SỬA LỖI Ở ĐÂY -----
                 var transVM = new InventoryTransactionDetailVM
                 {
                     TransactionDate = trans.TransactionDate,
-                    TransactionId = trans.Id,
+                    VoucherCode = trans.VoucherCode ?? trans.Id.ToString(), // Thay TransactionId bằng VoucherCode
                     TransactionTypeDisplay = GetTransactionTypeDisplayName(trans.TransactionType),
                     TransactionType = trans.TransactionType,
                     UserName = trans.User?.Name ?? "Hệ thống",
@@ -970,17 +965,12 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     transVM.UnitPriceIn = trans.UnitPrice;
                     transVM.ValueIn = trans.TotalPrice ?? (trans.QuantityChanged * (trans.UnitPrice ?? 0));
                 }
-                else // Giao dịch xuất (bán hàng, điều chỉnh giảm)
+                else
                 {
                     transVM.QuantityOut = -trans.QuantityChanged;
-
-                    // Đối với xuất bán hàng, UnitPriceOut là GIÁ BÁN
-                    // Đối với điều chỉnh giảm, UnitPriceOut là GIÁ VỐN
                     transVM.UnitPriceOut = trans.UnitPrice;
                     transVM.ValueOut = trans.TotalPrice;
-
-                    // *** SỬA ĐỔI: Luôn lấy giá vốn từ lô hàng cho mọi giao dịch xuất ***
-                    transVM.CostPriceOut = trans.Batch?.PurchasePrice; // <-- GÁN GIÁ VỐN TỪ LÔ HÀNG
+                    transVM.CostPriceOut = trans.Batch?.PurchasePrice;
                 }
 
                 currentStockForDetail += trans.QuantityChanged;
@@ -1253,6 +1243,36 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return Ok(new { success = true, message = $"Đã {(ingredient.IsActive ? "kích hoạt" : "vô hiệu hóa")} nguyên vật liệu.", isActive = ingredient.IsActive });
         }
 
+        // Đặt phương thức này bên trong #region Nguyên vật liệu (Ingredients)
+        [HttpGet]
+        public async Task<IActionResult> GetIngredientDetails(int id)
+        {
+            var ingredient = await _context.Ingredients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == id && !i.DeleteTemp);
+
+            if (ingredient == null)
+            {
+                return NotFound(new { success = false, message = "Không tìm thấy nguyên vật liệu." });
+            }
+
+            var batches = await _context.InventoryBatches
+                // ----- THAY ĐỔI: Thêm điều kiện Quantity > 0 -----
+                .Where(b => b.IngredientId == id && b.Quantity > 0)
+                .OrderByDescending(b => b.PurchaseDate)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.BatchNumber,
+                    PurchaseDate = b.PurchaseDate.ToString("dd/MM/yyyy"),
+                    b.PurchasePrice,
+                    b.Quantity
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, ingredient, batches });
+        }
+
         #endregion
 
         #region Nhà cung cấp (Suppliers) - Giữ nguyên
@@ -1424,6 +1444,54 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
 
         #region Giao dịch Kho (Inventory Transactions)
 
+        // Dùng để nhận dữ liệu từ AJAX
+        public class FifoCostRequestVM
+        {
+            public int IngredientId { get; set; }
+            public decimal Quantity { get; set; }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CalculateFifoCost([FromBody] FifoCostRequestVM request)
+        {
+            if (request.Quantity <= 0)
+            {
+                return Ok(new { success = true, totalCost = 0 });
+            }
+
+            try
+            {
+                var availableBatches = await _context.InventoryBatches
+                    .Where(b => b.IngredientId == request.IngredientId && b.IsActive && b.Quantity > 0)
+                    .OrderBy(b => b.PurchaseDate) // Sắp xếp FIFO
+                    .ToListAsync();
+
+                if (availableBatches.Sum(b => b.Quantity) < request.Quantity)
+                {
+                    return Ok(new { success = false, message = "Số lượng tồn kho không đủ." });
+                }
+
+                decimal totalCost = 0;
+                decimal quantityToCalculate = request.Quantity;
+
+                foreach (var batch in availableBatches)
+                {
+                    if (quantityToCalculate <= 0) break;
+
+                    decimal qtyFromThisBatch = Math.Min(quantityToCalculate, batch.Quantity);
+                    totalCost += qtyFromThisBatch * batch.PurchasePrice; // Tính tổng giá vốn
+                    quantityToCalculate -= qtyFromThisBatch;
+                }
+
+                return Ok(new { success = true, totalCost });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tính toán giá vốn FIFO.");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi tính giá vốn." });
+            }
+        }
+
         private string GetTransactionTypeDisplayName(InventoryTransactionType type)
         {
             return type switch
@@ -1449,8 +1517,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 _ => "PGD" // Phiếu Giao Dịch
             };
 
-            // Thay thế dòng return cũ bằng dòng này
-            return $"{prefix}-{DateTime.Now:yyMMdd-HHmm}";
+            string randomCode = Guid.NewGuid().ToString().Substring(0, 4).ToUpper();
+            return $"{prefix}-{DateTime.Now:yyMMdd}-{randomCode}";
         }
 
         [HttpPost]
@@ -1471,112 +1539,85 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 foreach (var detail in model.Details)
                 {
                     var ingredient = await _context.Ingredients.FindAsync(detail.IngredientId);
-                    if (ingredient == null)
-                    {
-                        await dbTransaction.RollbackAsync();
-                        return BadRequest(new { success = false, message = $"Không tìm thấy nguyên vật liệu với ID {detail.IngredientId}." });
-                    }
+                    if (ingredient == null) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Không tìm thấy nguyên vật liệu với ID {detail.IngredientId}." }); }
 
-                    var transaction = new InventoryTransaction
-                    {
-                        IngredientId = detail.IngredientId,
-                        TransactionType = model.TransactionType,
-                        TransactionDate = transactionDate,
-                        UserId = currentUser.Id,
-                        Notes = model.Notes,
-                        VoucherCode = voucherCode
-                    };
+                    ingredient.UpdatedAt = transactionDate;
 
                     switch (model.TransactionType)
                     {
                         case InventoryTransactionType.Purchase:
                         case InventoryTransactionType.InitialStock:
-                            if (!detail.UnitPrice.HasValue || detail.UnitPrice.Value < 0)
-                            {
-                                await dbTransaction.RollbackAsync();
-                                return BadRequest(new { success = false, message = $"Đơn giá là bắt buộc cho việc nhập hàng (NVL: {ingredient.Name})." });
-                            }
-                            if (model.TransactionType == InventoryTransactionType.Purchase)
-                            {
-                                if (!model.SupplierId.HasValue)
-                                {
-                                    await dbTransaction.RollbackAsync();
-                                    return BadRequest(new { success = false, message = "Nhà cung cấp là bắt buộc cho phiếu nhập mua hàng." });
-                                }
-                                transaction.SupplierId = model.SupplierId;
-                            }
-
-                            var newBatch = new InventoryBatch
-                            {
-                                IngredientId = detail.IngredientId,
-                                Quantity = detail.Quantity,
-                                PurchasePrice = detail.UnitPrice.Value,
-                                PurchaseDate = transactionDate,
-                                BatchNumber = $"PO-{transactionDate.Ticks}"
-                            };
+                            // ... (logic Nhập hàng giữ nguyên như cũ)
+                            if (!detail.UnitPrice.HasValue || detail.UnitPrice.Value < 0) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Đơn giá là bắt buộc cho việc nhập hàng (NVL: {ingredient.Name})." }); }
+                            if (model.TransactionType == InventoryTransactionType.Purchase) { if (!model.SupplierId.HasValue) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = "Nhà cung cấp là bắt buộc." }); } }
+                            var newBatch = new InventoryBatch { IngredientId = detail.IngredientId, Quantity = detail.Quantity, PurchasePrice = detail.UnitPrice.Value, PurchaseDate = transactionDate, BatchNumber = $"PO-{transactionDate.Ticks}" };
                             _context.InventoryBatches.Add(newBatch);
                             await _context.SaveChangesAsync();
-
-                            transaction.QuantityChanged = detail.Quantity;
-                            transaction.UnitPrice = detail.UnitPrice;
-                            transaction.TotalPrice = detail.Quantity * detail.UnitPrice.Value;
-                            transaction.BatchId = newBatch.Id;
-
+                            _context.InventoryTransactions.Add(new InventoryTransaction { IngredientId = detail.IngredientId, TransactionType = model.TransactionType, TransactionDate = transactionDate, UserId = currentUser.Id, Notes = model.Notes, VoucherCode = voucherCode, QuantityChanged = detail.Quantity, UnitPrice = detail.UnitPrice, TotalPrice = detail.Quantity * detail.UnitPrice.Value, BatchId = newBatch.Id, SupplierId = model.SupplierId });
                             ingredient.CurrentStockLevel += detail.Quantity;
                             ingredient.LastPurchasePrice = detail.UnitPrice.Value;
                             break;
 
-                        case InventoryTransactionType.AdjustmentIn:
-                        case InventoryTransactionType.AdjustmentOut:
                         case InventoryTransactionType.SaleConsumption:
-                            if (!detail.BatchId.HasValue)
+                        case InventoryTransactionType.AdjustmentOut:
+                            decimal totalQuantityToDeduct = detail.Quantity;
+                            // Trường hợp Tự động (FIFO)
+                            if (detail.BatchId == 0)
                             {
-                                await dbTransaction.RollbackAsync();
-                                return BadRequest(new { success = false, message = $"Vui lòng chọn lô hàng cho NVL: {ingredient.Name}." });
-                            }
-                            var batchToAdjust = await _context.InventoryBatches.FindAsync(detail.BatchId.Value);
-                            if (batchToAdjust == null)
-                            {
-                                await dbTransaction.RollbackAsync();
-                                return BadRequest(new { success = false, message = $"Lô hàng không hợp lệ cho NVL: {ingredient.Name}." });
-                            }
+                                var availableBatches = await _context.InventoryBatches.Where(b => b.IngredientId == detail.IngredientId && b.IsActive && b.Quantity > 0).OrderBy(b => b.PurchaseDate).ToListAsync();
+                                if (availableBatches.Sum(b => b.Quantity) < totalQuantityToDeduct) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Tổng tồn kho của NVL '{ingredient.Name}' không đủ. Chỉ còn {availableBatches.Sum(b => b.Quantity)}." }); }
 
-                            if (model.TransactionType == InventoryTransactionType.AdjustmentOut || model.TransactionType == InventoryTransactionType.SaleConsumption)
-                            {
-                                if (batchToAdjust.Quantity < detail.Quantity)
+                                foreach (var batch in availableBatches)
                                 {
-                                    await dbTransaction.RollbackAsync();
-                                    return BadRequest(new { success = false, message = $"Số lượng tồn trong lô của NVL '{ingredient.Name}' không đủ (Tồn: {batchToAdjust.Quantity})." });
+                                    if (totalQuantityToDeduct <= 0) break;
+                                    decimal qtyFromThisBatch = Math.Min(totalQuantityToDeduct, batch.Quantity);
+
+                                    // Xác định UnitPrice và TotalPrice dựa trên loại giao dịch
+                                    decimal unitPriceForTransaction = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? (detail.UnitPrice ?? 0) : batch.PurchasePrice;
+                                    decimal totalPriceForTransaction = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? (qtyFromThisBatch * unitPriceForTransaction) : (-qtyFromThisBatch * unitPriceForTransaction);
+
+                                    _context.InventoryTransactions.Add(new InventoryTransaction { IngredientId = detail.IngredientId, TransactionType = model.TransactionType, TransactionDate = transactionDate, UserId = currentUser.Id, Notes = model.Notes, VoucherCode = voucherCode, QuantityChanged = -qtyFromThisBatch, UnitPrice = unitPriceForTransaction, TotalPrice = totalPriceForTransaction, BatchId = batch.Id });
+
+                                    batch.Quantity -= qtyFromThisBatch;
+                                    ingredient.CurrentStockLevel -= qtyFromThisBatch;
+                                    if (batch.Quantity == 0) batch.IsActive = false;
+                                    totalQuantityToDeduct -= qtyFromThisBatch;
                                 }
-                                transaction.QuantityChanged = -detail.Quantity;
-                                batchToAdjust.Quantity -= detail.Quantity;
-                                ingredient.CurrentStockLevel -= detail.Quantity;
-
-                                transaction.UnitPrice = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? detail.UnitPrice : batchToAdjust.PurchasePrice;
-                                transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice;
                             }
-                            else // AdjustmentIn
+                            // Trường hợp Chọn lô thủ công
+                            else
                             {
-                                transaction.QuantityChanged = detail.Quantity;
-                                batchToAdjust.Quantity += detail.Quantity;
-                                ingredient.CurrentStockLevel += detail.Quantity;
+                                if (!detail.BatchId.HasValue) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Vui lòng chọn lô hàng cho NVL: {ingredient.Name}." }); }
+                                var batchToAdjust = await _context.InventoryBatches.FindAsync(detail.BatchId.Value);
+                                if (batchToAdjust == null || batchToAdjust.Quantity < totalQuantityToDeduct) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Số lượng tồn trong lô đã chọn của NVL '{ingredient.Name}' không đủ." }); }
 
-                                transaction.UnitPrice = batchToAdjust.PurchasePrice;
-                                transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice;
+                                decimal unitPriceForManual = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? (detail.UnitPrice ?? 0) : batchToAdjust.PurchasePrice;
+                                decimal totalPriceForManual = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? (totalQuantityToDeduct * unitPriceForManual) : (-totalQuantityToDeduct * unitPriceForManual);
+
+                                _context.InventoryTransactions.Add(new InventoryTransaction { IngredientId = detail.IngredientId, TransactionType = model.TransactionType, TransactionDate = transactionDate, UserId = currentUser.Id, Notes = model.Notes, VoucherCode = voucherCode, QuantityChanged = -totalQuantityToDeduct, UnitPrice = unitPriceForManual, TotalPrice = totalPriceForManual, BatchId = batchToAdjust.Id });
+
+                                batchToAdjust.Quantity -= totalQuantityToDeduct;
+                                ingredient.CurrentStockLevel -= totalQuantityToDeduct;
+                                if (batchToAdjust.Quantity == 0) batchToAdjust.IsActive = false;
                             }
+                            break;
 
-                            transaction.BatchId = batchToAdjust.Id;
-                            if (batchToAdjust.Quantity == 0 && batchToAdjust.Id != 0) batchToAdjust.IsActive = false;
+                        case InventoryTransactionType.AdjustmentIn:
+                            if (!detail.BatchId.HasValue) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Vui lòng chọn lô hàng cho NVL: {ingredient.Name}." }); }
+                            var batchForAdjustment = await _context.InventoryBatches.FindAsync(detail.BatchId.Value);
+                            if (batchForAdjustment == null) { await dbTransaction.RollbackAsync(); return BadRequest(new { success = false, message = $"Lô hàng không hợp lệ cho NVL: {ingredient.Name}." }); }
 
+                            _context.InventoryTransactions.Add(new InventoryTransaction { IngredientId = detail.IngredientId, TransactionType = model.TransactionType, TransactionDate = transactionDate, UserId = currentUser.Id, Notes = model.Notes, VoucherCode = voucherCode, QuantityChanged = detail.Quantity, UnitPrice = batchForAdjustment.PurchasePrice, TotalPrice = detail.Quantity * batchForAdjustment.PurchasePrice, BatchId = batchForAdjustment.Id });
+
+                            batchForAdjustment.Quantity += detail.Quantity;
+                            ingredient.CurrentStockLevel += detail.Quantity;
+                            if (batchForAdjustment.Quantity > 0) batchForAdjustment.IsActive = true;
                             break;
 
                         default:
                             await dbTransaction.RollbackAsync();
                             return BadRequest(new { success = false, message = "Loại giao dịch không được hỗ trợ." });
                     }
-
-                    ingredient.UpdatedAt = transactionDate;
-                    _context.InventoryTransactions.Add(transaction);
                 }
 
                 await _context.SaveChangesAsync();
@@ -1591,7 +1632,6 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                 return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi máy chủ. Vui lòng thử lại." });
             }
         }
-
 
         // Phương thức tạo giao dịch đơn lẻ cũ (có thể giữ lại hoặc xóa đi nếu không dùng)
         [HttpPost]
@@ -1775,7 +1815,9 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                         (it.User.Name != null && it.User.Name.ToLower().Contains(generalSearchValue)) ||
                         (it.Notes != null && it.Notes.ToLower().Contains(generalSearchValue)) ||
                         (it.Id.ToString().Contains(generalSearchValue)) ||
-                        (it.VoucherCode != null && it.VoucherCode.ToLower().Contains(generalSearchValue)) // Thêm tìm kiếm theo Mã phiếu
+                        (it.VoucherCode != null && it.VoucherCode.ToLower().Contains(generalSearchValue)) ||
+                        // ----- THÊM LOGIC TÌM KIẾM THEO LÔ HÀNG -----
+                        (it.BatchId.HasValue && it.BatchId.Value.ToString().Contains(generalSearchValue))
                     );
                 }
 
@@ -1818,7 +1860,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     SupplierName = it.Supplier?.Name,
                     UserName = it.User?.Name ?? (it.UserId == null ? "Hệ thống" : "N/A"),
                     Notes = it.Notes ?? "",
-                    VoucherCode = it.VoucherCode ?? "" // Thêm Mã phiếu để trả về cho DataTables
+                    VoucherCode = it.VoucherCode ?? "",
+                    BatchId = it.BatchId
                 }).ToList();
 
                 int recordsTotal = await _context.InventoryTransactions.CountAsync();

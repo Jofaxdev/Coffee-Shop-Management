@@ -389,11 +389,62 @@
         .dashboard-title {
             text-transform: capitalize;
         }
+
+        /* Giúp bảng chi tiết phiếu không bị co ép trên di động */
+        .voucher-details-table {
+            min-width: 800px; /* Đặt chiều rộng tối thiểu cho bảng */
+        }
+
+            /* Đảm bảo các ô nhập liệu trong bảng luôn có chiều rộng tối thiểu để dễ thao tác */
+            .voucher-details-table .form-control,
+            .voucher-details-table .select2-container {
+                min-width: 120px;
+            }
+
+            .voucher-details-table .select2-voucher-ingredient {
+                min-width: 200px; /* Cho ô chọn NVL rộng hơn */
+            }
+
+            @@media (max-width: 767px) {
+            #ingredientsTable {
+                min-width: 1100px;
+            }
+
+            #suppliersTable {
+                min-width: 1200px;
+            }
+        }
+
+        /* --- Mặc định cho di động (Mobile First) --- */
+        .page-header-container .page-title {
+            margin-bottom: 1rem; /* Tạo khoảng cách giữa tiêu đề và nút */
+        }
+
+        .page-header-container .btn {
+            width: 100%; /* Nút rộng 100% trên di động */
+        }
+
+        /* --- Áp dụng cho màn hình máy tính (breakpoint md >= 768px) --- */
+        @@media (min-width: 768px) {
+            .page-header-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+                .page-header-container .page-title {
+                    margin-bottom: 0; /* Bỏ khoảng cách dưới trên máy tính */
+                }
+
+                .page-header-container .btn {
+                    width: auto; /* Nút có chiều rộng tự động trên máy tính */
+                }
+        }
     </style>
 }
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="page-title mb-0"><i class="bi bi-box-seam me-2"></i>Quản lý Kho</h1>
+    <div class="page-header-container mb-4">
+        <h1 class="page-title"><i class="bi bi-box-seam me-2"></i>Quản lý Kho</h1>
         <button type="button" class="btn btn-primary" id="btnOpenInventoryReportModal">
             <i class="bi bi-file-earmark-arrow-down me-1"></i> Báo cáo & Xuất file
         </button>
@@ -700,7 +751,7 @@
                         <hr />
                         <h6 class="mb-3">Chi tiết phiếu</h6>
                         <div class="table-responsive">
-                            <table class="table table-bordered" id="voucher-items-table">
+                            <table class="table table-bordered voucher-details-table" id="voucher-items-table">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width: 5%;">STT</th>
@@ -803,6 +854,7 @@
                                     <th style="width: 40px;">STT</th>
                                     <th style="min-width: 140px;">Ngày</th>
                                     <th style="min-width: 130px;">Mã Phiếu</th>
+                                    <th style="min-width: 90px;">Lô hàng</th>
                                     <th style="min-width: 180px;">Nguyên vật liệu</th>
                                     <th style="min-width: 160px;">Loại GD</th>
                                     <th class="text-end" style="min-width: 90px;">Số lượng</th>
@@ -1018,6 +1070,32 @@
                 <button type="button" class="btn btn-success" id="btnDownloadFromPreview">
                     <i class="bi bi-file-earmark-excel me-1"></i>Tải xuống Excel
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* ----- MODAL XEM CHI TIẾT NGUYÊN VẬT LIỆU ----- *@
+<div class="modal fade" id="ingredientDetailModal" tabindex="-1" aria-labelledby="ingredientDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ingredientDetailModalLabel">Chi tiết Nguyên vật liệu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div id="ingredientDetailContent">
+                    @* Nội dung chi tiết sẽ được tải bằng AJAX *@
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Đóng</button>
             </div>
         </div>
     </div>
@@ -1373,8 +1451,18 @@
                         { data: 'lastPurchasePrice', name: 'LastPurchasePrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
                         { data: 'isActive', name: 'IsActive', className: 'text-center', orderable: true, render: function (data, type, row) { return `<span class="badge bg-${data ? 'success' : 'danger'} action-toggle-active" data-id="${row.id}" style="cursor:pointer;">${data ? 'Hoạt động' : 'Ngưng'}</span>`; } },
                         { data: 'updatedAt', name: 'UpdatedAt' },
-                        { data: 'id', name: 'Actions', orderable: false, searchable: false, className: 'text-center dt-no-wrap', render: function (data) { return `<button class="btn btn-sm btn-info me-1 btn-edit-ingredient" data-id="${data}" title="Sửa"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-danger btn-delete-ingredient" data-id="${data}" title="Xóa"><i class="bi bi-trash-fill"></i></button>`; } }
-                    ],
+                        {
+                            data: 'id',
+                            name: 'Actions',
+                            orderable: false,
+                            searchable: false,
+                            className: 'text-center dt-no-wrap',
+                            render: function (data) {
+                                return `<button class="btn btn-sm btn-success me-1 btn-view-details" data-id="${data}" title="Xem chi tiết"><i class="bi bi-eye-fill"></i></button>` +
+                                    `<button class="btn btn-sm btn-info me-1 btn-edit-ingredient" data-id="${data}" title="Sửa"><i class="bi bi-pencil-fill"></i></button>` +
+                                    `<button class="btn btn-sm btn-danger btn-delete-ingredient" data-id="${data}" title="Xóa"><i class="bi bi-trash-fill"></i></button>`;
+                            }
+                        }],
                     columnDefs: [
                         { targets: [0], width: '40px' },
                         { targets: [8], width: '120px' },
@@ -1443,102 +1531,115 @@
                 setupCustomPaginationEvents(suppliersTable, '#customPaginationSuppliers');
             } catch (e) { console.error("Lỗi khởi tạo Suppliers DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Nhà cung cấp."); }
 
-            // Tìm đến đoạn script khởi tạo DataTables
             try {
-    transactionsHistoryTable = $('#transactionsHistoryTable').DataTable({
-        language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
-        processing: false, serverSide: true, searching: false, lengthChange: false,
-        paging: true, pageLength: parseInt($('#transactionsHistoryTableLength').val()) || 10, info: false,
-        ajax: {
-            url: '@Url.Action("GetInventoryTransactions", "Inventory")', type: 'POST',
-            data: function (d) {
-                d.length = parseInt($('#transactionsHistoryTableLength').val()) || 10;
-                d.fromDate = $('#historyFromDate').val();
-                d.toDate = $('#historyToDate').val();
-                d.transactionTypeFilter = $('#historyTransactionTypeFilter').val();
-                d.ingredientFilterId = $('#historyIngredientFilterId').val();
-                d.search.value = $('#transactionHistorySearch').val();
-                return d;
-            },
-            beforeSend: function () { $('#transactionsHistoryTable_processing').show(); },
-            complete: function () { $('#transactionsHistoryTable_processing').hide(); },
-            error: function (xhr) { handleAjaxError(xhr, 'tải lịch sử giao dịch'); $('#transactionsHistoryTable_processing').hide(); }
-        },
-        columns: [
-            { data: null, name: "STT", orderable: false, searchable: false, className: "text-center", render: function (data, type, row, meta) { return meta.settings._iDisplayStart + meta.row + 1; } },
-            { data: 'transactionDate', name: 'TransactionDate' },
-            {
-                data: 'voucherCode', name: 'VoucherCode', orderable: false, render: function (data, type, row) {
-                    return data ? `<span class="badge bg-secondary-subtle text-secondary-emphasis">${data}</span>` : '-';
-                }
-            },
-            { data: 'ingredientName', name: 'IngredientName', render: function (data) { return data || '-'; } },
-            {
-                data: 'transactionTypeDisplay', name: 'TransactionType', render: function (data, type, row) {
-                    let badgeClass = 'text-bg-secondary';
-                    if (row.transactionType === 'Purchase' || row.transactionType === 'InitialStock' || row.transactionType === 'AdjustmentIn') {
-                        badgeClass = 'text-bg-success';
-                    } else if (row.transactionType === 'SaleConsumption' || row.transactionType === 'AdjustmentOut') {
-                        badgeClass = 'text-bg-danger';
+                transactionsHistoryTable = $('#transactionsHistoryTable').DataTable({
+                    language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
+                    processing: false, serverSide: true, searching: false, lengthChange: false,
+                    paging: true, pageLength: parseInt($('#transactionsHistoryTableLength').val()) || 10, info: false,
+                    ajax: {
+                        url: '@Url.Action("GetInventoryTransactions", "Inventory")', type: 'POST',
+                        data: function (d) {
+                            d.length = parseInt($('#transactionsHistoryTableLength').val()) || 10;
+                            d.fromDate = $('#historyFromDate').val();
+                            d.toDate = $('#historyToDate').val();
+                            d.transactionTypeFilter = $('#historyTransactionTypeFilter').val();
+                            d.ingredientFilterId = $('#historyIngredientFilterId').val();
+                            d.search.value = $('#transactionHistorySearch').val();
+                            return d;
+                        },
+                        beforeSend: function () { $('#transactionsHistoryTable_processing').show(); },
+                        complete: function () { $('#transactionsHistoryTable_processing').hide(); },
+                        error: function (xhr) { handleAjaxError(xhr, 'tải lịch sử giao dịch'); $('#transactionsHistoryTable_processing').hide(); }
+                    },
+                    columns: [
+                        { data: null, name: "STT", orderable: false, searchable: false, className: "text-center", render: function (data, type, row, meta) { return meta.settings._iDisplayStart + meta.row + 1; } },
+                        { data: 'transactionDate', name: 'TransactionDate' },
+                        {
+                            data: 'voucherCode', name: 'VoucherCode', orderable: false, render: function (data, type, row) {
+                                return data ? `<span class="badge bg-secondary-subtle text-secondary-emphasis">${data}</span>` : '-';
+                            }
+                        },
+                        {
+                            data: 'batchId', name: 'BatchId', orderable: false, className: 'text-center', render: function (data) {
+                                return data ? `<span class="badge bg-info-subtle text-info-emphasis">Lô #${data}</span>` : '-';
+                            }
+                        },
+                        { data: 'ingredientName', name: 'IngredientName', render: function (data) { return data || '-'; } },
+
+                        // ----- CẬP NHẬT: Dùng màu đậm cho Loại Giao dịch -----
+                        {
+                            data: 'transactionTypeDisplay',
+                            name: 'TransactionType',
+                            render: function (data, type, row) {
+                                let badgeClass = 'text-bg-secondary'; // Màu mặc định (xám đậm)
+                                switch (row.transactionType) {
+                                    case 'Purchase':
+                                    case 'InitialStock':
+                                        badgeClass = 'text-bg-success'; // Xanh lá đậm
+                                        break;
+                                    case 'AdjustmentIn':
+                                        badgeClass = 'text-bg-primary'; // Xanh dương đậm
+                                        break;
+                                    case 'SaleConsumption':
+                                        badgeClass = 'text-bg-danger'; // Đỏ đậm
+                                        break;
+                                    case 'AdjustmentOut':
+                                        badgeClass = 'text-bg-warning'; // Vàng đậm
+                                        break;
+                                }
+                                return `<span class="badge ${badgeClass}" style="width: 130px;">${data}</span>`;
+                            }
+                        },
+
+                        {
+                            data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) {
+                                if (data > 0) {
+                                    return `<span class="fw-bold text-success">+${formatVnDynamicDecimal(data, 4)}</span>`;
+                                } else if (data < 0) {
+                                    return `<span class="fw-bold text-danger">${formatVnDynamicDecimal(data, 4)}</span>`;
+                                }
+                                return '0';
+                            }
+                        },
+                        { data: 'ingredientUnit', name: 'IngredientUnit', orderable: false, searchable: false },
+                        { data: 'unitPrice', name: 'UnitPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
+                        { data: 'totalPrice', name: 'TotalPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
+                        { data: 'supplierName', name: 'SupplierName', orderable: false, className: 'text-center', render: function (data) { return data || '-'; } },
+                        { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data || '-'; } },
+                        {
+                            data: 'notes', name: 'Notes', orderable: false, render: function (data) {
+                                if (!data) return '-';
+                                const maxLength = 50;
+                                if (data.length > maxLength) {
+                                    return `<span title="${data}">${data.substring(0, maxLength)}...</span>`;
+                                }
+                                return data;
+                            }
+                        }
+                    ],
+                    order: [[1, 'desc']],
+                    autoWidth: false,
+                    dom: 'rt',
+                    drawCallback: function (settings) {
+                        updateCustomPagination(this.api(), '#customPaginationTransactions', '#transactionsHistoryTableInfo');
+                        var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#transactionsHistoryTable [title]'));
+                        tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
+                            var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                            if (existingTooltip) {
+                                existingTooltip.dispose();
+                            }
+                            new bootstrap.Tooltip(tooltipTriggerEl);
+                        });
                     }
-                    return `<span class="badge ${badgeClass}">${data}</span>`;
-                }
-            },
-            {
-                data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) {
-                    if (data > 0) {
-                        return `<span class="fw-bold text-success">+${formatVnDynamicDecimal(data, 4)}</span>`;
-                    } else if (data < 0) {
-                        return `<span class="fw-bold text-danger">${formatVnDynamicDecimal(data, 4)}</span>`;
-                    }
-                    return '0';
-                }
-            },
-            { data: 'ingredientUnit', name: 'IngredientUnit', orderable: false, searchable: false },
-            { data: 'unitPrice', name: 'UnitPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
-            { data: 'totalPrice', name: 'TotalPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
+                });
 
-            // ----- THAY ĐỔI: Thêm className để căn giữa cột NCC -----
-            { data: 'supplierName', name: 'SupplierName', orderable: false, className: 'text-center', render: function (data) { return data || '-'; } },
+                // Các event listener giữ nguyên
+                $('#transactionsHistoryTableLength').on('change', function () { transactionsHistoryTable.page.len(parseInt($(this).val()) || 10).draw(); });
+                $('#historyFromDate, #historyToDate, #historyTransactionTypeFilter, #historyIngredientFilterId').on('change', function () { transactionsHistoryTable.draw(); });
+                $('#transactionHistorySearch').on('keyup', debounce(function () { transactionsHistoryTable.search($(this).val()).draw(); }, 350));
+                setupCustomPaginationEvents(transactionsHistoryTable, '#customPaginationTransactions');
 
-            { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data ? `<span class="dt-col-120-row-2" title="${data}">${data}</span>` : '-'; } },
-            {
-                data: 'notes', name: 'Notes', orderable: false, render: function (data) {
-                    if (!data) return '-';
-                    const maxLength = 50;
-                    if (data.length > maxLength) {
-                        return `<span title="${data}">${data.substring(0, maxLength)}...</span>`;
-                    }
-                    return data;
-                }
-            }
-        ],
-        // Xóa columnDefs cũ để áp dụng min-width từ a
-        order: [[1, 'desc']], 
-        autoWidth: false, 
-        dom: 'rt',
-        drawCallback: function (settings) {
-            updateCustomPagination(this.api(), '#customPaginationTransactions', '#transactionsHistoryTableInfo');
-            // Kích hoạt lại tooltip cho các ghi chú dài
-            var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#transactionsHistoryTable [title]'));
-            tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
-                var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
-                if (existingTooltip) {
-                    existingTooltip.dispose();
-                }
-                new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        }
-    });
-    
-    // Các event listener giữ nguyên
-    $('#transactionsHistoryTableLength').on('change', function () { transactionsHistoryTable.page.len(parseInt($(this).val()) || 10).draw(); });
-    $('#historyFromDate, #historyToDate, #historyTransactionTypeFilter, #historyIngredientFilterId').on('change', function () { transactionsHistoryTable.draw(); });
-    $('#transactionHistorySearch').on('keyup', debounce(function () { transactionsHistoryTable.search($(this).val()).draw(); }, 350));
-    setupCustomPaginationEvents(transactionsHistoryTable, '#customPaginationTransactions');
-
-} catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
-
+            } catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
 
             // ============== LOGIC CRUD NGUYÊN VẬT LIỆU ==============
             $('#btnAddIngredient').on('click', function () {
@@ -1690,6 +1791,100 @@
                         } else if (result.value && result.value.message) {
                             showErrorAlert('Thất bại', result.value.message);
                         }
+                    }
+                });
+            });
+
+            // ----- LOGIC XEM CHI TIẾT NGUYÊN VẬT LIỆU -----
+            $('#ingredientsTable tbody').on('click', '.btn-view-details', function () {
+                const ingredientId = $(this).data('id');
+                const ingredientDetailModal = new bootstrap.Modal(document.getElementById('ingredientDetailModal'));
+                const modalContent = $('#ingredientDetailContent');
+
+                // Hiển thị modal với trạng thái loading
+                modalContent.html('<div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                ingredientDetailModal.show();
+
+                // Gọi API để lấy dữ liệu
+                $.ajax({
+                    url: `@Url.Action("GetIngredientDetails", "Inventory")/${ingredientId}`,
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.success) {
+                            const ing = response.ingredient;
+                            const batches = response.batches;
+
+                            $('#ingredientDetailModalLabel').text(`Chi tiết: ${ing.name}`);
+
+                            let batchTableHtml = '';
+
+                            // ----- THAY ĐỔI: Sử dụng biểu tượng khi không có dữ liệu -----
+                            if (batches && batches.length > 0) {
+                                batchTableHtml = `
+                                <h6 class="mb-3">Danh sách các lô hàng</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered table-hover" id="batchDetailsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã Lô</th>
+                                                <th>Mã tham chiếu</th>
+                                                <th>Ngày nhập</th>
+                                                <th class="text-end">Giá nhập</th>
+                                                <th class="text-end">Tồn kho hiện tại</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
+
+                                batches.forEach(b => {
+                                    if (b.quantity > 0) {
+                                        batchTableHtml += `
+                                        <tr>
+                                            <td class="text-center">${b.id}</td>
+                                            <td>${b.batchNumber || '-'}</td>
+                                            <td>${b.purchaseDate}</td>
+                                            <td class="text-end">${formatVnCurrency(b.purchasePrice)}</td>
+                                            <td class="text-end fw-bold">${formatVnDynamicDecimal(b.quantity, 3)}</td>
+                                        </tr>`;
+                                    }
+                                });
+
+                                batchTableHtml += '</tbody></table></div>';
+                            } else {
+                                // Đây là khối giao diện mới khi không có lô hàng
+                                batchTableHtml = `
+                                <div class="text-center p-4 my-3 bg-light rounded border">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                                    <h6 class="mt-3 mb-1 fw-bold">Chưa có lô hàng</h6>
+                                    <p class="text-muted mb-0 small">Nguyên vật liệu này hiện chưa có thông tin nhập kho.</p>
+                                </div>`;
+                            }
+
+                            const detailHtml = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-2"><strong>Mã NVL:</strong> NVL${ing.id.toString().padStart(4, '0')}</p>
+                                            <p class="mb-2"><strong>Mô tả:</strong> ${ing.description || 'N/A'}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-2"><strong>ĐVT:</strong> ${ing.unitOfMeasure}</p>
+                                            <p class="mb-2"><strong>Tồn tối thiểu:</strong> ${formatVnDynamicDecimal(ing.minimumStockLevel, 3)}</p>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    ${batchTableHtml}
+                                </div>
+                            </div>`;
+
+                            modalContent.html(detailHtml);
+                        } else {
+                            modalContent.html(`<div class="alert alert-danger">${response.message}</div>`);
+                        }
+                    },
+                    error: function (xhr) {
+                        handleAjaxError(xhr, "lấy chi tiết nguyên vật liệu");
+                        modalContent.html('<div class="alert alert-danger">Không thể tải dữ liệu. Vui lòng thử lại.</div>');
                     }
                 });
             });
@@ -2484,18 +2679,59 @@
             // === LOGIC CHO TAB TẠO PHIẾU KHO (PHIÊN BẢN NÂNG CẤP) ===
             // ========================================================
 
+            // Khai báo các biến DOM chính
             const $voucherForm = $('#createVoucherForm');
             const $voucherTypeSelect = $('#voucherTransactionType');
             const $voucherItemsTbody = $('#voucher-items-table tbody');
             const $voucherSupplierContainer = $('#voucherSupplierContainer');
             const $batchColumnHeader = $('#batchColumnHeader');
 
-            // 1. Hàm tạo một dòng mới trong bảng chi tiết phiếu
+            // Hàm debounce để tránh gọi AJAX liên tục
+            const debouncedCalculateCost = debounce(calculateAndDisplayFifoCost, 500);
+
+            // 1. Hàm tính toán và hiển thị giá vốn FIFO
+            function calculateAndDisplayFifoCost($row) {
+                const ingredientId = $row.find('.select2-voucher-ingredient').val();
+                const quantity = parseFloat($row.find('.quantity-input').val()) || 0;
+
+                const $totalCell = $row.find('.line-total-display');
+                if (!ingredientId || quantity <= 0) {
+                    $totalCell.text(formatVnCurrency(0, false));
+                    return;
+                }
+
+                const requestData = {
+                    IngredientId: parseInt(ingredientId),
+                    Quantity: quantity
+                };
+
+                $totalCell.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
+                $.ajax({
+                    url: '@Url.Action("CalculateFifoCost", "Inventory")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(requestData),
+                    success: function (response) {
+                        if (response.success) {
+                            // Hiển thị giá trị âm vì đây là phiếu xuất điều chỉnh
+                            $totalCell.text(formatVnCurrency(-response.totalCost, false));
+                        } else {
+                            $totalCell.text('Lỗi');
+                            showErrorAlert('Lỗi tính toán', response.message);
+                        }
+                    },
+                    error: function () {
+                        $totalCell.text('Lỗi');
+                    }
+                });
+            }
+
+            // 2. Hàm tạo một dòng mới trong bảng chi tiết phiếu
             function createNewVoucherRow() {
                 const rowIndex = $voucherItemsTbody.find('tr').length;
                 const isBatchSelectionNeeded = ['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val());
 
-                // Cập nhật visibility của header cột Lô hàng
                 if (isBatchSelectionNeeded) {
                     $batchColumnHeader.removeClass('d-none');
                 } else {
@@ -2507,21 +2743,17 @@
                     <td class="text-center row-number align-middle">${rowIndex + 1}</td>
                     <td>
                         <select class="form-control select2-voucher-ingredient" name="Details[${rowIndex}].IngredientId" required></select>
-                        <div class="invalid-feedback"></div>
                     </td>
                     <td class="batch-cell" ${isBatchSelectionNeeded ? '' : 'style="display:none;"'}>
                         <select class="form-control select2-voucher-batch" name="Details[${rowIndex}].BatchId" disabled>
                             <option value="" selected>Vui lòng chọn NVL trước</option>
                         </select>
-                        <div class="invalid-feedback"></div>
                     </td>
                     <td>
                         <input type="number" class="form-control quantity-input" name="Details[${rowIndex}].Quantity" required step="0.01" min="0.01" placeholder="Nhập SL">
-                         <div class="invalid-feedback"></div>
                     </td>
                     <td>
                         <input type="number" class="form-control price-input" name="Details[${rowIndex}].UnitPrice" required step="100" min="0" placeholder="Nhập đơn giá">
-                         <div class="invalid-feedback"></div>
                     </td>
                     <td class="text-end align-middle">
                         <span class="line-total-display fw-bold">0</span>
@@ -2568,27 +2800,49 @@
                     }
                 });
 
-                // Cập nhật colspan cho tfoot
                 const colspan = isBatchSelectionNeeded ? 7 : 6;
                 $('#add-voucher-item').closest('td').attr('colspan', colspan);
             }
-            // 2. Hàm tải danh sách lô hàng cho một dòng
+
+            // 3. Hàm tải danh sách lô hàng cho một dòng
             function loadBatchesForVoucherRow($row, ingredientId) {
                 const $batchSelect = $row.find('.select2-voucher-batch');
                 $batchSelect.empty().prop('disabled', true).append('<option>Đang tải...</option>');
 
                 if (!ingredientId) return;
 
+                const currentVoucherType = $voucherTypeSelect.val();
+
                 $.ajax({
                     url: `@Url.Action("GetBatchesForIngredient", "Inventory")?ingredientId=${ingredientId}`,
                     type: 'GET',
                     success: function (batches) {
                         $batchSelect.empty().prop('disabled', false);
+
                         if (batches && batches.length > 0) {
-                            $batchSelect.append('<option value="" selected disabled>-- Chọn lô --</option>');
+                            // ----- THAY ĐỔI 1: Chỉ thêm lựa chọn "Tự động" nếu không phải là phiếu "Điều chỉnh tăng" -----
+                            if (currentVoucherType !== 'AdjustmentIn') {
+                                $batchSelect.append('<option value="0">-- Tự động --</option>');
+                                $batchSelect.append('<option value="" disabled selected>-- Hoặc chọn lô thủ công --</option>');
+                            } else {
+                                // Đối với phiếu Điều chỉnh tăng, không có lựa chọn mặc định trống
+                            }
+
                             batches.forEach(b => {
                                 $batchSelect.append(`<option value="${b.id}" data-price="${b.price}">${b.text}</option>`);
                             });
+
+                            // ----- THAY ĐỔI 2: Tự động chọn lô đầu tiên nếu là phiếu "Điều chỉnh tăng" -----
+                            if (currentVoucherType === 'AdjustmentIn') {
+                                // Lấy ID của lô hàng đầu tiên trong danh sách trả về
+                                const firstBatchId = batches[0].id;
+                                $batchSelect.val(firstBatchId).trigger('change');
+                            }
+                            // Giữ nguyên logic mặc định cho các loại phiếu khác
+                            else if (currentVoucherType !== 'AdjustmentIn' && $batchSelect.find('option[value="0"]').length > 0) {
+                                $batchSelect.val('0').trigger('change');
+                            }
+
                         } else {
                             $batchSelect.append('<option value="">Hết hàng</option>');
                         }
@@ -2598,39 +2852,31 @@
                     }
                 });
             }
-
-
-            // 3. Hàm cập nhật lại giao diện dựa trên loại phiếu
+            // 4. Hàm cập nhật lại giao diện dựa trên loại phiếu
             function updateVoucherUI() {
                 const type = $voucherTypeSelect.val();
                 $voucherItemsTbody.empty();
 
-                // Mặc định ẩn các thành phần không dùng chung
                 $voucherSupplierContainer.hide();
                 $batchColumnHeader.addClass('d-none');
 
-                let isBatchSelectionNeeded = false;
-
-                // ----- THAY ĐỔI: Bật/tắt nút "Thêm dòng" -----
                 if (type) {
-                    $('#add-voucher-item').prop('disabled', false); // Kích hoạt nút
+                    $('#add-voucher-item').prop('disabled', false);
                 } else {
-                    $('#add-voucher-item').prop('disabled', true); // Vô hiệu hóa nút
-                    return; // Dừng hàm nếu chưa chọn loại phiếu
+                    $('#add-voucher-item').prop('disabled', true);
+                    return;
                 }
+
+                let isBatchSelectionNeeded = ['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes(type);
 
                 switch (type) {
                     case 'Purchase':
                         $voucherSupplierContainer.show();
                         break;
-                    case 'InitialStock':
-                        break;
-                    case 'SaleConsumption':
-                    case 'AdjustmentIn':
-                    case 'AdjustmentOut':
-                        isBatchSelectionNeeded = true;
-                        $batchColumnHeader.removeClass('d-none');
-                        break;
+                }
+
+                if (isBatchSelectionNeeded) {
+                    $batchColumnHeader.removeClass('d-none');
                 }
 
                 const colspan = isBatchSelectionNeeded ? 7 : 6;
@@ -2638,7 +2884,8 @@
 
                 createNewVoucherRow();
             }
-            // 4. Các sự kiện
+
+            // 5. Các sự kiện
             $('#add-voucher-item').on('click', createNewVoucherRow);
 
             $voucherItemsTbody.on('click', '.btn-delete-row', function () {
@@ -2661,30 +2908,59 @@
 
             $voucherItemsTbody.on('input', '.quantity-input, .price-input', function () {
                 const $row = $(this).closest('tr');
-                const quantity = parseFloat($row.find('.quantity-input').val()) || 0;
-                const price = parseFloat($row.find('.price-input').val()) || 0;
-                $row.find('.line-total-display').text(formatVnCurrency(quantity * price, false));
+                const type = $voucherTypeSelect.val();
+                const batchSelection = $row.find('.select2-voucher-batch').val();
+
+                // Trường hợp Xuất Điều Chỉnh Giảm - TỰ ĐỘNG
+                if (type === 'AdjustmentOut' && batchSelection == '0') {
+                    // Gọi hàm tính toán FIFO (đã xử lý giá trị âm)
+                    debouncedCalculateCost($row);
+                }
+                // Các trường hợp còn lại - TÍNH TOÁN THỦ CÔNG
+                else {
+                    const quantity = parseFloat($row.find('.quantity-input').val()) || 0;
+                    const price = parseFloat($row.find('.price-input').val()) || 0;
+                    let total = quantity * price;
+
+                    // Nếu là phiếu Xuất Điều Chỉnh Giảm (thủ công), thì thành tiền phải là số âm
+                    if (type === 'AdjustmentOut') {
+                        total = -Math.abs(total);
+                    }
+
+                    $row.find('.line-total-display').text(formatVnCurrency(total, false));
+                }
             });
 
             $voucherItemsTbody.on('change', '.select2-voucher-batch', function () {
                 const type = $voucherTypeSelect.val();
                 const $row = $(this).closest('tr');
-                const price = $(this).find('option:selected').data('price') || 0;
                 const $priceInput = $row.find('.price-input');
+                const selectedBatchVal = $(this).val();
 
-                if (type === 'AdjustmentOut' || type === 'AdjustmentIn') {
-                    $priceInput.val(price).prop('readonly', true).attr('placeholder', 'Giá vốn (từ lô)');
+                let placeholder = 'Đơn giá';
+                let isReadonly = false;
+
+                if (type === 'AdjustmentIn' || type === 'AdjustmentOut') {
+                    isReadonly = true;
+                    placeholder = 'Giá vốn (từ lô)';
+                    if (selectedBatchVal == '0') {
+                        placeholder = 'Tự động';
+                        $priceInput.val('');
+                        debouncedCalculateCost($row);
+                    } else {
+                        const price = $(this).find('option:selected').data('price') || 0;
+                        $priceInput.val(price);
+                    }
                 } else if (type === 'SaleConsumption') {
-                    $priceInput.prop('readonly', false).attr('placeholder', 'Giá bán');
-                    // Có thể set giá bán gợi ý ở đây nếu muốn
+                    placeholder = 'Giá bán';
                 } else {
-                    $priceInput.prop('readonly', false).attr('placeholder', 'Giá nhập');
+                    placeholder = 'Giá nhập';
                 }
-                $priceInput.trigger('input');
+
+                $priceInput.prop('readonly', isReadonly).attr('placeholder', placeholder).trigger('input');
             });
 
-
-            // 5. Xử lý Submit Form
+            // 6. Xử lý Submit Form
             $voucherForm.on('submit', function (e) {
                 e.preventDefault();
 
@@ -2707,11 +2983,13 @@
 
                 $('.voucher-item-row').each(function () {
                     const $row = $(this);
+                    const batchValue = $row.find('.select2-voucher-batch').val();
+
                     const detail = {
                         IngredientId: $row.find('.select2-voucher-ingredient').val(),
                         Quantity: parseFloat($row.find('.quantity-input').val()),
                         UnitPrice: parseFloat($row.find('.price-input').val()),
-                        BatchId: $row.find('.select2-voucher-batch').val() ? parseInt($row.find('.select2-voucher-batch').val()) : null
+                        BatchId: (batchValue !== null && batchValue !== "") ? parseInt(batchValue) : null
                     };
 
                     if (!detail.IngredientId) {
@@ -2722,11 +3000,11 @@
                         showErrorAlert('Lỗi', `Vui lòng nhập số lượng hợp lệ cho dòng ${$row.data('index') + 1}.`);
                         isValid = false; return false;
                     }
-                    if (isNaN(detail.UnitPrice) || detail.UnitPrice < 0) {
+                    if (isNaN(detail.UnitPrice) && !($voucherTypeSelect.val() === 'AdjustmentOut' && detail.BatchId === 0)) {
                         showErrorAlert('Lỗi', `Vui lòng nhập đơn giá hợp lệ cho dòng ${$row.data('index') + 1}.`);
                         isValid = false; return false;
                     }
-                    if (['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val()) && !detail.BatchId) {
+                    if (['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val()) && detail.BatchId === null) {
                         showErrorAlert('Lỗi', `Vui lòng chọn lô hàng cho dòng ${$row.data('index') + 1}.`);
                         isValid = false; return false;
                     }

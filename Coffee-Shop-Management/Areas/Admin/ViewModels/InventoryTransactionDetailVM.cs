@@ -5,7 +5,7 @@ namespace Coffee_Shop_Management.Areas.Admin.ViewModels
     public class InventoryTransactionDetailVM
     {
         public DateTime TransactionDate { get; set; }
-        public long TransactionId { get; set; }
+        public string VoucherCode { get; set; }
         public string TransactionTypeDisplay { get; set; }
         public AppDbContext.InventoryTransactionType TransactionType { get; set; }
 

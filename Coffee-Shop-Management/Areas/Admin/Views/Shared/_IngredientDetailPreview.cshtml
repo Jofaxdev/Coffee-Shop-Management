@@ -1,29 +1,21 @@
-﻿@* File: /Areas/Admin/Views/Inventory/_IngredientDetailPreview.cshtml *@
-@model Coffee_Shop_Management.Areas.Admin.ViewModels.InventoryDetailReportItemVM
+﻿@model Coffee_Shop_Management.Areas.Admin.ViewModels.InventoryDetailReportItemVM
 @using Coffee_Shop_Management.Models
 
 @{
-    var colorIn = "#E7F3E7";
-    var colorOut = "#FFF0F0";
-    var colorAdjIn = "#EBF5FF";
-    var colorAdjOut = "#FFF9E6";
-
-    var culture = new System.Globalization.CultureInfo("vi-VN");
+    var colorIn = "#E7F3E7";      // Nhập mua hàng / Tồn đầu
+    var colorOut = "#FFF0F0";     // Xuất bán hàng
+    var colorAdjIn = "#EBF5FF";   // Điều chỉnh tăng
+    var colorAdjOut = "#FFF9E6";  // Điều chỉnh giảm
 }
 
 @functions {
-    // Hàm tiện ích để định dạng số ngay trong View cho nhất quán
     private string FormatNumber(decimal? number, bool isQuantity = false)
     {
         if (!number.HasValue) return "-";
         var culture = new System.Globalization.CultureInfo("vi-VN");
-
         if (isQuantity)
         {
-            if (number.Value == Math.Truncate(number.Value))
-            {
-                return number.Value.ToString("N0", culture);
-            }
+            if (number.Value == Math.Truncate(number.Value)) return number.Value.ToString("N0", culture);
             return number.Value.ToString("N4", culture).TrimEnd('0').TrimEnd(culture.NumberFormat.NumberDecimalSeparator[0]);
         }
         return number.Value.ToString("N0", culture);
@@ -31,101 +23,80 @@
 }
 
 <style>
-    .excel-preview-container {
-        padding: 20px;
-        background-color: #f0f2f5;
-        overflow-x: auto;
-    }
-
-    .fixed-layout-wrapper {
-        min-width: 1400px;
-        padding-bottom: 15px;
-    }
-
-    .preview-table {
+    /* Các style giữ nguyên như cũ, không cần thay đổi */
+    .preview-table-detail {
         width: 100%;
         border-collapse: collapse;
         background-color: #fff;
-        font-size: 14px;
+        font-size: 13px;
         font-family: Calibri, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        table-layout: fixed;
     }
 
-        .preview-table th, .preview-table td {
-            border: 1px solid #ccc;
+        .preview-table-detail th, .preview-table-detail td {
+            border: 1px solid #ddd;
             padding: 6px 8px;
-            text-align: left;
-            white-space: nowrap;
             vertical-align: middle;
         }
 
-        /* *** SỬA ĐỔI: Thêm text-align: center để căn giữa ngang *** */
-        .preview-table .wrap-text {
-            white-space: normal;
-            word-break: break-word;
+        .preview-table-detail thead th {
+            background-color: #f8f9fa;
+            font-weight: 600;
             text-align: center;
-        }
-
-        .preview-table thead th {
-            background-color: #e2e2e2;
-            font-weight: bold;
-            text-align: center;
-            vertical-align: middle;
             position: sticky;
             top: -1px;
+            z-index: 1;
         }
 
-        .preview-table .text-right {
+        .preview-table-detail .wrap-text {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .preview-table-detail .text-right {
             text-align: right;
         }
 
-        .preview-table .text-left {
-            text-align: left;
-        }
-
-        .preview-table .text-center {
+        .preview-table-detail .text-center {
             text-align: center;
         }
 
+        .preview-table-detail .text-left {
+            text-align: left;
+        }
+
+    .ref-cost-price {
+        font-style: italic;
+        color: #6c757d;
+    }
 </style>
 
-<div class="fixed-layout-wrapper">
-    <h4 class="mb-3">Thẻ kho: @Model.IngredientName (@Model.IngredientCode)</h4>
-    <table class="preview-table">
-        <colgroup>
-            <col style="width: 130px;" /> @* Ngày GD *@
-            <col style="width: 80px;" />  @* Số Phiếu *@
-            <col style="width: 120px;" /> @* Loại GD/Diễn giải *@
-            <col style="width: 110px;" /> @* Người TH *@
-            <col style="width: 150px;" /> @* NCC *@
-            <col style="width: 90px;" />  @* SL Nhập *@
-            <col style="width: 90px;" />  @* ĐG Nhập *@
-            <col style="width: 100px;" /> @* TT Nhập *@
-            <col style="width: 90px;" />  @* SL Xuất *@
-            <col style="width: 90px;" />  @* ĐG Xuất *@
-            <col style="width: 100px;" /> @* TT Xuất *@
-            <col style="width: 100px;" /> @* SL Tồn *@
-            <col style="width: 120px;" /> @* Ghi Chú *@
-        </colgroup>
-        <thead>
+<div>
+    <div class="p-3 mb-3 bg-white rounded shadow-sm border-start border-primary border-5">
+        <h4 class="mb-1">Thẻ kho: @Model.IngredientName</h4>
+        <p class="mb-0 text-muted">Mã NVL: @Model.IngredientCode | Kỳ báo cáo: @Model.PeriodStartDate.ToString("dd/MM/yyyy") - @Model.PeriodEndDate.ToString("dd/MM/yyyy")</p>
+    </div>
+
+    <table class="table table-bordered table-hover preview-table-detail">
+        <thead class="table-light">
             <tr>
-                <th>Ngày GD</th>
-                <th>Số Phiếu</th>
-                <th>Loại GD/Diễn giải</th>
-                <th>Người TH</th>
-                <th>NCC</th>
-                <th>SL Nhập</th>
-                <th>ĐG Nhập</th>
-                <th>TT Nhập</th>
-                <th>SL Xuất</th>
-                <th>ĐG Xuất</th>
-                <th>TT Xuất</th>
-                <th>SL Tồn</th>
-                <th>Ghi Chú</th>
+                <th style="min-width: 140px;">Ngày GD</th>
+                <th style="min-width: 120px;">Mã Phiếu</th>
+                <th style="min-width: 150px;">Loại GD/Diễn giải</th>
+                <th style="min-width: 140px;">Người TH</th>
+                <th style="min-width: 150px;">NCC</th>
+                <th class="text-end" style="min-width: 90px;">SL Nhập</th>
+                <th class="text-end" style="min-width: 100px;">ĐG Nhập / Giá vốn</th>
+                <th class="text-end" style="min-width: 110px;">TT Nhập</th>
+                <th class="text-end" style="min-width: 90px;">SL Xuất</th>
+                <th class="text-end" style="min-width: 100px;">ĐG Bán</th>
+                <th class="text-end" style="min-width: 110px;">TT Xuất</th>
+                <th class="text-end" style="min-width: 100px;">SL Tồn</th>
+                <th style="min-width: 180px;">Ghi Chú</th>
             </tr>
         </thead>
         <tbody>
-            <tr style="font-weight: bold; font-style: italic;">
+            @* ----- THAY ĐỔI: Bỏ in nghiêng ----- *@
+            <tr style="font-weight: bold; background-color: #f8f9fa;">
                 <td colspan="11" class="text-center">Tồn đầu kỳ</td>
                 <td class="text-right">@FormatNumber(Model.OpeningStockQuantity, true)</td>
                 <td></td>
@@ -150,31 +121,36 @@
                         rowColor = colorAdjOut;
                         break;
                 }
+
                 <tr style="background-color: @rowColor">
                     <td class="text-center">@trans.TransactionDate.ToString("dd/MM/yyyy HH:mm")</td>
-                    <td class="text-center">@trans.TransactionId</td>
-                    <td class="wrap-text">@trans.TransactionTypeDisplay</td>
-                    <td class="wrap-text">@trans.UserName</td>
-                    <td class="wrap-text">@trans.SupplierName</td>
-                    <td class="text-right">@FormatNumber(trans.QuantityIn, true)</td>
+                    <td class="text-center">@trans.VoucherCode</td>
+                    <td>@trans.TransactionTypeDisplay</td>
+                    <td>@trans.UserName</td>
+                    <td>@trans.SupplierName</td>
+
+                    @* ----- THAY ĐỔI: Bỏ màu xanh/đỏ, chỉ giữ lại in đậm ----- *@
+                    <td class="text-right fw-bold">@FormatNumber(trans.QuantityIn, true)</td>
 
                     <td class="text-right">
-                        @if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption)
+                        @if (trans.TransactionType == AppDbContext.InventoryTransactionType.SaleConsumption || trans.TransactionType == AppDbContext.InventoryTransactionType.AdjustmentOut)
                         {
-                            <span class="ref-cost-price" title="Giá vốn của lô hàng đã bán">@FormatNumber(trans.CostPriceOut)</span>
+                            <span class="ref-cost-price" title="Giá vốn của lô hàng đã xuất">@FormatNumber(trans.CostPriceOut)</span>
                         }
                         else
                         {
                             @FormatNumber(trans.UnitPriceIn)
                         }
                     </td>
-
                     <td class="text-right">@FormatNumber(trans.ValueIn)</td>
-                    <td class="text-right">@FormatNumber(trans.QuantityOut, true)</td>
+
+                    @* ----- THAY ĐỔI: Bỏ màu xanh/đỏ, chỉ giữ lại in đậm ----- *@
+                    <td class="text-right fw-bold">@FormatNumber(trans.QuantityOut, true)</td>
+
                     <td class="text-right">@FormatNumber(trans.UnitPriceOut)</td>
                     <td class="text-right">@FormatNumber(trans.ValueOut)</td>
-                    <td class="text-right">@FormatNumber(trans.StockAfterTransaction, true)</td>
-                    <td class="text-left wrap-text">@trans.Notes</td>
+                    <td class="text-right fw-bold">@FormatNumber(trans.StockAfterTransaction, true)</td>
+                    <td class="wrap-text">@trans.Notes</td>
                 </tr>
             }
             <tr style="font-weight: bold; background-color: #FFF2CC;">
@@ -187,7 +163,8 @@
                 <td class="text-right">@FormatNumber(Model.TotalValueOut)</td>
                 <td colspan="2"></td>
             </tr>
-            <tr style="font-weight: bold; font-style: italic;">
+            @* ----- THAY ĐỔI: Bỏ in nghiêng ----- *@
+            <tr style="font-weight: bold; background-color: #f8f9fa;">
                 <td colspan="11" class="text-center">Tồn cuối kỳ</td>
                 <td class="text-right">@FormatNumber(Model.ClosingStockQuantity, true)</td>
                 <td></td>
