@@ -1422,7 +1422,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
         }
         #endregion
 
-        #region Giao dịch Kho (Inventory Transactions) - Bổ sung hàm GetTransactionTypeDisplayName nếu chưa có ngoài controller
+        #region Giao dịch Kho (Inventory Transactions)
 
         private string GetTransactionTypeDisplayName(InventoryTransactionType type)
         {
@@ -1437,8 +1437,163 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             };
         }
 
-        // POST: /Admin/Inventory/CreateInventoryTransaction
-        // POST: /Admin/Inventory/CreateInventoryTransaction
+        private string GenerateVoucherCode(InventoryTransactionType type)
+        {
+            string prefix = type switch
+            {
+                InventoryTransactionType.Purchase => "PNK", // Phiếu Nhập Kho
+                InventoryTransactionType.InitialStock => "PDC", // Phiếu Điều Chỉnh
+                InventoryTransactionType.AdjustmentIn => "PDC",
+                InventoryTransactionType.AdjustmentOut => "PDC",
+                InventoryTransactionType.SaleConsumption => "PXK", // Phiếu Xuất Kho
+                _ => "PGD" // Phiếu Giao Dịch
+            };
+
+            // Thay thế dòng return cũ bằng dòng này
+            return $"{prefix}-{DateTime.Now:yyMMdd-HHmm}";
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateVoucher([FromBody] VoucherVM model)
+        {
+            if (!ModelState.IsValid || !model.Details.Any())
+            {
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ. Phiếu phải có ít nhất một nguyên vật liệu." });
+            }
+
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                var voucherCode = GenerateVoucherCode(model.TransactionType);
+                var transactionDate = DateTime.Now;
+
+                foreach (var detail in model.Details)
+                {
+                    var ingredient = await _context.Ingredients.FindAsync(detail.IngredientId);
+                    if (ingredient == null)
+                    {
+                        await dbTransaction.RollbackAsync();
+                        return BadRequest(new { success = false, message = $"Không tìm thấy nguyên vật liệu với ID {detail.IngredientId}." });
+                    }
+
+                    var transaction = new InventoryTransaction
+                    {
+                        IngredientId = detail.IngredientId,
+                        TransactionType = model.TransactionType,
+                        TransactionDate = transactionDate,
+                        UserId = currentUser.Id,
+                        Notes = model.Notes,
+                        VoucherCode = voucherCode
+                    };
+
+                    switch (model.TransactionType)
+                    {
+                        case InventoryTransactionType.Purchase:
+                        case InventoryTransactionType.InitialStock:
+                            if (!detail.UnitPrice.HasValue || detail.UnitPrice.Value < 0)
+                            {
+                                await dbTransaction.RollbackAsync();
+                                return BadRequest(new { success = false, message = $"Đơn giá là bắt buộc cho việc nhập hàng (NVL: {ingredient.Name})." });
+                            }
+                            if (model.TransactionType == InventoryTransactionType.Purchase)
+                            {
+                                if (!model.SupplierId.HasValue)
+                                {
+                                    await dbTransaction.RollbackAsync();
+                                    return BadRequest(new { success = false, message = "Nhà cung cấp là bắt buộc cho phiếu nhập mua hàng." });
+                                }
+                                transaction.SupplierId = model.SupplierId;
+                            }
+
+                            var newBatch = new InventoryBatch
+                            {
+                                IngredientId = detail.IngredientId,
+                                Quantity = detail.Quantity,
+                                PurchasePrice = detail.UnitPrice.Value,
+                                PurchaseDate = transactionDate,
+                                BatchNumber = $"PO-{transactionDate.Ticks}"
+                            };
+                            _context.InventoryBatches.Add(newBatch);
+                            await _context.SaveChangesAsync();
+
+                            transaction.QuantityChanged = detail.Quantity;
+                            transaction.UnitPrice = detail.UnitPrice;
+                            transaction.TotalPrice = detail.Quantity * detail.UnitPrice.Value;
+                            transaction.BatchId = newBatch.Id;
+
+                            ingredient.CurrentStockLevel += detail.Quantity;
+                            ingredient.LastPurchasePrice = detail.UnitPrice.Value;
+                            break;
+
+                        case InventoryTransactionType.AdjustmentIn:
+                        case InventoryTransactionType.AdjustmentOut:
+                        case InventoryTransactionType.SaleConsumption:
+                            if (!detail.BatchId.HasValue)
+                            {
+                                await dbTransaction.RollbackAsync();
+                                return BadRequest(new { success = false, message = $"Vui lòng chọn lô hàng cho NVL: {ingredient.Name}." });
+                            }
+                            var batchToAdjust = await _context.InventoryBatches.FindAsync(detail.BatchId.Value);
+                            if (batchToAdjust == null)
+                            {
+                                await dbTransaction.RollbackAsync();
+                                return BadRequest(new { success = false, message = $"Lô hàng không hợp lệ cho NVL: {ingredient.Name}." });
+                            }
+
+                            if (model.TransactionType == InventoryTransactionType.AdjustmentOut || model.TransactionType == InventoryTransactionType.SaleConsumption)
+                            {
+                                if (batchToAdjust.Quantity < detail.Quantity)
+                                {
+                                    await dbTransaction.RollbackAsync();
+                                    return BadRequest(new { success = false, message = $"Số lượng tồn trong lô của NVL '{ingredient.Name}' không đủ (Tồn: {batchToAdjust.Quantity})." });
+                                }
+                                transaction.QuantityChanged = -detail.Quantity;
+                                batchToAdjust.Quantity -= detail.Quantity;
+                                ingredient.CurrentStockLevel -= detail.Quantity;
+
+                                transaction.UnitPrice = (model.TransactionType == InventoryTransactionType.SaleConsumption) ? detail.UnitPrice : batchToAdjust.PurchasePrice;
+                                transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice;
+                            }
+                            else // AdjustmentIn
+                            {
+                                transaction.QuantityChanged = detail.Quantity;
+                                batchToAdjust.Quantity += detail.Quantity;
+                                ingredient.CurrentStockLevel += detail.Quantity;
+
+                                transaction.UnitPrice = batchToAdjust.PurchasePrice;
+                                transaction.TotalPrice = transaction.QuantityChanged * transaction.UnitPrice;
+                            }
+
+                            transaction.BatchId = batchToAdjust.Id;
+                            if (batchToAdjust.Quantity == 0 && batchToAdjust.Id != 0) batchToAdjust.IsActive = false;
+
+                            break;
+
+                        default:
+                            await dbTransaction.RollbackAsync();
+                            return BadRequest(new { success = false, message = "Loại giao dịch không được hỗ trợ." });
+                    }
+
+                    ingredient.UpdatedAt = transactionDate;
+                    _context.InventoryTransactions.Add(transaction);
+                }
+
+                await _context.SaveChangesAsync();
+                await dbTransaction.CommitAsync();
+
+                return Ok(new { success = true, message = $"Tạo phiếu {voucherCode} thành công!" });
+            }
+            catch (Exception ex)
+            {
+                await dbTransaction.RollbackAsync();
+                _logger.LogError(ex, "Lỗi khi tạo phiếu giao dịch kho.");
+                return StatusCode(500, new { success = false, message = "Đã xảy ra lỗi máy chủ. Vui lòng thử lại." });
+            }
+        }
+
+
+        // Phương thức tạo giao dịch đơn lẻ cũ (có thể giữ lại hoặc xóa đi nếu không dùng)
         [HttpPost]
         public async Task<IActionResult> CreateInventoryTransaction([FromBody] InventoryTransactionVM model)
         {
@@ -1485,19 +1640,16 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     transaction.TotalPrice = model.Quantity * model.UnitPrice.Value;
                     transaction.Batch = newBatch;
 
-                    // *** SỬA LỖI: Bổ sung dòng gán SupplierId ***
                     if (model.TransactionType == InventoryTransactionType.Purchase)
                     {
                         transaction.SupplierId = model.SupplierId;
                     }
 
-                    // Cập nhật tồn kho và giá vốn cuối cùng
                     ingredient.CurrentStockLevel += model.Quantity;
                     ingredient.LastPurchasePrice = model.UnitPrice.Value;
                     ingredient.UpdatedAt = DateTime.Now;
                     break;
 
-                // --- Các case còn lại giữ nguyên ---
                 case InventoryTransactionType.AdjustmentIn:
                 case InventoryTransactionType.AdjustmentOut:
                     if (!model.BatchId.HasValue)
@@ -1575,7 +1727,7 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return Ok(resultData);
         }
 
-        // POST: /Admin/Inventory/GetInventoryTransactions
+        // Lấy dữ liệu cho bảng Lịch sử giao dịch
         [HttpPost]
         public async Task<IActionResult> GetInventoryTransactions()
         {
@@ -1605,9 +1757,9 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                                         .AsQueryable();
 
                 if (DateTime.TryParseExact(fromDateStr, "d/M/yyyy", _vnCulture, DateTimeStyles.None, out var fromDate))
-                { query = query.Where(it => it.TransactionDate >= fromDate.Date); } // Lấy từ đầu ngày
+                { query = query.Where(it => it.TransactionDate >= fromDate.Date); }
                 if (DateTime.TryParseExact(toDateStr, "d/M/yyyy", _vnCulture, DateTimeStyles.None, out var toDate))
-                { query = query.Where(it => it.TransactionDate < toDate.Date.AddDays(1)); } // Lấy đến cuối ngày
+                { query = query.Where(it => it.TransactionDate < toDate.Date.AddDays(1)); }
 
                 if (Enum.TryParse<InventoryTransactionType>(transactionTypeFilterStr, out var transactionType))
                 { query = query.Where(it => it.TransactionType == transactionType); }
@@ -1622,7 +1774,8 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                         (it.Supplier.Name != null && it.Supplier.Name.ToLower().Contains(generalSearchValue)) ||
                         (it.User.Name != null && it.User.Name.ToLower().Contains(generalSearchValue)) ||
                         (it.Notes != null && it.Notes.ToLower().Contains(generalSearchValue)) ||
-                        (it.Id.ToString().Contains(generalSearchValue)) // Tìm theo số phiếu
+                        (it.Id.ToString().Contains(generalSearchValue)) ||
+                        (it.VoucherCode != null && it.VoucherCode.ToLower().Contains(generalSearchValue)) // Thêm tìm kiếm theo Mã phiếu
                     );
                 }
 
@@ -1633,12 +1786,12 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     Expression<Func<InventoryTransaction, object>> keySelector = sortColumn switch
                     {
                         "transactiondate" => it => it.TransactionDate,
-                        "ingredientname" => it => it.Ingredient.Name, // Sắp xếp theo tên NVL
+                        "ingredientname" => it => it.Ingredient.Name,
                         "transactiontype" => it => it.TransactionType,
                         "quantitychanged" => it => it.QuantityChanged,
                         "unitprice" => it => it.UnitPrice ?? 0,
                         "totalprice" => it => it.TotalPrice ?? 0,
-                        "username" => it => it.User.Name, // Sắp xếp theo tên người dùng
+                        "username" => it => it.User.Name,
                         _ => it => it.Id
                     };
                     query = sortColumnDirection.Equals("desc", StringComparison.OrdinalIgnoreCase)
@@ -1660,11 +1813,12 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
                     TransactionType = it.TransactionType.ToString(),
                     TransactionTypeDisplay = GetTransactionTypeDisplayName(it.TransactionType),
                     it.QuantityChanged,
-                    UnitPrice = it.UnitPrice, // Gửi số thô
-                    TotalPrice = it.TotalPrice, // Gửi số thô
+                    UnitPrice = it.UnitPrice,
+                    TotalPrice = it.TotalPrice,
                     SupplierName = it.Supplier?.Name,
                     UserName = it.User?.Name ?? (it.UserId == null ? "Hệ thống" : "N/A"),
-                    Notes = it.Notes ?? ""
+                    Notes = it.Notes ?? "",
+                    VoucherCode = it.VoucherCode ?? "" // Thêm Mã phiếu để trả về cho DataTables
                 }).ToList();
 
                 int recordsTotal = await _context.InventoryTransactions.CountAsync();

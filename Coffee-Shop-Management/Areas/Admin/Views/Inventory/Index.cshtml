@@ -71,6 +71,13 @@
                     margin-right: 0.5rem;
                 }
 
+            /* --- Style cho card footer chứa pagination --- */
+            .card-inventory .card-footer {
+                background-color: #f8f9fa;
+                padding: 0.75rem 1rem;
+                border-top: 1px solid #e9ecef;
+            }
+
         /* --- Modal Styling --- */
         .modal-header {
             background-color: var(--primary-color);
@@ -164,15 +171,11 @@
         }
 
         /* --- Custom Pagination --- */
-        #customPaginationIngredients .pagination,
-        #customPaginationSuppliers .pagination,
-        #customPaginationTransactions .pagination {
+        .pagination {
             margin: 0;
         }
 
-        #customPaginationIngredients .page-link,
-        #customPaginationSuppliers .page-link,
-        #customPaginationTransactions .page-link {
+        .page-link {
             font-size: 0.85rem;
             padding: 0.4rem 0.75rem;
             color: var(--primary-color);
@@ -183,34 +186,26 @@
             transition: all 0.2s ease-in-out;
         }
 
-        #customPaginationIngredients .page-item.disabled .page-link,
-        #customPaginationSuppliers .page-item.disabled .page-link,
-        #customPaginationTransactions .page-item.disabled .page-link {
+        .page-item.disabled .page-link {
             color: #6c757d;
             background-color: #f8f9fa;
             border-color: #dee2e6;
         }
 
-        #customPaginationIngredients .page-item.active .page-link,
-        #customPaginationSuppliers .page-item.active .page-link,
-        #customPaginationTransactions .page-item.active .page-link {
+        .page-item.active .page-link {
             z-index: 3;
             color: #fff;
             background-color: var(--primary-color);
             border-color: var(--primary-color);
         }
 
-        #customPaginationIngredients .page-link:hover,
-        #customPaginationSuppliers .page-link:hover,
-        #customPaginationTransactions .page-link:hover {
+        .page-link:hover {
             background-color: var(--light-blue-bg);
             border-color: #dee2e6;
             color: var(--primary-color);
         }
 
-        #customPaginationIngredients .page-item.active .page-link:hover,
-        #customPaginationSuppliers .page-item.active .page-link:hover,
-        #customPaginationTransactions .page-item.active .page-link:hover {
+        .page-item.active .page-link:hover {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
             color: #fff;
@@ -227,26 +222,24 @@
             line-height: 1.5;
         }
 
-        /* Style cho Select2 multiple */
         .select2-container--bootstrap-5 .select2-selection--multiple {
             min-height: calc(1.5em + .75rem + 2px);
             font-size: 1rem;
-            /* padding: .375rem .75rem; */ /* Bỏ padding này để không bị lệch */
         }
 
             .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
-                padding-left: 0.5rem; /* Thêm padding để giống input thường */
+                padding-left: 0.5rem;
             }
 
             .select2-container--bootstrap-5 .select2-selection--multiple .select2-search__field {
-                margin-top: 0.2rem; /* Điều chỉnh vị trí con trỏ gõ */
+                margin-top: 0.2rem;
             }
 
             .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-                margin-top: calc(((.75rem + 2px) - 1.5em) / 2); /* Căn giữa các tag đã chọn */
+                margin-top: calc(((.75rem + 2px) - 1.5em) / 2);
                 margin-right: 0.375rem;
             }
 
@@ -260,24 +253,6 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb),0.25);
         }
-
-        /* --- Focus Styles --- */
-        .form-control:focus, .form-select:focus, .btn:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
-            outline: 0;
-        }
-
-        *:focus {
-            outline: none;
-        }
-
-        .form-control:focus-visible, .form-select:focus-visible, .btn:focus-visible, a:focus-visible {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
-            outline: 0;
-        }
-
 
         /* --- Custom Search Box for DataTables --- */
         .dt-search-controls {
@@ -319,9 +294,6 @@
                 min-width: 80px;
             }
 
-        .dt-search {
-        }
-
         /* Style cho table header */
         .table thead th {
             background-color: #f8f9fa;
@@ -338,82 +310,16 @@
             vertical-align: middle;
         }
 
-        /* Style cho card footer chứa pagination */
-        .card-inventory .card-footer {
-            background-color: #f8f9fa;
-            padding: 0.75rem 1rem;
-            border-top: 1px solid #e9ecef;
-        }
-
         .dt-no-wrap {
             white-space: nowrap;
         }
 
-        /* --- Cấu hình chung cho việc cắt ngắn văn bản nhiều dòng --- */
-        .dt-col-100-row-2,
-        .dt-col-110-row-2,
-        .dt-col-120-row-2,
-        .dt-col-180-row-2,
-        .dt-col-180-row-3 {
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: normal !important; /* Ghi đè nowrap của header nếu cần */
-            word-break: break-word;
-        }
-
-        .dt-col-100-row-2 {
-            min-width: 100px !important;
-            max-width: 100px !important;
-        }
-
-        .dt-col-110-row-2 {
-            min-width: 110px !important;
-            max-width: 110px !important;
-        }
-
-        .dt-col-120-row-2 {
-            min-width: 120px !important;
-            max-width: 120px !important;
-        }
-
-        .dt-col-180-row-2,
-        .dt-col-180-row-3 {
-            min-width: 180px !important;
-            max-width: 180px !important;
-        }
-
-        .dt-col-100-row-2,
-        .dt-col-110-row-2,
-        .dt-col-120-row-2,
-        .dt-col-180-row-2 {
-            -webkit-line-clamp: 2;
-        }
-
-        .dt-col-180-row-3 {
-            -webkit-line-clamp: 3;
-        }
-
-        /* Căn chỉnh nút xóa filter trong Lịch sử giao dịch */
-        .transaction-history-filters .btn-clear-filters {
-            margin-top: auto;
-            height: calc(1.5em + .75rem + 2px);
-        }
-
-        /* Style cho các nút chọn nhanh thời gian */
-        .time-shortcut-buttons .btn {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        /* Style cho modal báo cáo */
+        /* --- Style cho modal báo cáo */
         #inventoryReportModal .select2-container {
             width: 100% !important;
         }
 
-        /* === BẢNG MÀU MỚI CHO CÁC THẺ KPI === */
-        /* === CSS MỚI CHO CÁC THẺ KPI TRÔNG ĐẸP VÀ CÂN ĐỐI HƠN === */
+        /* === CSS MỚI CHO CÁC THẺ KPI === */
         .dashboard-kpi-card {
             transition: all 0.3s ease-in-out;
             border: none;
@@ -438,7 +344,7 @@
                 font-size: 1.8rem;
                 font-weight: 700;
                 color: #fff;
-                white-space: nowrap; 
+                white-space: nowrap;
             }
 
             .dashboard-kpi-card .kpi-icon {
@@ -449,11 +355,6 @@
                 opacity: 0.2;
                 transform: rotate(-15deg);
             }
-
-        /* CSS để thu nhỏ font chữ cho các thẻ KPI */
-        .kpi-value.kpi-value-medium {
-            font-size: 1.8rem; /* Cỡ chữ trung bình */
-        }
 
         .kpi-value.kpi-value-small {
             font-size: 1.5rem; /* Cỡ chữ nhỏ nhất */
@@ -503,7 +404,7 @@
             <button class="nav-link active" id="dashboard-tab-btn" data-bs-toggle="tab" data-bs-target="#dashboardTabPane" type="button" role="tab" aria-controls="dashboardTabPane" aria-selected="true"><i class="bi bi-bar-chart-line-fill me-1"></i>Tổng quan</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="ingredients-tab-btn" data-bs-toggle="tab" data-bs-target="#ingredientsTabPane" type="button" role="tab" aria-controls="ingredientsTabPane" aria-selected="true"><i class="bi bi-droplet-half me-1"></i>Nguyên vật liệu</button>
+            <button class="nav-link" id="ingredients-tab-btn" data-bs-toggle="tab" data-bs-target="#ingredientsTabPane" type="button" role="tab" aria-controls="ingredientsTabPane" aria-selected="false"><i class="bi bi-droplet-half me-1"></i>Nguyên vật liệu</button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="suppliers-tab-btn" data-bs-toggle="tab" data-bs-target="#suppliersTabPane" type="button" role="tab" aria-controls="suppliersTabPane" aria-selected="false"><i class="bi bi-truck me-1"></i>Nhà cung cấp</button>
@@ -517,7 +418,7 @@
     </ul>
 
     <div class="tab-content" id="inventoryTabsContent">
-        @* --- TAB DASHBOARD (PHIÊN BẢN HOÀN THIỆN VỚI GIAO DIỆN CHUYÊN NGHIỆP) --- *@
+        @* --- TAB DASHBOARD --- *@
         <div class="tab-pane fade show active" id="dashboardTabPane" role="tabpanel" aria-labelledby="dashboard-tab-btn">
 
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-4 mt-2">
@@ -634,6 +535,7 @@
                 </div>
             </div>
         </div>
+
         @* --- TAB NGUYÊN VẬT LIỆU --- *@
         <div class="tab-pane fade" id="ingredientsTabPane" role="tabpanel" aria-labelledby="ingredients-tab-btn">
             <div class="card card-inventory">
@@ -679,6 +581,19 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="dataTables_info_wrapper">
+                        <span id="ingredientsTableInfo"></span>
+                    </div>
+                    <nav>
+                        <ul class="pagination" id="customPaginationIngredients">
+                            <li class="page-item" id="ingredientsFirstPage"><a class="page-link" href="#">&laquo;</a></li>
+                            <li class="page-item" id="ingredientsPrevPage"><a class="page-link" href="#">&lt;</a></li>
+                            <li class="page-item" id="ingredientsNextPage"><a class="page-link" href="#">&gt;</a></li>
+                            <li class="page-item" id="ingredientsLastPage"><a class="page-link" href="#">&raquo;</a></li>
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -727,99 +642,96 @@
                         </table>
                     </div>
                 </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="dataTables_info_wrapper">
+                        <span id="suppliersTableInfo"></span>
+                    </div>
+                    <nav>
+                        <ul class="pagination" id="customPaginationSuppliers">
+                            <li class="page-item" id="suppliersFirstPage"><a class="page-link" href="#">&laquo;</a></li>
+                            <li class="page-item" id="suppliersPrevPage"><a class="page-link" href="#">&lt;</a></li>
+                            <li class="page-item" id="suppliersNextPage"><a class="page-link" href="#">&gt;</a></li>
+                            <li class="page-item" id="suppliersLastPage"><a class="page-link" href="#">&raquo;</a></li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
 
-        @* --- TAB TẠO PHIẾU KHO --- *@
+        @* --- TAB TẠO PHIẾU KHO (PHIÊN BẢN NÂNG CẤP) --- *@
         <div class="tab-pane fade" id="createTransactionTabPane" role="tabpanel" aria-labelledby="create-transaction-tab-btn">
-            <div class="card card-inventory">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="bi bi-file-earmark-plus me-2"></i>Tạo Phiếu Giao dịch Kho</h5>
-                </div>
-                <div class="card-body p-4">
-                    <form id="createTransactionForm">
+            <form id="createVoucherForm">
+                <div class="card card-inventory">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="bi bi-file-earmark-plus me-2"></i>Tạo Phiếu Giao dịch Kho</h5>
+                    </div>
+                    <div class="card-body p-4">
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-label-group">
-                                    <label for="transactionType" class="form-label">Loại giao dịch <span class="text-danger">*</span></label>
-                                    <select id="transactionType" name="TransactionType" class="form-select" required>
-                                        <option value="">-- Chọn loại giao dịch --</option>
-                                        <option value="InitialStock">Tồn kho ban đầu</option>
-                                        <option value="Purchase">Nhập mua hàng</option>
-                                        <option value="AdjustmentIn">Điều chỉnh tăng</option>
-                                        <option value="SaleConsumption">Xuất bán hàng (Thủ công)</option>
-                                        <option value="AdjustmentOut">Điều chỉnh giảm</option>
+                                    <label for="voucherTransactionType" class="form-label">Loại phiếu <span class="text-danger">*</span></label>
+                                    <select id="voucherTransactionType" name="TransactionType" class="form-select" required>
+                                        <option value="" disabled selected>-- Chọn loại phiếu --</option>
+                                        <optgroup label="Phiếu Nhập">
+                                            <option value="Purchase">Nhập Mua Hàng</option>
+                                            <option value="InitialStock">Nhập Tồn Kho Đầu Kỳ</option>
+                                            <option value="AdjustmentIn">Nhập Điều Chỉnh Tăng</option>
+                                        </optgroup>
+                                        <optgroup label="Phiếu Xuất">
+                                            <option value="SaleConsumption">Xuất Bán Hàng (Thủ công)</option>
+                                            <option value="AdjustmentOut">Xuất Điều Chỉnh Giảm (Hủy)</option>
+                                        </optgroup>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="voucherSupplierContainer" style="display:none;">
                                 <div class="form-label-group">
-                                    <label for="transactionIngredientId" class="form-label">Nguyên vật liệu <span class="text-danger">*</span></label>
-                                    <select id="transactionIngredientId" name="IngredientId" class="form-select select2-custom" required style="width:100%;">
-                                        <option value="">-- Tìm & chọn NVL --</option>
-                                    </select>
-                                    <small id="ingredientInfo" class="form-text fw-bold text-danger"></small>
+                                    <label for="voucherSupplierId" class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
+                                    <select id="voucherSupplierId" name="SupplierId" class="form-select select2-custom" style="width:100%;"></select>
                                 </div>
                             </div>
-
-                            <div class="col-md-4">
+                            <div class="col-md-8">
                                 <div class="form-label-group">
-                                    <label for="transactionDate" class="form-label">Ngày giao dịch</label>
-                                    <input type="text" id="transactionDate" name="TransactionDate" class="form-control" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-label-group">
-                                    <label for="transactionQuantity" class="form-label">Số lượng <span class="text-danger">*</span></label>
-                                    <input type="number" id="transactionQuantity" name="Quantity" class="form-control" step="0.001" min="0.001" required>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4" id="transactionUnitPriceContainer">
-                                <div class="form-label-group">
-                                    <label for="transactionUnitPrice" class="form-label" id="transactionUnitPriceLabel">Đơn giá <span class="text-danger">*</span></label>
-                                    <input type="number" id="transactionUnitPrice" name="UnitPrice" class="form-control" step="100" min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-4" id="transactionBatchContainer" style="display:none;">
-                                <div class="form-label-group">
-                                    <label for="transactionBatchId" class="form-label">Chọn lô hàng<span class="text-danger">*</span></label>
-                                    <select id="transactionBatchId" name="BatchId" class="form-select select2-custom" style="width:100%;"></select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4" id="transactionTotalPriceContainer">
-                                <div class="form-label-group">
-                                    <label for="transactionTotalPrice" class="form-label">Thành tiền</label>
-                                    <input type="text" id="transactionTotalPrice" name="TotalPrice" class="form-control" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4" id="transactionSupplierContainer" style="display:none;">
-                                <div class="form-label-group">
-                                    <label for="transactionSupplierId" class="form-label">Nhà cung cấp <span class="text-danger">*</span></label>
-                                    <select id="transactionSupplierId" name="SupplierId" class="form-select select2-custom" style="width:100%;">
-                                        <option value="">-- Tìm & chọn NCC --</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <div class="form-label-group">
-                                    <label for="transactionNotes" class="form-label">Ghi chú</label>
-                                    <textarea id="transactionNotes" name="Notes" class="form-control" rows="3"></textarea>
+                                    <label for="voucherNotes" class="form-label">Ghi chú chung</label>
+                                    <textarea id="voucherNotes" name="Notes" class="form-control" rows="1" placeholder="VD: Nhập hàng đợt 1 tháng 6..."></textarea>
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i>Lưu Phiếu</button>
-                            <button type="reset" class="btn btn-outline-secondary ms-2"><i class="bi bi-arrow-counterclockwise me-1"></i>Làm lại</button>
+                        <hr />
+                        <h6 class="mb-3">Chi tiết phiếu</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="voucher-items-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;">STT</th>
+                                        <th style="width: 30%;">Nguyên vật liệu</th>
+                                        <th style="width: 25%;" id="batchColumnHeader" class="d-none">Lô hàng xuất</th>
+                                        <th style="width: 15%;">Số lượng</th>
+                                        <th style="width: 15%;">Đơn giá</th>
+                                        <th style="width: 15%;">Thành tiền</th>
+                                        <th style="width: 5%;" class="text-center">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @* Các dòng sẽ được thêm bằng JavaScript *@
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="6">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-voucher-item" disabled>
+                                                <i class="bi bi-plus-circle me-1"></i>Thêm dòng
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
-                    </form>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-save me-1"></i>Lưu Phiếu</button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         @* --- TAB LỊCH SỬ GIAO DỊCH --- *@
@@ -865,7 +777,7 @@
                     <div class="dt-search-controls">
                         <div class="dt-search-input-group">
                             <label for="transactionHistorySearch" class="form-label">Tìm kiếm chung</label>
-                            <input type="search" class="form-control dt-search" id="transactionHistorySearch" placeholder="NVL, NCC, người tạo, ghi chú, số phiếu...">
+                            <input type="search" class="form-control dt-search" id="transactionHistorySearch" placeholder="NVL, NCC, người tạo, ghi chú, mã phiếu...">
                         </div>
                         <div class="dt-controls-group">
                             <div class="dt-length-select-group">
@@ -886,24 +798,38 @@
                     <div class="table-responsive position-relative">
                         <div class="dataTables_processing_custom" id="transactionsHistoryTable_processing">Đang xử lý...</div>
                         <table id="transactionsHistoryTable" class="table table-hover" style="width:100%">
-                            <thead>
+                            <thead class="table-light">
                                 <tr>
-                                    <th style="width:40px;">STT</th>
-                                    <th>Ngày</th>
-                                    <th>Nguyên vật liệu</th>
-                                    <th>Loại GD</th>
-                                    <th class="text-end">Số lượng</th>
-                                    <th>ĐVT</th>
-                                    <th class="text-end">Đơn giá</th>
-                                    <th class="text-end">Thành tiền</th>
-                                    <th>NCC</th>
-                                    <th>Người tạo</th>
-                                    <th>Ghi chú</th>
+                                    <th style="width: 40px;">STT</th>
+                                    <th style="min-width: 140px;">Ngày</th>
+                                    <th style="min-width: 130px;">Mã Phiếu</th>
+                                    <th style="min-width: 180px;">Nguyên vật liệu</th>
+                                    <th style="min-width: 160px;">Loại GD</th>
+                                    <th class="text-end" style="min-width: 90px;">Số lượng</th>
+                                    <th style="min-width: 50px;">ĐVT</th>
+                                    <th class="text-end" style="min-width: 100px;">Đơn giá</th>
+                                    <th class="text-end" style="min-width: 110px;">Thành tiền</th>
+                                    <th style="min-width: 150px;">NCC</th>
+                                    <th style="min-width: 140px;">Người tạo</th>
+                                    <th style="min-width: 200px;">Ghi chú</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
                     </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="dataTables_info_wrapper">
+                        <span id="transactionsHistoryTableInfo"></span>
+                    </div>
+                    <nav>
+                        <ul class="pagination" id="customPaginationTransactions">
+                            <li class="page-item" id="transactionsFirstPage"><a class="page-link" href="#">&laquo;</a></li>
+                            <li class="page-item" id="transactionsPrevPage"><a class="page-link" href="#">&lt;</a></li>
+                            <li class="page-item" id="transactionsNextPage"><a class="page-link" href="#">&gt;</a></li>
+                            <li class="page-item" id="transactionsLastPage"><a class="page-link" href="#">&raquo;</a></li>
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -1034,7 +960,7 @@
                                 <label for="reportIngredientIds" class="form-label">Chọn Nguyên vật liệu</label>
                                 <select id="reportIngredientIds" name="IngredientIds" class="form-select select2-report" multiple="multiple" data-placeholder="-- Chọn một hoặc nhiều NVL (để trống là tất cả) --">
                                     <option></option>
-                                </select>                                
+                                </select>
                                 <div class="mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearAllIngredients">Bỏ chọn tất cả</button>
                                 </div>
@@ -1517,59 +1443,102 @@
                 setupCustomPaginationEvents(suppliersTable, '#customPaginationSuppliers');
             } catch (e) { console.error("Lỗi khởi tạo Suppliers DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Nhà cung cấp."); }
 
+            // Tìm đến đoạn script khởi tạo DataTables
             try {
-                transactionsHistoryTable = $('#transactionsHistoryTable').DataTable({
-                    language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
-                    processing: false, serverSide: true, searching: false, lengthChange: false,
-                    paging: true, pageLength: parseInt($('#transactionsHistoryTableLength').val()) || 10, info: false,
-                    ajax: {
-                        url: '@Url.Action("GetInventoryTransactions", "Inventory")', type: 'POST',
-                        data: function (d) {
-                            d.length = parseInt($('#transactionsHistoryTableLength').val()) || 10;
-                            d.fromDate = $('#historyFromDate').val();
-                            d.toDate = $('#historyToDate').val();
-                            d.transactionTypeFilter = $('#historyTransactionTypeFilter').val();
-                            d.ingredientFilterId = $('#historyIngredientFilterId').val();
-                            d.search.value = $('#transactionHistorySearch').val();
-                            return d;
-                        },
-                        beforeSend: function () { $('#transactionsHistoryTable_processing').show(); },
-                        complete: function () { $('#transactionsHistoryTable_processing').hide(); },
-                        error: function (xhr) { handleAjaxError(xhr, 'tải lịch sử giao dịch'); $('#transactionsHistoryTable_processing').hide(); }
-                    },
-                    columns: [
-                        { data: null, name: "STT", orderable: false, searchable: false, className: "text-center", render: function (data, type, row, meta) { return meta.settings._iDisplayStart + meta.row + 1; } },
-                        { data: 'transactionDate', name: 'TransactionDate' },
-                        { data: 'ingredientName', name: 'IngredientName', render: function (data, type, row) { return `<span class="dt-col-120-row-2" title="${row.ingredientName}">${data || '-'}</span>` } },
-                        { data: 'transactionTypeDisplay', name: 'TransactionType', render: function (data, type, row) { return `<span class="dt-col-120-row-2" title="${row.transactionTypeDisplay}">${data || '-'}</span>` } },
-                        { data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) { return formatVnDynamicDecimal(data, 4); } },
-                        { data: 'ingredientUnit', name: 'IngredientUnit', orderable: false, searchable: false, render: function (data) { return data || ''; } },
-                        { data: 'unitPrice', name: 'UnitPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
-                        { data: 'totalPrice', name: 'TotalPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
-                        { data: 'supplierName', name: 'SupplierName', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-120-row-2" title="${row.supplierName}">${data}</span>` : '-'; } },
-                        { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data ? `<span class="dt-col-120-row-2" title="">${data}</span>` : '-'; } },
-                        { data: 'notes', name: 'Notes', orderable: false, render: function (data, type, row) { return data ? `<span class="dt-col-180-row-3" title="${row.notes}">${data}</span>` : '-'; } }
-                    ],
-                    columnDefs: [{ targets: [0], width: '40px' }, { targets: [10], width: '150px' }],
-                    order: [[1, 'desc']], autoWidth: false, dom: 'rt',
-                    drawCallback: function (settings) {
-                        updateCustomPagination(this.api(), '#customPaginationTransactions', '#transactionsHistoryTableInfo');
-                        var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#transactionsHistoryTable [title]'));
-                        tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
-                            var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
-                            if (existingTooltip) {
-                                existingTooltip.dispose();
-                            }
-                            new bootstrap.Tooltip(tooltipTriggerEl);
-                        });
+    transactionsHistoryTable = $('#transactionsHistoryTable').DataTable({
+        language: { url: '//cdn.datatables.net/plug-ins/2.0.7/i18n/vi.json', processing: "" },
+        processing: false, serverSide: true, searching: false, lengthChange: false,
+        paging: true, pageLength: parseInt($('#transactionsHistoryTableLength').val()) || 10, info: false,
+        ajax: {
+            url: '@Url.Action("GetInventoryTransactions", "Inventory")', type: 'POST',
+            data: function (d) {
+                d.length = parseInt($('#transactionsHistoryTableLength').val()) || 10;
+                d.fromDate = $('#historyFromDate').val();
+                d.toDate = $('#historyToDate').val();
+                d.transactionTypeFilter = $('#historyTransactionTypeFilter').val();
+                d.ingredientFilterId = $('#historyIngredientFilterId').val();
+                d.search.value = $('#transactionHistorySearch').val();
+                return d;
+            },
+            beforeSend: function () { $('#transactionsHistoryTable_processing').show(); },
+            complete: function () { $('#transactionsHistoryTable_processing').hide(); },
+            error: function (xhr) { handleAjaxError(xhr, 'tải lịch sử giao dịch'); $('#transactionsHistoryTable_processing').hide(); }
+        },
+        columns: [
+            { data: null, name: "STT", orderable: false, searchable: false, className: "text-center", render: function (data, type, row, meta) { return meta.settings._iDisplayStart + meta.row + 1; } },
+            { data: 'transactionDate', name: 'TransactionDate' },
+            {
+                data: 'voucherCode', name: 'VoucherCode', orderable: false, render: function (data, type, row) {
+                    return data ? `<span class="badge bg-secondary-subtle text-secondary-emphasis">${data}</span>` : '-';
+                }
+            },
+            { data: 'ingredientName', name: 'IngredientName', render: function (data) { return data || '-'; } },
+            {
+                data: 'transactionTypeDisplay', name: 'TransactionType', render: function (data, type, row) {
+                    let badgeClass = 'text-bg-secondary';
+                    if (row.transactionType === 'Purchase' || row.transactionType === 'InitialStock' || row.transactionType === 'AdjustmentIn') {
+                        badgeClass = 'text-bg-success';
+                    } else if (row.transactionType === 'SaleConsumption' || row.transactionType === 'AdjustmentOut') {
+                        badgeClass = 'text-bg-danger';
                     }
-                });
-                $('#transactionsHistoryTableLength').on('change', function () { transactionsHistoryTable.page.len(parseInt($(this).val()) || 10).draw(); });
-                $('#historyFromDate, #historyToDate, #historyTransactionTypeFilter, #historyIngredientFilterId').on('change', function () { transactionsHistoryTable.draw(); });
-                $('#transactionHistorySearch').on('keyup', debounce(function () { transactionsHistoryTable.search($(this).val()).draw(); }, 350));
-                setupCustomPaginationEvents(transactionsHistoryTable, '#customPaginationTransactions');
+                    return `<span class="badge ${badgeClass}">${data}</span>`;
+                }
+            },
+            {
+                data: 'quantityChanged', name: 'QuantityChanged', className: 'text-end', render: function (data) {
+                    if (data > 0) {
+                        return `<span class="fw-bold text-success">+${formatVnDynamicDecimal(data, 4)}</span>`;
+                    } else if (data < 0) {
+                        return `<span class="fw-bold text-danger">${formatVnDynamicDecimal(data, 4)}</span>`;
+                    }
+                    return '0';
+                }
+            },
+            { data: 'ingredientUnit', name: 'IngredientUnit', orderable: false, searchable: false },
+            { data: 'unitPrice', name: 'UnitPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
+            { data: 'totalPrice', name: 'TotalPrice', className: 'text-end', render: function (data) { return formatVnCurrency(data); } },
 
-            } catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
+            // ----- THAY ĐỔI: Thêm className để căn giữa cột NCC -----
+            { data: 'supplierName', name: 'SupplierName', orderable: false, className: 'text-center', render: function (data) { return data || '-'; } },
+
+            { data: 'userName', name: 'UserName', orderable: false, render: function (data) { return data ? `<span class="dt-col-120-row-2" title="${data}">${data}</span>` : '-'; } },
+            {
+                data: 'notes', name: 'Notes', orderable: false, render: function (data) {
+                    if (!data) return '-';
+                    const maxLength = 50;
+                    if (data.length > maxLength) {
+                        return `<span title="${data}">${data.substring(0, maxLength)}...</span>`;
+                    }
+                    return data;
+                }
+            }
+        ],
+        // Xóa columnDefs cũ để áp dụng min-width từ a
+        order: [[1, 'desc']], 
+        autoWidth: false, 
+        dom: 'rt',
+        drawCallback: function (settings) {
+            updateCustomPagination(this.api(), '#customPaginationTransactions', '#transactionsHistoryTableInfo');
+            // Kích hoạt lại tooltip cho các ghi chú dài
+            var tooltipTriggerElements = [].slice.call(document.querySelectorAll('#transactionsHistoryTable [title]'));
+            tooltipTriggerElements.forEach(function (tooltipTriggerEl) {
+                var existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    });
+    
+    // Các event listener giữ nguyên
+    $('#transactionsHistoryTableLength').on('change', function () { transactionsHistoryTable.page.len(parseInt($(this).val()) || 10).draw(); });
+    $('#historyFromDate, #historyToDate, #historyTransactionTypeFilter, #historyIngredientFilterId').on('change', function () { transactionsHistoryTable.draw(); });
+    $('#transactionHistorySearch').on('keyup', debounce(function () { transactionsHistoryTable.search($(this).val()).draw(); }, 350));
+    setupCustomPaginationEvents(transactionsHistoryTable, '#customPaginationTransactions');
+
+} catch (e) { console.error("Lỗi khởi tạo Transactions History DataTable:", e); showErrorAlert("Lỗi Table", "Không thể khởi tạo bảng Lịch sử Giao dịch."); }
+
 
             // ============== LOGIC CRUD NGUYÊN VẬT LIỆU ==============
             $('#btnAddIngredient').on('click', function () {
@@ -2510,6 +2479,294 @@
             loadAnnualProfitChart(currentYear);
             loadWasteData(currentYear);
             loadAnnualProfitSummaryChart();
+
+            // ========================================================
+            // === LOGIC CHO TAB TẠO PHIẾU KHO (PHIÊN BẢN NÂNG CẤP) ===
+            // ========================================================
+
+            const $voucherForm = $('#createVoucherForm');
+            const $voucherTypeSelect = $('#voucherTransactionType');
+            const $voucherItemsTbody = $('#voucher-items-table tbody');
+            const $voucherSupplierContainer = $('#voucherSupplierContainer');
+            const $batchColumnHeader = $('#batchColumnHeader');
+
+            // 1. Hàm tạo một dòng mới trong bảng chi tiết phiếu
+            function createNewVoucherRow() {
+                const rowIndex = $voucherItemsTbody.find('tr').length;
+                const isBatchSelectionNeeded = ['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val());
+
+                // Cập nhật visibility của header cột Lô hàng
+                if (isBatchSelectionNeeded) {
+                    $batchColumnHeader.removeClass('d-none');
+                } else {
+                    $batchColumnHeader.addClass('d-none');
+                }
+
+                const newRow = `
+                <tr class="voucher-item-row" data-index="${rowIndex}">
+                    <td class="text-center row-number align-middle">${rowIndex + 1}</td>
+                    <td>
+                        <select class="form-control select2-voucher-ingredient" name="Details[${rowIndex}].IngredientId" required></select>
+                        <div class="invalid-feedback"></div>
+                    </td>
+                    <td class="batch-cell" ${isBatchSelectionNeeded ? '' : 'style="display:none;"'}>
+                        <select class="form-control select2-voucher-batch" name="Details[${rowIndex}].BatchId" disabled>
+                            <option value="" selected>Vui lòng chọn NVL trước</option>
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control quantity-input" name="Details[${rowIndex}].Quantity" required step="0.01" min="0.01" placeholder="Nhập SL">
+                         <div class="invalid-feedback"></div>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control price-input" name="Details[${rowIndex}].UnitPrice" required step="100" min="0" placeholder="Nhập đơn giá">
+                         <div class="invalid-feedback"></div>
+                    </td>
+                    <td class="text-end align-middle">
+                        <span class="line-total-display fw-bold">0</span>
+                    </td>
+                    <td class="text-center align-middle">
+                        <button type="button" class="btn btn-sm btn-danger btn-delete-row" title="Xóa dòng"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`;
+
+                $voucherItemsTbody.append(newRow);
+                const $lastRow = $voucherItemsTbody.find('tr').last();
+
+                $lastRow.find('.select2-voucher-ingredient').select2({
+                    theme: "bootstrap-5",
+                    placeholder: 'Tìm & chọn NVL',
+                    width: '100%',
+                    dropdownParent: $voucherForm,
+                    ajax: {
+                        url: '@Url.Action("GetIngredientsForDropdown", "Inventory")',
+                        dataType: 'json',
+                        delay: 250,
+                        data: p => ({ searchTerm: p.term }),
+                        processResults: d => ({ results: d.map(i => ({ id: i.id, text: `${i.text} (Tồn: ${formatVnDynamicDecimal(i.currentStock, 3)} ${i.unit})` })) }),
+                        cache: true
+                    }
+                }).on('select2:select', function (e) {
+                    const ingredientId = $(this).val();
+                    if (isBatchSelectionNeeded) {
+                        loadBatchesForVoucherRow($(this).closest('tr'), ingredientId);
+                    }
+                });
+
+                $('#voucherSupplierId').select2({
+                    theme: "bootstrap-5",
+                    placeholder: 'Tìm & chọn nhà cung cấp',
+                    width: '100%',
+                    dropdownParent: $voucherForm,
+                    ajax: {
+                        url: '@Url.Action("GetSuppliersForDropdown", "Inventory")',
+                        dataType: 'json',
+                        delay: 250,
+                        data: p => ({ searchTerm: p.term }),
+                        processResults: d => ({ results: d })
+                    }
+                });
+
+                // Cập nhật colspan cho tfoot
+                const colspan = isBatchSelectionNeeded ? 7 : 6;
+                $('#add-voucher-item').closest('td').attr('colspan', colspan);
+            }
+            // 2. Hàm tải danh sách lô hàng cho một dòng
+            function loadBatchesForVoucherRow($row, ingredientId) {
+                const $batchSelect = $row.find('.select2-voucher-batch');
+                $batchSelect.empty().prop('disabled', true).append('<option>Đang tải...</option>');
+
+                if (!ingredientId) return;
+
+                $.ajax({
+                    url: `@Url.Action("GetBatchesForIngredient", "Inventory")?ingredientId=${ingredientId}`,
+                    type: 'GET',
+                    success: function (batches) {
+                        $batchSelect.empty().prop('disabled', false);
+                        if (batches && batches.length > 0) {
+                            $batchSelect.append('<option value="" selected disabled>-- Chọn lô --</option>');
+                            batches.forEach(b => {
+                                $batchSelect.append(`<option value="${b.id}" data-price="${b.price}">${b.text}</option>`);
+                            });
+                        } else {
+                            $batchSelect.append('<option value="">Hết hàng</option>');
+                        }
+                    },
+                    error: function () {
+                        $batchSelect.empty().append('<option value="">Lỗi tải lô</option>');
+                    }
+                });
+            }
+
+
+            // 3. Hàm cập nhật lại giao diện dựa trên loại phiếu
+            function updateVoucherUI() {
+                const type = $voucherTypeSelect.val();
+                $voucherItemsTbody.empty();
+
+                // Mặc định ẩn các thành phần không dùng chung
+                $voucherSupplierContainer.hide();
+                $batchColumnHeader.addClass('d-none');
+
+                let isBatchSelectionNeeded = false;
+
+                // ----- THAY ĐỔI: Bật/tắt nút "Thêm dòng" -----
+                if (type) {
+                    $('#add-voucher-item').prop('disabled', false); // Kích hoạt nút
+                } else {
+                    $('#add-voucher-item').prop('disabled', true); // Vô hiệu hóa nút
+                    return; // Dừng hàm nếu chưa chọn loại phiếu
+                }
+
+                switch (type) {
+                    case 'Purchase':
+                        $voucherSupplierContainer.show();
+                        break;
+                    case 'InitialStock':
+                        break;
+                    case 'SaleConsumption':
+                    case 'AdjustmentIn':
+                    case 'AdjustmentOut':
+                        isBatchSelectionNeeded = true;
+                        $batchColumnHeader.removeClass('d-none');
+                        break;
+                }
+
+                const colspan = isBatchSelectionNeeded ? 7 : 6;
+                $('#add-voucher-item').closest('td').attr('colspan', colspan);
+
+                createNewVoucherRow();
+            }
+            // 4. Các sự kiện
+            $('#add-voucher-item').on('click', createNewVoucherRow);
+
+            $voucherItemsTbody.on('click', '.btn-delete-row', function () {
+                $(this).closest('tr').remove();
+                const isBatchSelectionNeeded = ['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val());
+                const colspan = isBatchSelectionNeeded ? 7 : 6;
+                $('#add-voucher-item').closest('td').attr('colspan', colspan);
+
+                $voucherItemsTbody.find('tr').each(function (index, row) {
+                    $(row).find('.row-number').text(index + 1);
+                    $(row).attr('data-index', index);
+                    $(row).find('[name^="Details"]').each(function () {
+                        let newName = $(this).attr('name').replace(/\[\d+\]/, `[${index}]`);
+                        $(this).attr('name', newName);
+                    });
+                });
+            });
+
+            $voucherTypeSelect.on('change', updateVoucherUI);
+
+            $voucherItemsTbody.on('input', '.quantity-input, .price-input', function () {
+                const $row = $(this).closest('tr');
+                const quantity = parseFloat($row.find('.quantity-input').val()) || 0;
+                const price = parseFloat($row.find('.price-input').val()) || 0;
+                $row.find('.line-total-display').text(formatVnCurrency(quantity * price, false));
+            });
+
+            $voucherItemsTbody.on('change', '.select2-voucher-batch', function () {
+                const type = $voucherTypeSelect.val();
+                const $row = $(this).closest('tr');
+                const price = $(this).find('option:selected').data('price') || 0;
+                const $priceInput = $row.find('.price-input');
+
+                if (type === 'AdjustmentOut' || type === 'AdjustmentIn') {
+                    $priceInput.val(price).prop('readonly', true).attr('placeholder', 'Giá vốn (từ lô)');
+                } else if (type === 'SaleConsumption') {
+                    $priceInput.prop('readonly', false).attr('placeholder', 'Giá bán');
+                    // Có thể set giá bán gợi ý ở đây nếu muốn
+                } else {
+                    $priceInput.prop('readonly', false).attr('placeholder', 'Giá nhập');
+                }
+                $priceInput.trigger('input');
+            });
+
+
+            // 5. Xử lý Submit Form
+            $voucherForm.on('submit', function (e) {
+                e.preventDefault();
+
+                const voucherData = {
+                    TransactionType: $voucherTypeSelect.val(),
+                    SupplierId: $voucherTypeSelect.val() === 'Purchase' ? $('#voucherSupplierId').val() : null,
+                    Notes: $('#voucherNotes').val(),
+                    Details: []
+                };
+
+                let isValid = true;
+                if (!voucherData.TransactionType) {
+                    showErrorAlert("Lỗi", "Vui lòng chọn loại phiếu.");
+                    return;
+                }
+                if (voucherData.TransactionType === 'Purchase' && !voucherData.SupplierId) {
+                    showErrorAlert("Lỗi", "Vui lòng chọn nhà cung cấp cho phiếu nhập hàng.");
+                    return;
+                }
+
+                $('.voucher-item-row').each(function () {
+                    const $row = $(this);
+                    const detail = {
+                        IngredientId: $row.find('.select2-voucher-ingredient').val(),
+                        Quantity: parseFloat($row.find('.quantity-input').val()),
+                        UnitPrice: parseFloat($row.find('.price-input').val()),
+                        BatchId: $row.find('.select2-voucher-batch').val() ? parseInt($row.find('.select2-voucher-batch').val()) : null
+                    };
+
+                    if (!detail.IngredientId) {
+                        showErrorAlert('Lỗi', `Vui lòng chọn nguyên vật liệu cho dòng ${$row.data('index') + 1}.`);
+                        isValid = false; return false;
+                    }
+                    if (isNaN(detail.Quantity) || detail.Quantity <= 0) {
+                        showErrorAlert('Lỗi', `Vui lòng nhập số lượng hợp lệ cho dòng ${$row.data('index') + 1}.`);
+                        isValid = false; return false;
+                    }
+                    if (isNaN(detail.UnitPrice) || detail.UnitPrice < 0) {
+                        showErrorAlert('Lỗi', `Vui lòng nhập đơn giá hợp lệ cho dòng ${$row.data('index') + 1}.`);
+                        isValid = false; return false;
+                    }
+                    if (['AdjustmentOut', 'AdjustmentIn', 'SaleConsumption'].includes($voucherTypeSelect.val()) && !detail.BatchId) {
+                        showErrorAlert('Lỗi', `Vui lòng chọn lô hàng cho dòng ${$row.data('index') + 1}.`);
+                        isValid = false; return false;
+                    }
+
+                    voucherData.Details.push(detail);
+                });
+
+                if (!isValid || voucherData.Details.length === 0) {
+                    if (isValid && voucherData.Details.length === 0) showErrorAlert('Lỗi', 'Phiếu phải có ít nhất một dòng chi tiết.');
+                    return;
+                }
+
+                showLoading('#createVoucherForm');
+                $.ajax({
+                    url: '@Url.Action("CreateVoucher", "Inventory")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(voucherData),
+                    success: function (response) {
+                        hideLoading('#createVoucherForm');
+                        if (response.success) {
+                            showSuccessToast(response.message);
+                            $voucherForm[0].reset();
+                            $('#voucherSupplierId').val(null).trigger('change');
+                            $voucherTypeSelect.val('').trigger('change');
+                            if (transactionsHistoryTable) transactionsHistoryTable.draw();
+                            if (ingredientsTable) ingredientsTable.draw(false);
+                        } else {
+                            showErrorAlert('Lỗi', response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        hideLoading('#createVoucherForm');
+                        handleAjaxError(xhr, 'tạo phiếu kho');
+                    }
+                });
+            });
+
+            // Khởi tạo UI lần đầu khi tải trang
+            updateVoucherUI();
         });
     </script>
 }

@@ -374,6 +374,10 @@ namespace Coffee_Shop_Management.Models
             [ForeignKey("UserId")]
             public virtual AppUser? User { get; set; }
 
+
+            [MaxLength(50)] 
+            public string? VoucherCode { get; set; } // Mã phiếu để nhóm các giao dịch
+
             [MaxLength(500)]
             public string? Notes { get; set; } // Ghi chú (vd: "Hủy do bể vỡ", "Kiểm kê ngày X")
 
