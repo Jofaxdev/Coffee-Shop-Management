@@ -1,1504 +1,445 @@
-﻿@* File: Areas/Admin/Views/AreaTable/Index.cshtml *@
+﻿@using System.Security.Claims
+
 @{
     ViewData["Title"] = "Quản lý Khu vực & Bàn";
 }
 
-<div class="container-fluid">
-    @Html.AntiForgeryToken() @* Add token once for all AJAX calls *@
+<div id="audio-activation-overlay">
+    <div class="content">
+        <i class="fas fa-volume-up fa-3x"></i>
+        <p>Nhấp vào đây để bật âm thanh cho các yêu cầu mới.</p>
+    </div>
+</div>
 
-    @* --- Section: Quản lý Khu vực --- *@
-    <div class="mb-5"> @* Add margin between sections *@
-        <h3 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Quản lý Khu vực</h3>
 
-        @* --- Hàng điều khiển cho Khu vực --- *@
-        <div class="row mb-3 gy-2 align-items-center">
-            @* Nút Thêm mới Khu vực *@
-            <div class="col-12 col-sm-auto mb-2 mb-md-0">
-                <button id="showAddAreaModalBtn" class="btn btn-success shadow-sm me-2">
-                    <i class="fas fa-plus"></i> Thêm Khu vực
-                </button>
+<div class="container-fluid" id="pageContainer">
+    @Html.AntiForgeryToken()
+
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h4 class="mb-0 card-title fw-semibold">Khu vực & Bàn</h4>
+        <div class="ms-auto d-flex gap-2">
+            <button id="showAddAreaModalBtn" class="btn btn-success" title="Thêm khu vực mới">
+                <i class="fas fa-plus me-1"></i>
+                <span class="d-none d-md-inline">Thêm Khu vực</span>
+            </button>
+            <button id="showAddTableModalBtn" class="btn btn-primary" title="Thêm bàn mới" style="display: none;">
+                <i class="fas fa-plus me-1"></i>
+                <span class="d-none d-md-inline">Thêm Bàn</span>
+            </button>
+            <button id="sortModeBtn" class="btn btn-info" title="Bật/Tắt chế độ sắp xếp">
+                <i class="fas fa-sort me-1"></i>
+                <span class="d-none d-md-inline">Sắp xếp</span>
+            </button>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-12 col-lg-4 col-xl-3 mb-4 mb-lg-0">
+            <div class="card shadow-sm h-100" id="areaCard">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 card-title fw-semibold"><i class="fas fa-map-marked-alt me-2 text-primary"></i>Danh sách Khu vực</h5>
+                </div>
+                <div class="card-body p-2">
+                    <div id="areaList" class="list-group list-group-flush">
+                    </div>
+                </div>
+                <div id="areaFooter" class="card-footer text-center text-muted small bg-light edit-mode-item">
+                    Kéo <i class="fas fa-grip-vertical"></i> để sắp xếp hoặc kéo bàn vào đây
+                </div>
             </div>
+        </div>
 
-            @* Bộ lọc cho Khu vực *@
-            <div class="col-12 col-sm">
-                <div class="row gx-2 gy-2 justify-content-end">
-                    <div class="col-12 col-md-5 col-lg-4">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="areaSearch" class="form-control" placeholder="Tìm theo tên, mô tả...">
+        <div class="col-12 col-lg-8 col-xl-9">
+            <div class="card shadow-sm h-100" id="tableCard">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 id="tableListHeader" class="mb-0 card-title fw-semibold text-muted">
+                        <i class="fas fa-columns me-2"></i>Bàn
+                    </h5>
+                </div>
+                <div class="card-body bg-light" id="tableGridContainer">
+                    <div id="tableDisplayArea">
+                        <div id="tableGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5 g-4 d-none d-lg-flex"></div>
+                        <div id="tableList" class="list-group d-lg-none"></div>
+                        <div id="tableEmptyState" class="empty-state-container" style="display: block;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-arrow-left-circle mb-3" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-4.5-.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z" /></svg>
+                            <h5>Hãy chọn một khu vực để xem bàn</h5>
                         </div>
                     </div>
-                    <div class="col-6 col-md-auto">
-                         <div class="input-group">
-                            <span class="input-group-text">Hiện</span>
-                            <select id="areaPageLength" class="form-select" style="max-width: 80px;">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                         </div>
-                    </div>
-                     <div class="col-6 col-md-auto">
-                        <button id="resetAreaFilterBtn" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-undo"></i> Tải lại
-                        </button>
-                    </div>
+                </div>
+                <div id="tableGridFooter" class="card-footer text-center text-muted small bg-light edit-mode-item">
+                    Kéo thả để sắp xếp
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        @* --- Bảng DataTable cho Khu vực --- *@
-        <div class="card shadow-sm">
-            <div class="card-header bg-light py-2">
-                <h5 class="mb-0 card-title">Danh sách Khu vực</h5>
-            </div>
-            <div class="card-body" style="padding: 0;">
-                <div class="table-responsive position-relative" id="areaTableContainer">
-                    <table id="areaTable" class="table table-hover table-bordered" style="width:100%">
-                        <thead class="thead-light">
-                            <tr>
-                                <th style="width: 5%;">STT</th>
-                                <th style="width: 25%;" data-name="Name">Tên Khu vực</th>
-                                <th style="width: 30%;" data-name="Description">Mô tả</th>
-                                <th style="width: 10%;" data-name="IsActive">Trạng thái</th>
-                                <th style="width: 10%;" data-name="TableCount">Số bàn</th>
-                                <th style="width: 10%;" data-name="CreatedAt">Ngày tạo</th>
-                                <th style="width: 10%;" data-name="UpdatedAt">Ngày sửa</th>
-                                <th style="width: 10%;" data-orderable="false">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            @* --- Phân trang & Thông tin cho Khu vực --- *@
-            <div class="card-footer bg-light py-2">
-                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                    <span id="areaPageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
-                    <nav aria-label="Area table navigation" class="mt-2 mt-md-0">
-                        <ul class="pagination pagination-sm mb-0 justify-content-center" id="areaPagination">
-                            <li class="page-item" id="areaFirst"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item" id="areaPrevious"><a class="page-link" href="#">&lt;</a></li>
-                            @* Page numbers here *@
-                            <li class="page-item" id="areaNext"><a class="page-link" href="#">&gt;</a></li>
-                            <li class="page-item" id="areaLast"><a class="page-link" href="#">&raquo;</a></li>
-                        </ul>
-                    </nav>
-                 </div>
-            </div>
-        </div>
-    </div> @* --- Hết Section Khu vực --- *@
-
-
-    <hr class="my-5"> @* Separator *@
-
-
-    @* --- Section: Quản lý Bàn --- *@
-    <div class="mb-4">
-         <h3 class="mb-3"><i class="fas fa-chair me-2"></i>Quản lý Bàn</h3>
-
-         @* --- Hàng điều khiển cho Bàn --- *@
-        <div class="row mb-3 gy-2 align-items-center">
-            @* Nút Thêm mới Bàn *@
-            <div class="col-12 col-sm-auto mb-2 mb-md-0">
-                <button id="showAddTableModalBtn" class="btn btn-primary shadow-sm me-2">
-                    <i class="fas fa-plus"></i> Thêm Bàn
-                </button>
-            </div>
-
-            @* Bộ lọc cho Bàn *@
-            <div class="col-12 col-sm">
-                <div class="row gx-2 gy-2 justify-content-end">
-                     <div class="col-12 col-md-3 col-lg-3">
-                         @* Filter by Area *@
-                         <select id="tableAreaFilter" class="form-select">
-                             <option value="0" selected>-- Lọc theo Khu vực --</option>
-                             @* Options will be loaded by AJAX *@
-                         </select>
-                    </div>
-                    <div class="col-12 col-md-3 col-lg-3">
-                         @* Filter by Status *@
-                         <select id="tableStatusFilter" class="form-select">
-                             <option value="all" selected>-- Lọc trạng thái --</option>
-                             <option value="active_true">Hoạt động</option>
-                             <option value="active_false">Không hoạt động</option>
-                             <option value="available_true">Đang trống</option>
-                             <option value="available_false">Đang có khách</option>
-                         </select>
-                    </div>
-                    <div class="col-12 col-md-4 col-lg-3">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="tableSearch" class="form-control" placeholder="Tìm theo tên bàn, tên khu vực...">
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-auto">
-                         <div class="input-group">
-                            <span class="input-group-text">Hiện</span>
-                            <select id="tablePageLength" class="form-select" style="max-width: 80px;">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                         </div>
-                    </div>
-                    <div class="col-6 col-md-auto">
-                        <button id="resetTableFilterBtn" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-undo"></i> Tải lại
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @* --- Bảng DataTable cho Bàn --- *@
-        <div class="card shadow-sm">
-            <div class="card-header bg-light py-2">
-                <h5 class="mb-0 card-title">Danh sách Bàn</h5>
-            </div>
-            <div class="card-body" style="padding: 0;">
-                <div class="table-responsive position-relative" id="tableTableContainer">
-                    <table id="tableTable" class="table table-hover table-bordered" style="width:100%">
-                        <thead class="thead-light">
-                            <tr>
-                                <th style="width: 5%;">STT</th>
-                                <th style="width: 25%;" data-name="NameTable">Tên Bàn</th>
-                                <th style="width: 25%;" data-name="AreaName">Khu vực</th>
-                                <th style="width: 15%;" data-name="IsAvailable">Trạng thái Trống</th>
-                                <th style="width: 15%;" data-name="IsActive">Trạng thái Hoạt động</th>
-                                <th style="width: 5%;" data-name="Request">Yêu cầu</th>
-                                <th style="width: 10%;" data-orderable="false">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-             @* --- Phân trang & Thông tin cho Bàn --- *@
-            <div class="card-footer bg-light py-2">
-                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                     <span id="tablePageInfo" class="text-muted mb-2 mb-md-0" style="display: none;"></span>
-                     <nav aria-label="Table navigation" class="mt-2 mt-md-0">
-                         <ul class="pagination pagination-sm mb-0 justify-content-center" id="tablePagination">
-                            <li class="page-item" id="tableFirst"><a class="page-link" href="#">&laquo;</a></li>
-                            <li class="page-item" id="tablePrevious"><a class="page-link" href="#">&lt;</a></li>
-                            @* Page numbers here *@
-                            <li class="page-item" id="tableNext"><a class="page-link" href="#">&gt;</a></li>
-                            <li class="page-item" id="tableLast"><a class="page-link" href="#">&raquo;</a></li>
-                         </ul>
-                     </nav>
-                 </div>
-            </div>
-        </div>
-    </div> @* --- Hết Section Bàn --- *@
-
-</div> @* --- Hết container-fluid --- *@
-
-
-@* --- Modal Thêm/Sửa Khu vực --- *@
+@* Các Modal không thay đổi *@
 <div class="modal fade" id="areaModal" tabindex="-1" aria-labelledby="areaModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-light">
+            <div class="modal-header">
                 <h5 class="modal-title" id="areaModalLabel">Thêm Khu vực mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="areaFormContainer">
-                    @* CSRF token already added outside *@
-                    <input type="hidden" id="editAreaId" name="Id" value="" />
+                <form id="areaFormContainer">
+                    <div class="mb-3">
+                        <label for="modalAreaCode" class="form-label">Mã Khu vực <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAreaCode" name="AreaCode" required maxlength="50" autocomplete="off" placeholder="VD: SAN_VUON, TANG_1">
+                        <div class="invalid-feedback">Vui lòng nhập mã khu vực.</div>
+                    </div>
                     <div class="mb-3">
                         <label for="modalAreaName" class="form-label">Tên Khu vực <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="modalAreaName" name="Name" required maxlength="100" autocomplete="off">
                         <div class="invalid-feedback">Vui lòng nhập tên khu vực.</div>
                     </div>
-                     <div class="mb-3">
+                    <div class="mb-3">
                         <label for="modalAreaDescription" class="form-label">Mô tả</label>
                         <textarea class="form-control" id="modalAreaDescription" name="Description" rows="3" maxlength="250"></textarea>
-                     </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Trạng thái <span class="text-danger">*</span></label><br>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="AreaIsActive" id="modalAreaIsActiveTrue" value="true" required checked>
+                            <input class="form-check-input" type="radio" name="IsActive" id="modalAreaIsActiveTrue" value="true" required checked>
                             <label class="form-check-label" for="modalAreaIsActiveTrue">Hoạt động</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="AreaIsActive" id="modalAreaIsActiveFalse" value="false" required>
+                            <input class="form-check-input" type="radio" name="IsActive" id="modalAreaIsActiveFalse" value="false" required>
                             <label class="form-check-label" for="modalAreaIsActiveFalse">Không hoạt động</label>
                         </div>
-                        <div class="invalid-feedback area-is-active-error">Vui lòng chọn trạng thái.</div>
                     </div>
-                    <div class="mb-3" id="areaCreatedAtDisplayContainer" style="display: none;">
-                        <label class="form-label">Ngày tạo:</label>
-                        <p id="modalAreaCreatedAtDisplay" class="form-control-plaintext mb-0"></p>
-                    </div>
-                </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-success" id="saveAreaBtn">Lưu Khu vực</button>
+                <button type="button" class="btn btn-primary" id="saveAreaBtn">Lưu</button>
             </div>
         </div>
     </div>
 </div>
-
-
-@* --- Modal Thêm/Sửa Bàn --- *@
 <div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel" aria-hidden="true">
-     <div class="modal-dialog">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-light">
+            <div class="modal-header">
                 <h5 class="modal-title" id="tableModalLabel">Thêm Bàn mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="tableFormContainer">
-                    @* CSRF token already added outside *@
-                    <input type="hidden" id="editTableId" name="Id" value="" />
+                <form id="tableFormContainer">
+                    <div class="mb-3">
+                        <label for="modalTableCode" class="form-label">Mã Bàn <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalTableCode" name="TableCode" required maxlength="50" autocomplete="off" placeholder="VD: B01, VIP02">
+                        <div class="invalid-feedback">Vui lòng nhập mã bàn.</div>
+                    </div>
                     <div class="mb-3">
                         <label for="modalTableName" class="form-label">Tên Bàn <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="modalTableName" name="NameTable" required maxlength="50" autocomplete="off">
                         <div class="invalid-feedback">Vui lòng nhập tên bàn.</div>
-                        <div class="text-danger validation-error" data-valmsg-for="NameTable"></div> @* Server-side error placeholder *@
                     </div>
-                     <div class="mb-3">
-                        <label for="modalTableAreaId" class="form-label">Thuộc Khu vực <span class="text-danger">*</span></label>
-                        <select class="form-select" id="modalTableAreaId" name="AreaId" required>
-                             <option value="">-- Chọn khu vực --</option>
-                             @* Options will be loaded by AJAX *@
-                        </select>
-                         <div class="invalid-feedback">Vui lòng chọn khu vực.</div>
-                         <div class="text-danger validation-error" data-valmsg-for="AreaId"></div> @* Server-side error placeholder *@
-                    </div>
-
                     <div class="mb-3">
-                        <label class="form-label">Trạng thái Có sẵn<span class="text-danger">*</span></label><br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TableIsAvailable" id="modalTableIsAvailableTrue" value="true" required checked>
-                            <label class="form-check-label" for="modalTableIsAvailableTrue">Trống</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TableIsAvailable" id="modalTableIsAvailableFalse" value="false" required>
-                            <label class="form-check-label" for="modalTableIsAvailableFalse">Có khách</label>
-                        </div>
-                         <div class="invalid-feedback table-is-available-error">Vui lòng chọn trạng thái trống/có khách.</div>
+                        <label for="modalTableAreaCodeSelect" class="form-label">Thuộc Khu vực</label>
+                        <select id="modalTableAreaCodeSelect" name="AreaCode" class="form-select" required></select>
+                        <div class="invalid-feedback">Vui lòng chọn khu vực.</div>
                     </div>
-
-                     <div class="mb-3">
-                        <label class="form-label">Trạng thái Hoạt động<span class="text-danger">*</span></label><br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TableIsActive" id="modalTableIsActiveTrue" value="true" required checked>
-                            <label class="form-check-label" for="modalTableIsActiveTrue">Hoạt động</label>
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label">Trạng thái Hoạt động<span class="text-danger">*</span></label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsActive" id="modalTableIsActiveTrue" value="true" required checked>
+                                <label class="form-check-label" for="modalTableIsActiveTrue">Hoạt động</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsActive" id="modalTableIsActiveFalse" value="false" required>
+                                <label class="form-check-label" for="modalTableIsActiveFalse">Tắt</label>
+                            </div>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="TableIsActive" id="modalTableIsActiveFalse" value="false" required>
-                            <label class="form-check-label" for="modalTableIsActiveFalse">Không hoạt động</label>
+                        <div class="col-6">
+                            <label class="form-label">Trạng thái Bàn<span class="text-danger">*</span></label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsAvailable" id="modalTableIsAvailableTrue" value="true" required checked>
+                                <label class="form-check-label" for="modalTableIsAvailableTrue">Trống</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsAvailable" id="modalTableIsAvailableFalse" value="false" required>
+                                <label class="form-check-label" for="modalTableIsAvailableFalse">Có khách</label>
+                            </div>
                         </div>
-                        <div class="invalid-feedback table-is-active-error">Vui lòng chọn trạng thái hoạt động.</div>
                     </div>
-                    @* No CreatedAt for Table in default model *@
-                </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="saveTableBtn">Lưu Bàn</button>
+                <button type="button" class="btn btn-primary" id="saveTableBtn">Lưu</button>
             </div>
         </div>
     </div>
 </div>
 
-
 @section Styles {
-    @* --- Copy relevant CSS from Category/Index.cshtml --- *@
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    @* Add Select2 CSS if using it for dropdowns *@
-    @* <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> *@
-    @* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" /> *@
     <style>
-        /* --- Copy relevant custom CSS from Category/Index.cshtml --- */
-        .custom-swal-popup { border-radius: 10px; padding: 25px; box-shadow: 0 5px 20px rgba(0, 0, 0, .15); }
-        .custom-swal-popup .swal2-title { font-size: 1.4em; }
-        .custom-swal-popup .swal2-html-container { font-size: 1.1em; color: #555; }
-        .custom-confirm-btn, .custom-cancel-btn, .custom-delete-btn, .custom-restore-btn { color: #fff !important; font-weight: 500; border-radius: 5px; padding: .5em 1.5em; border: none; }
-        .custom-confirm-btn { background-color: #28a745 !important; }
-        .custom-confirm-btn:hover { background-color: #218838 !important; }
-        .custom-cancel-btn { background-color: #6c757d !important; }
-        .custom-cancel-btn:hover { background-color: #5a6268 !important; }
-        .custom-delete-btn { background-color: #dc3545 !important; } /* Physical delete button */
-        .custom-delete-btn:hover { background-color: #c82333 !important; }
-        /* .custom-restore-btn not needed here */
-
-        #areaTable td, #areaTable th,
-        #tableTable td, #tableTable th {
-            vertical-align: middle; 
-            text-align: center; 
-            white-space: nowrap;
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            max-width: 180px; /* Adjust as needed */
-
-        }
-        /* Name columns align left */
-        #areaTable th[data-name="Name"], #areaTable td:nth-child(2),
-        #areaTable th[data-name="Description"], #areaTable td:nth-child(3),
-        #tableTable th[data-name="NameTable"], #tableTable td:nth-child(2),
-        #tableTable th[data-name="AreaName"], #tableTable td:nth-child(3) {
-            text-align: left; 
-        }
-
-        .badge { padding: .4em .6em; font-size: .8rem; font-weight: 600; }
-        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.7); z-index: 10; display: flex; justify-content: center; align-items: center; color: #333; }
-        body > .loading-overlay { position: fixed; z-index: 1060; }
-        .pagination .page-item .page-link { border-radius: .25rem; margin: 0 2px; }
-        .dataTables_processing { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.8); padding: 10px 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 11; }
-        .page-item.disabled .page-link { pointer-events: none; cursor: default; color: #6c757d; background-color: #fff; border-color: #dee2e6; }
-
-        @@media (max-width: 767.98px) {
-            .card-footer .d-flex { flex-direction: column; align-items: center; }
-            #areaPageInfo, #tablePageInfo { margin-bottom: 0.75rem; }
-        }
-
-        /* Modal Validation Styles */
-        #areaFormContainer .form-check-input.is-invalid ~ .form-check-label,
-        #tableFormContainer .form-check-input.is-invalid ~ .form-check-label { color: var(--bs-form-invalid-color); }
-        #areaFormContainer .form-check-input.is-invalid,
-        #tableFormContainer .form-check-input.is-invalid { border-color: #dee2e6; background-image: none; }
-        #areaFormContainer .form-check-input.is-invalid:focus,
-        #tableFormContainer .form-check-input.is-invalid:focus { box-shadow: none; }
-
-        .area-is-active-error, .table-is-active-error, .table-is-available-error { display: none; width: 100%; margin-top: .25rem; font-size: .875em; color: var(--bs-form-invalid-color); }
-
-        #areaFormContainer.was-validated .form-check-input[name="AreaIsActive"].is-invalid ~ .area-is-active-error,
-        #tableFormContainer.was-validated .form-check-input[name="TableIsActive"].is-invalid ~ .table-is-active-error,
-        #tableFormContainer.was-validated .form-check-input[name="TableIsAvailable"].is-invalid ~ .table-is-available-error {
-             display: block !important;
-        }
-
-        /* Action Button Size */
-        .edit-area-btn, .delete-area-btn, .edit-table-btn, .delete-table-btn {
-            padding: 0.15rem 0.4rem; font-size: 0.8rem; line-height: 1;
-        }
-        .edit-area-btn i, .delete-area-btn i, .edit-table-btn i, .delete-table-btn i { vertical-align: middle; }
-
-         /* Select2 custom styling (optional) */
-        /* .select2-container--bootstrap-5 .select2-selection { min-height: calc(1.5em + .75rem + 2px); padding: .375rem .75rem; font-size: 1rem; } */
-        /* .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow { top: 50%; transform: translateY(-50%); } */
-
-        /* Server-side validation message placeholder styling */
-        .validation-error { font-size: .875em; margin-top: .25rem; }
-
+        #audio-activation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; cursor: pointer; backdrop-filter: blur(5px); transition: opacity 0.3s ease; }
+        #audio-activation-overlay .content { text-align: center; animation: fadeIn-scale 0.5s ease-out; }
+        #audio-activation-overlay p { font-size: 1.2rem; margin-top: 1rem; }
+        @@keyframes fadeIn-scale { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        :root { --app-color-1: #5D87FF; --app-color-2: #13DEB9; --app-color-3: #FFB822; --app-color-4: #7B6FFF; --app-color-5: #FA896B; --card-border-color: #e5e9f2; --body-bg-light: #f1f5f9; --drop-target-bg: #e0f7fa; --drop-target-border: #00bcd4; }
+        .truncate-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .card { border-color: var(--card-border-color); }
+        #tableGridContainer { background-color: var(--body-bg-light) !important; }
+        .edit-mode-item { display: none !important; }
+        body.is-edit-mode .edit-mode-item { display: flex !important; }
+        body.is-edit-mode #areaFooter, body.is-edit-mode #tableGridFooter { display: block !important; }
+        #sortModeBtn.active { background-color: var(--app-color-1) !important; color: white !important; border-color: var(--app-color-1) !important; }
+        #areaList .list-group-item.drop-target-highlight:not(.active) { background-color: var(--drop-target-bg) !important; border-left-color: var(--drop-target-border) !important; }
+        .list-group-item.border-danger, .table-card.border-danger { border-width: 2px !important; border-color: #dc3545 !important; }
+        .item-inactive { opacity: 0.6; transition: opacity 0.2s ease-in-out; }
+        .item-inactive:hover { opacity: 1; }
+        #areaList .list-group-item { padding: 1rem 1.25rem; font-size: 1rem; border-left: 4px solid transparent; border-radius: 0.375rem; margin-bottom: 0.25rem; border-top-width: 1px !important; transition: all 0.2s ease-in-out; border-color: transparent; }
+        .list-group-item .handle { cursor: grab; color: #adb5bd; margin-right: 15px; transition: color 0.2s; }
+        .list-group-item:hover .handle { color: #495057; }
+        .list-group-item.active { background-color: var(--app-color-1) !important; border-color: var(--app-color-1) !important; color: white; font-weight: 600; }
+        .list-group-item.active .badge { background-color: rgba(255,255,255,0.2) !important; color: white !important; }
+        .list-group-item-action:hover:not(.active) { background-color: #e9ecef !important; }
+        #areaList .list-group-item:nth-child(5n + 1) { border-left-color: var(--app-color-1); }
+        #areaList .list-group-item:nth-child(5n + 2) { border-left-color: var(--app-color-2); }
+        #areaList .list-group-item:nth-child(5n + 3) { border-left-color: var(--app-color-3); }
+        #areaList .list-group-item:nth-child(5n + 4) { border-left-color: var(--app-color-4); }
+        #areaList .list-group-item:nth-child(5n + 5) { border-left-color: var(--app-color-5); }
+        .action-menu-btn { background: none; border: none; color: #6c757d; padding: 0.25rem 0.5rem; border-radius: 0.375rem; }
+        .action-menu-btn:hover { color: #000; background-color: #e9ecef; }
+        .list-group-item.active .action-menu-btn { color: white; }
+        .table-card { border: 1px solid var(--card-border-color); border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s ease; background-color: #fff; position: relative; }
+        body.is-edit-mode .table-card { cursor: grab; }
+        body.is-edit-mode .table-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); border-color: var(--app-color-1); }
+        .table-card .card-body { padding: 1rem; text-align: left; }
+        .table-card-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.1rem; }
+        .table-card-code { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.75rem; }
+        .table-card .action-menu-container { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3; }
+        .table-card-status .badge { font-size: 0.85rem; }
+        #tableList .list-group-item { align-items: center; }
+        #tableList .status-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
+        .empty-state-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 100%; color: #6c757d; padding: 2rem; }
+        .empty-state-container p { max-width: 350px; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px); z-index: 10; display: flex; justify-content: center; align-items: center; border-radius: 7px; }
+        
+        .table-card-request-icon { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; z-index: 2; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .list-view-request-icon { font-size: 1.2rem; margin-left: 10px; }
+        .table-card-request-icon i, .list-view-request-icon i { pointer-events: none; }
+        .request-order { color: #ffc107; animation: ring-animation 1.5s ease-in-out infinite; }
+        .request-payment { color: #28a745; animation: beat-animation 1.2s ease-in-out infinite; }
+        @@keyframes ring-animation { 0%, 100% { transform: rotate(0); } 10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); } 20%, 40%, 60%, 80% { transform: rotate(10deg); } }
+        @@keyframes beat-animation { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
     </style>
 }
 
 @section Scripts {
-    @* --- Thư viện JS --- *@
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    @* Add Select2 JS if using it *@
-    @* <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> *@
-
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
     <script>
         (function ($) {
             "use strict";
 
-            // =========================================================================
-            // BIẾN TRẠNG THÁI CHUNG & TIỆN ÍCH (Copy from Category/Index)
-            // =========================================================================
-            let csrfToken = $('input[name="__RequestVerificationToken"]').val();
-            const notyf = new Notyf({ /* ... copy Notyf config ... */
-                 duration: 3000, position: { x: 'right', y: 'top' },
-                 types: [
-                     { type: 'success', background: '#28a745', icon: { className: 'fas fa-check-circle', tagName: 'i', color: 'white' } },
-                     { type: 'error', background: '#dc3545', icon: { className: 'fas fa-times-circle', tagName: 'i', color: 'white' } },
-                     { type: 'warning', background: '#ffc107', icon: { className: 'fas fa-exclamation-triangle', tagName: 'i', color: 'white' }, duration: 5000 },
-                     { type: 'info', background: '#0d6efd', icon: { className: 'fas fa-info-circle', tagName: 'i', color: 'white' }, duration: 4000 }
-                 ],
-                 dismissible: true
-            });
+            // --- KHAI BÁO BIẾN TOÀN CỤC ---
+            let notificationSound;
+            let isAudioEnabled = false;
+            let csrfToken, notyf, Swal;
+            let currentSelectedAreaCode = null, currentSelectedAreaName = null;
+            let areaSortable, tableSortableGrid, tableSortableList;
+            let isInEditMode = false;
+            let areaModal, tableModal;
+            let signalRConnection;
+            let isAreaLoading = false, isTableLoading = false;
 
-            function showSuccessToast(message) { notyf.success(message || 'Thao tác thành công.'); }
-            function showErrorAlert(title, message) { notyf.error((title ? title + ': ' : '') + (message || 'Đã xảy ra lỗi.')); }
-            function showInfo(message) { notyf.open({ type: 'info', message: message }); }
-
-            function showLoading(selector = 'body', message = 'Đang xử lý...') {
-                 const $target = $(selector);
-                 if ($target.length && $target.find('.loading-overlay').length === 0) {
-                     let positionStyle = 'absolute';
-                     if (selector === 'body' || $target.is('body')) {
-                         positionStyle = 'fixed';
-                     } else {
-                         const currentPosition = $target.css('position');
-                         if (!['relative', 'absolute', 'fixed'].includes(currentPosition)) {
-                             $target.css('position', 'relative');
-                         }
-                     }
-                     const zIndex = (positionStyle === 'fixed') ? 1060 : ($target.css('z-index') === 'auto' ? 10 : parseInt($target.css('z-index')) + 1);
-                     $target.append(`<div class="loading-overlay" style="position:${positionStyle}; top:0; left:0; width:100%; height:100%; z-index:${zIndex}; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.7); color:#333;">
-                                          <div class="spinner-border text-primary spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>
-                                          <span>${message}</span>
-                                      </div>`);
-                 }
-            }
-            function hideLoading(selector = 'body') {
-                 setTimeout(() => {
-                    $(selector).find('.loading-overlay').fadeOut(150, function () { $(this).remove(); });
-                 }, 50);
-            }
-
-            function formatDate(dateString) { /* ... copy formatDate func ... */
-                 if (!dateString) return 'N/A';
-                 try {
-                     const date = new Date(dateString);
-                     if (isNaN(date.getTime())) return 'Ngày lỗi';
-                     const day = String(date.getDate()).padStart(2, '0');
-                     const month = String(date.getMonth() + 1).padStart(2, '0');
-                     const year = date.getFullYear();
-                     return `${day}/${month}/${year}`;
-                 } catch (e) {
-                     console.error("Error formatting date:", dateString, e);
-                     return 'Lỗi định dạng';
-                 }
-            }
-
-            function handleAjaxError(xhr, actionText, formSelector = null) {
-                 hideLoading();
-                 console.error(`Lỗi ${actionText}:`, xhr.status, xhr.responseText);
-                 let errorMsg = `Không thể ${actionText.toLowerCase()}.`;
-                 let serverErrors = null;
-
-                 if (xhr.responseJSON) {
-                     errorMsg = xhr.responseJSON.message || errorMsg;
-                     serverErrors = xhr.responseJSON.errors; // Get structured errors if available
-                 } else if (xhr.status === 400) { errorMsg += ' Dữ liệu gửi lên không hợp lệ.'; }
-                 else if (xhr.status === 401 || xhr.status === 403) { errorMsg = 'Bạn không có quyền thực hiện thao tác này.'; }
-                 else if (xhr.status === 404) { errorMsg = 'Không tìm thấy tài nguyên được yêu cầu.'; }
-                 else if (xhr.status === 409) { errorMsg = 'Dữ liệu bị trùng lặp hoặc xung đột.'; }
-                 else if (xhr.status >= 500) { errorMsg += ' Lỗi máy chủ nội bộ.'; }
-
-                 showErrorAlert('Lỗi hệ thống', errorMsg);
-
-                 // Display server-side validation errors on the form
-                 if (formSelector && serverErrors) {
-                     const $form = $(formSelector);
-                     // Clear previous errors
-                     $form.find('.validation-error').text('');
-                     $form.find('.is-invalid').removeClass('is-invalid');
-
-                     $.each(serverErrors, function(key, value) {
-                         if (value && value.length > 0) {
-                             const inputName = key; // Assuming key matches input name
-                             const $input = $form.find(`[name="${inputName}"]`);
-                             const $errorContainer = $form.find(`[data-valmsg-for="${inputName}"]`);
-
-                             if ($input.length) {
-                                 $input.addClass('is-invalid');
-                             }
-                             if ($errorContainer.length) {
-                                 $errorContainer.text(value.join(' ')); // Join multiple errors if any
-                             } else if ($input.length) {
-                                 // Fallback: show error after the input
-                                 $input.after(`<div class="text-danger validation-error">${value.join(' ')}</div>`);
-                             }
-                         }
-                     });
-                 }
-            }
-
-            // =========================================================================
-            // CHỨC NĂNG DATATABLE & PHÂN TRANG TÙY CHỈNH (Copy from Category/Index)
-            // =========================================================================
-            function updateCustomPagination(tableInstance, paginationListSelector, pageInfoSelector) { /* ... copy updateCustomPagination func ... */
-                 if (!tableInstance) return;
-                 const pageInfo = tableInstance.page.info();
-                 const $paginationList = $(paginationListSelector);
-                 const $pageInfoSpan = $(pageInfoSelector);
-                 const $paginationNav = $paginationList.parent('nav');
-
-                 $paginationList.find('.page-item.page-number').remove();
-                 $pageInfoSpan.hide().empty();
-
-                 if (pageInfo.pages <= 1) {
-                     $paginationNav.hide();
-                     if (pageInfo.recordsDisplay > 0) {
-                         $pageInfoSpan.text(`Hiện 1-${pageInfo.recordsDisplay} / ${pageInfo.recordsDisplay.toLocaleString('vi-VN')} mục`).show();
-                     } else {
-                         $pageInfoSpan.text("(Không có mục nào)").show();
-                     }
-                     return;
-                 } else {
-                     $paginationNav.show();
-                 }
-
-                 const recordsDisplayed = pageInfo.recordsDisplay;
-                 if (recordsDisplayed > 0) {
-                     const startRecord = pageInfo.start + 1;
-                     const endRecord = pageInfo.end;
-                     $pageInfoSpan.text(`Hiện ${startRecord.toLocaleString('vi-VN')}-${endRecord.toLocaleString('vi-VN')} / ${recordsDisplayed.toLocaleString('vi-VN')} mục`).show();
-                     $paginationList.find('.page-item').removeClass('disabled');
-                 } else {
-                     $pageInfoSpan.text("(Không có mục nào)").show();
-                     $paginationList.find('.page-item').addClass('disabled');
-                 }
-
-                 const currentPage = pageInfo.page;
-                 const totalPages = pageInfo.pages;
-                 const maxPagesToShow = 5;
-                 let startPage, endPage;
-
-                 if (totalPages <= maxPagesToShow) { startPage = 0; endPage = totalPages - 1; }
-                 else {
-                     const pagesBefore = Math.floor((maxPagesToShow - 1) / 2);
-                     const pagesAfter = Math.ceil((maxPagesToShow - 1) / 2);
-                     if (currentPage <= pagesBefore) { startPage = 0; endPage = maxPagesToShow - 1; }
-                     else if (currentPage + pagesAfter >= totalPages - 1) { startPage = totalPages - maxPagesToShow; endPage = totalPages - 1; }
-                     else { startPage = currentPage - pagesBefore; endPage = currentPage + pagesAfter; }
-                 }
-
-                 // Find next/prev button IDs dynamically within the specific pagination list
-                 const prevButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(1)').attr('id');
-                 const nextButtonId = $paginationList.find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
-
-                 if (startPage > 0) {
-                      $paginationList.find('#' + prevButtonId).after('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
-                 }
-
-                 for (let i = startPage; i <= endPage; i++) {
-                     const pageNum = i + 1;
-                     const $pageItem = $(`<li class="page-item page-number ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#">${pageNum}</a></li>`);
-
-                     // Find the element to insert before based on the specific pagination list
-                     $pageItem.insertBefore($paginationList.find('#' + nextButtonId)).find('a').on('click', function (e) {
-                         e.preventDefault();
-                         if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) {
-                             tableInstance.page(i).draw('page');
-                         }
-                     });
-                 }
-
-                 if (endPage < totalPages - 1) {
-                    $paginationList.find('#' + nextButtonId).before('<li class="page-item disabled page-number"><span class="page-link">...</span></li>');
-                 }
-
-                 // Find first/last button IDs dynamically
-                 const firstButtonId = $paginationList.find('.page-item:has(a[href="#"]):first').attr('id');
-                 const lastButtonId = $paginationList.find('.page-item:has(a[href="#"]):last').attr('id');
-
-                 // Use the dynamic IDs
-                 $paginationList.find('#' + firstButtonId).toggleClass('disabled', currentPage === 0);
-                 $paginationList.find('#' + prevButtonId).toggleClass('disabled', currentPage === 0);
-                 $paginationList.find('#' + nextButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
-                 $paginationList.find('#' + lastButtonId).toggleClass('disabled', currentPage >= totalPages - 1);
-            }
-
-            function setupCustomPaginationEvents(tableInstance, paginationListSelector) { /* ... copy setupCustomPaginationEvents func, ensure it uses dynamic IDs as above ... */
-                const $paginationNav = $(paginationListSelector).parent();
-                const firstButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):first').attr('id');
-                const prevButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(1)').attr('id');
-                const nextButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):eq(-2)').attr('id');
-                const lastButtonId = $(paginationListSelector).find('.page-item:has(a[href="#"]):last').attr('id');
-
-                $paginationNav.off('click', `#${firstButtonId} a`).on('click', `#${firstButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('first').draw('page'); });
-                $paginationNav.off('click', `#${prevButtonId} a`).on('click', `#${prevButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('previous').draw('page'); });
-                $paginationNav.off('click', `#${nextButtonId} a`).on('click', `#${nextButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('next').draw('page'); });
-                $paginationNav.off('click', `#${lastButtonId} a`).on('click', `#${lastButtonId} a`, function (e) { e.preventDefault(); if (!$(this).closest('.page-item').hasClass('disabled')) tableInstance.page('last').draw('page'); });
-            }
-
-            const dataTableLanguage = { /* ... copy dataTableLanguage config ... */
-                "sEmptyTable": "Không có dữ liệu trong bảng", "sInfo": "Hiện _START_ đến _END_ trong tổng số _TOTAL_ mục",
-                "sInfoEmpty": "Hiện 0 đến 0 trong tổng số 0 mục", "sInfoFiltered": "(được lọc từ _MAX_ mục)",
-                "sInfoPostFix": "", "sInfoThousands": ".", "sLengthMenu": "Hiện _MENU_ mục", "sLoadingRecords": "Đang tải...",
-                "sProcessing": '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div> Đang xử lý...',
-                "sSearch": "Tìm kiếm:", "sZeroRecords": "Không tìm thấy kết quả phù hợp",
-                "oPaginate": { "sFirst": "<<", "sLast": ">>", "sNext": ">", "sPrevious": "<" },
-                "oAria": { "sSortAscending": ": Sắp xếp cột tăng dần", "sSortDescending": ": Sắp xếp cột giảm dần" }
-            };
-
-            // =========================================================================
-            // MODULE DATATABLE CHO KHU VỰC (AREA)
-            // =========================================================================
-            const areaTableModule = (function () {
-                let tableInstance = null;
-                const tableSelector = '#areaTable';
-                const paginationSelector = '#areaPagination';
-                const pageInfoSelector = '#areaPageInfo';
-                const searchInputSelector = '#areaSearch';
-                const pageLengthSelector = '#areaPageLength';
-                const resetFilterBtnSelector = '#resetAreaFilterBtn';
-
-                function init() {
-                    if (tableInstance) return;
-                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
-
-                    tableInstance = $(tableSelector).DataTable({
-                        serverSide: true, processing: true,
-                        ajax: {
-                            url: "/Admin/AreaTable/GetDataAreas", type: "POST", dataType: "json",
-                            data: function (d) {
-                                d.__RequestVerificationToken = csrfToken;
-                                d.searchValue = d.search.value; // Pass search value
-                            },
-                            error: function (xhr, error, code) {
-                                console.error("Lỗi Ajax DataTables (Areas):", error, code, xhr.status, xhr.responseText);
-                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách khu vực. Mã lỗi: ${xhr.status}`);
-                                $(tableSelector + '_processing').hide();
-                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="8" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu khu vực.</td></tr>`);
-                                $(paginationSelector).parent().hide(); $(pageInfoSelector).hide();
-                            }
-                        },
-                        columns: [
-                            { data: null, name: "STT", orderable: false, searchable: false, className: 'text-center align-middle', render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart },
-                            { data: "name", name: "Name", orderable: true, className: 'text-start align-middle' },
-                            { data: "description", name: "Description", orderable: true, className: 'text-start align-middle', render: data => data ? data : '' }, // Handle null description
-                            {
-                                data: "isActive", name: "IsActive", orderable: true, className: 'text-center align-middle',
-                                render: data => data ? '<span class="badge bg-success-subtle text-success-emphasis rounded-pill">Hoạt động</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Không HĐ</span>'
-                            },
-                             { data: "tableCount", name: "TableCount", orderable: true, searchable: false, className: 'text-center align-middle' }, // Column for table count
-                            { data: "createdAt", name: "CreatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) },
-                            { data: "updatedAt", name: "UpdatedAt", orderable: true, className: 'text-center align-middle', render: data => formatDate(data) },
-                            {
-                                data: "id", name: "Actions", orderable: false, searchable: false, className: 'text-center align-middle',
-                                render: function (data, type, row) {
-                                    const safeName = row.name ? $('<div>').text(row.name).html() : 'khu vực này';
-                                    const editBtn = `<button type="button" class="btn btn-sm btn-outline-warning me-1 edit-area-btn" data-id="${data}" title="Sửa Khu vực"><i class="fas fa-edit"></i></button>`;
-                                    // Physical Delete Button
-                                    const deleteBtn = `<button type="button" class="btn btn-sm btn-outline-danger delete-area-btn" data-id="${data}" data-name="${safeName}" title="Xóa Khu vực"><i class="fas fa-trash"></i></button>`;
-                                    return editBtn + deleteBtn;
-                                }
-                            }
-                        ],
-                        order: [[5, 'desc']], // Default sort by CreatedAt desc
-                        pageLength: initialPageLength, searching: true, lengthChange: false, info: false, paging: true,
-                        dom: 'rt', language: dataTableLanguage, responsive: true,
-                        drawCallback: function (settings) {
-                            updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
-                            // Init tooltips for this table
-                            var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
-                            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                                 let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
-                                 if (tooltipInstance) { tooltipInstance.dispose(); } // Dispose old before creating new
-                                 return new bootstrap.Tooltip(tooltipTriggerEl);
-                             });
-                        }
-                    });
-
-                    setupCustomControlsEvents();
-                    setupCustomPaginationEvents(tableInstance, paginationSelector);
-                    setupActionEvents();
+            // --- CÁC HÀM KHỞI TẠO VÀ TIỆN ÍCH ---
+            function initializeAudio() {
+                try {
+                    notificationSound = new Audio('/sound/bell.wav');
+                    notificationSound.volume = 0.7;
+                    notificationSound.play().then(() => notificationSound.pause()).catch(() => { });
+                    isAudioEnabled = true;
+                    console.log("Âm thanh đã được người dùng kích hoạt.");
+                } catch (e) {
+                    isAudioEnabled = false;
+                    console.error("Không thể khởi tạo âm thanh:", e);
                 }
+            }
 
-                function setupCustomControlsEvents() {
-                    let searchTimeout; const searchDebounce = 400;
-                    $(searchInputSelector).off('keyup').on('keyup', function () {
-                        const searchValue = $(this).val(); clearTimeout(searchTimeout);
-                        searchTimeout = setTimeout(() => { if (tableInstance.search() !== searchValue) { tableInstance.search(searchValue).draw(); } }, searchDebounce);
-                    });
-                    $(pageLengthSelector).off('change').on('change', function () { tableInstance.page.len($(this).val()).draw(); });
-                    $(resetFilterBtnSelector).off('click').on('click', function () {
-                         $(searchInputSelector).val('');
-                         $(pageLengthSelector).val('10');
-                         tableInstance.search('').page.len(10).order([[5, 'desc']]).draw(); // Reset search, length, order and draw
-                    });
-                }
-
-                 function setupActionEvents() {
-                    $(tableSelector + ' tbody').off('click', '.edit-area-btn').on('click', '.edit-area-btn', function () {
-                        var id = $(this).data('id');
-                        areaModalModule.showEditModal(id); // Call specific modal module function
-                    });
-                    $(tableSelector + ' tbody').off('click', '.delete-area-btn').on('click', '.delete-area-btn', function () {
-                        var id = $(this).data('id');
-                        var name = $(this).data('name');
-                        deleteArea(id, name); // Call global delete function
-                    });
-                 }
-
-                 function reload(callback = null, resetPaging = false) {
-                    if (tableInstance) {
-                        tableInstance.ajax.reload(callback, resetPaging);
+            function appendConnectionId(data) {
+                if (signalRConnection && signalRConnection.state === "Connected") {
+                    const connectionId = signalRConnection.connectionId;
+                    if (data instanceof URLSearchParams || data instanceof FormData) {
+                        data.append('__ConnectionId', connectionId);
+                    } else if (typeof data === 'object' && data !== null) {
+                        data.__ConnectionId = connectionId;
                     }
-                 }
-
-                 function getInstance(){ return tableInstance; }
-
-                return { init: init, reload: reload, getInstance: getInstance };
-            })();
-
-
-            // =========================================================================
-            // MODULE DATATABLE CHO BÀN (TABLE)
-            // =========================================================================
-            const tableTableModule = (function () {
-                let tableInstance = null;
-                const tableSelector = '#tableTable';
-                const paginationSelector = '#tablePagination';
-                const pageInfoSelector = '#tablePageInfo';
-                const searchInputSelector = '#tableSearch';
-                const pageLengthSelector = '#tablePageLength';
-                const resetFilterBtnSelector = '#resetTableFilterBtn';
-                const areaFilterSelector = '#tableAreaFilter'; // Area filter dropdown
-                const statusFilterSelector = '#tableStatusFilter'; // Status filter dropdown
-
-                function init() {
-                    if (tableInstance) return;
-                    const initialPageLength = parseInt($(pageLengthSelector).val()) || 10;
-
-                    tableInstance = $(tableSelector).DataTable({
-                        serverSide: true, processing: true,
-                        ajax: {
-                            url: "/Admin/AreaTable/GetDataTables", type: "POST", dataType: "json",
-                            data: function (d) {
-                                d.__RequestVerificationToken = csrfToken;
-                                d.searchValue = d.search.value;
-                                // Add custom filters
-                                d.areaFilter = $(areaFilterSelector).val();
-                                d.statusFilter = $(statusFilterSelector).val();
-                            },
-                             error: function (xhr, error, code) {
-                                console.error("Lỗi Ajax DataTables (Tables):", error, code, xhr.status, xhr.responseText);
-                                showErrorAlert('Lỗi tải dữ liệu', `Không thể tải danh sách bàn. Mã lỗi: ${xhr.status}`);
-                                $(tableSelector + '_processing').hide();
-                                $(tableSelector + ' tbody').empty().html(`<tr><td colspan="7" class="text-center text-danger p-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi tải dữ liệu bàn.</td></tr>`);
-                                $(paginationSelector).parent().hide(); $(pageInfoSelector).hide();
-                            }
-                        },
-                        columns: [
-                            { data: null, name: "STT", orderable: false, searchable: false, className: 'text-center align-middle', render: (d, t, r, meta) => meta.row + 1 + meta.settings._iDisplayStart },
-                            { data: "nameTable", name: "NameTable", orderable: true, className: 'text-start align-middle' },
-                            { data: "areaName", name: "AreaName", orderable: true, className: 'text-start align-middle' }, // Use related name for display/sort
-                            {
-                                data: "isAvailable", name: "IsAvailable", orderable: true, className: 'text-center align-middle',
-                                render: data => data ? '<span class="badge bg-info-subtle text-info-emphasis rounded-pill">Trống</span>' : '<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Có khách</span>'
-                            },
-                            {
-                                data: "isActive", name: "IsActive", orderable: true, className: 'text-center align-middle',
-                                render: data => data ? '<span class="badge bg-success-subtle text-success-emphasis rounded-pill">Hoạt động</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Không HĐ</span>'
-                            },
-                            { data: "request", name: "Request", orderable: true, searchable: false, className: 'text-center align-middle' }, // Assuming Request is numeric or simple display
-                            {
-                                data: "id", name: "Actions", orderable: false, searchable: false, className: 'text-center align-middle',
-                                render: function (data, type, row) {
-                                     const safeName = row.nameTable ? $('<div>').text(row.nameTable).html() : 'bàn này';
-                                     const safeAreaName = row.areaName ? $('<div>').text(row.areaName).html() : 'khu vực không xác định';
-                                    const editBtn = `<button type="button" class="btn btn-sm btn-outline-warning me-1 edit-table-btn" data-id="${data}" title="Sửa Bàn"><i class="fas fa-edit"></i></button>`;
-                                    const deleteBtn = `<button type="button" class="btn btn-sm btn-outline-danger delete-table-btn" data-id="${data}" data-name="${safeName}" data-area="${safeAreaName}" title="Xóa Bàn"><i class="fas fa-trash"></i></button>`;
-                                    return editBtn + deleteBtn;
-                                }
-                            }
-                        ],
-                        order: [[1, 'asc']], // Default sort by Table Name asc
-                        pageLength: initialPageLength, searching: true, lengthChange: false, info: false, paging: true,
-                        dom: 'rt', language: dataTableLanguage, responsive: true,
-                        drawCallback: function (settings) {
-                             updateCustomPagination(tableInstance, paginationSelector, pageInfoSelector);
-                             // Init tooltips for this table
-                             var tooltipTriggerList = [].slice.call(document.querySelectorAll(`${tableSelector} [title]`));
-                             tooltipTriggerList.map(function (tooltipTriggerEl) {
-                                 let tooltipInstance = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
-                                 if (tooltipInstance) { tooltipInstance.dispose(); }
-                                 return new bootstrap.Tooltip(tooltipTriggerEl);
-                             });
-                        }
-                    });
-
-                    setupCustomControlsEvents();
-                    setupCustomPaginationEvents(tableInstance, paginationSelector);
-                    setupActionEvents();
                 }
+                return data;
+            }
 
-                function setupCustomControlsEvents() {
-                    let searchTimeout; const searchDebounce = 400;
-                    $(searchInputSelector).off('keyup').on('keyup', function () {
-                         const searchValue = $(this).val(); clearTimeout(searchTimeout);
-                         searchTimeout = setTimeout(() => { if (tableInstance.search() !== searchValue) { tableInstance.search(searchValue).draw(); } }, searchDebounce);
-                    });
-                    $(pageLengthSelector).off('change').on('change', function () { tableInstance.page.len($(this).val()).draw(); });
-                    // Reload table when filters change
-                    $(areaFilterSelector).off('change').on('change', function () { tableInstance.ajax.reload(); });
-                    $(statusFilterSelector).off('change').on('change', function () { tableInstance.ajax.reload(); });
-
-                    $(resetFilterBtnSelector).off('click').on('click', function () {
-                         $(searchInputSelector).val('');
-                         $(pageLengthSelector).val('10');
-                         $(areaFilterSelector).val('0'); // Reset area filter
-                         $(statusFilterSelector).val('all'); // Reset status filter
-                         tableInstance.search('').page.len(10).order([[1, 'asc']]).ajax.reload(); // Reset search, length, order, filters and reload
-                    });
-                }
-
-                 function setupActionEvents() {
-                    $(tableSelector + ' tbody').off('click', '.edit-table-btn').on('click', '.edit-table-btn', function () {
-                        var id = $(this).data('id');
-                        tableModalModule.showEditModal(id); // Call specific modal module function
-                    });
-                    $(tableSelector + ' tbody').off('click', '.delete-table-btn').on('click', '.delete-table-btn', function () {
-                        var id = $(this).data('id');
-                        var name = $(this).data('name');
-                        var areaName = $(this).data('area');
-                        deleteTable(id, name, areaName); // Call global delete function
-                    });
-                 }
-
-                 function reload(callback = null, resetPaging = false) {
-                     if (tableInstance) {
-                         tableInstance.ajax.reload(callback, resetPaging);
-                     }
-                 }
-                 function getInstance(){ return tableInstance; }
-
-                return { init: init, reload: reload, getInstance: getInstance };
-            })();
-
-
-            // =========================================================================
-            // MODULE MODAL KHU VỰC (AREA)
-            // =========================================================================
-             const areaModalModule = (function () {
-                const modalSelector = '#areaModal';
-                const formContainerSelector = '#areaFormContainer';
-                const saveBtnSelector = '#saveAreaBtn';
-                const editIdInputSelector = '#editAreaId';
-                const nameInputSelector = '#modalAreaName';
-                const descriptionInputSelector = '#modalAreaDescription';
-                const statusTrueSelector = '#modalAreaIsActiveTrue';
-                const statusFalseSelector = '#modalAreaIsActiveFalse';
-                const statusErrorSelector = '.area-is-active-error'; // Class selector
-                const modalTitleSelector = '#areaModalLabel';
-                const createdAtContainerSelector = '#areaCreatedAtDisplayContainer';
-                const createdAtDisplaySelector = '#modalAreaCreatedAtDisplay';
-                let modalInstance = null;
-
-                function getModalInstance() {
-                    if (!modalInstance) {
-                        modalInstance = new bootstrap.Modal(document.getElementById('areaModal'));
+            async function handleMoveTable(tableCode, newAreaCode) {
+                let formData = new URLSearchParams();
+                formData.append('tableCode', tableCode);
+                formData.append('newAreaCode', newAreaCode);
+                formData = appendConnectionId(formData);
+                try {
+                    const response = await fetch('/Admin/AreaTable/MoveTableToArea', { method: 'POST', headers: { 'RequestVerificationToken': csrfToken }, body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        notyf.success(result.message);
+                        await loadAreas();
+                    } else {
+                        notyf.error(result.message || "Di chuyển bàn thất bại.");
+                        await loadAreas();
                     }
-                    return modalInstance;
+                } catch (error) {
+                    handleAjaxError(error, "di chuyển bàn");
+                    await loadAreas();
                 }
+            }
 
-                function resetForm() {
-                    const $formContainer = $(formContainerSelector);
-                    $(editIdInputSelector).val('');
-                    $(nameInputSelector).val('');
-                    $(descriptionInputSelector).val('');
-                    $(statusTrueSelector).prop('checked', true); // Default to active
-                    $(statusFalseSelector).prop('checked', false);
-                    $formContainer.removeClass('was-validated');
-                    $formContainer.find('.is-invalid').removeClass('is-invalid');
-                    $formContainer.find('.validation-error').text(''); // Clear server errors
-                    $(statusErrorSelector).hide();
-                    $(modalTitleSelector).text('Thêm Khu vực mới');
-                    $(saveBtnSelector).text('Lưu Khu vực').prop('disabled', false).removeClass('btn-warning').addClass('btn-success');
-                    $(createdAtContainerSelector).hide();
-                    $(createdAtDisplaySelector).text('');
-                }
+            async function handleSave(type) {
+                const isArea = type === 'area';
+                const form = $(isArea ? '#areaFormContainer' : '#tableFormContainer');
+                if (!form[0].checkValidity()) { form.addClass('was-validated'); return; }
+                const mode = $(isArea ? '#areaModal' : '#tableModal').data('mode');
+                const code = $(isArea ? '#modalAreaCode' : '#modalTableCode').val();
+                const url = isArea ? (mode === 'edit' ? `/Admin/AreaTable/EditArea/${code}` : '/Admin/AreaTable/CreateArea') : (mode === 'edit' ? `/Admin/AreaTable/EditTable/${code}` : '/Admin/AreaTable/CreateTable');
+                let formData = new FormData(form[0]);
+                formData = appendConnectionId(formData);
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'RequestVerificationToken': csrfToken }, body: new URLSearchParams(formData) });
+                    const result = await response.json();
+                    if (result.success) { (isArea ? areaModal : tableModal).hide(); notyf.success(result.message); loadAreas(); } else { notyf.error(result.message || 'Lưu thất bại'); }
+                } catch (error) { handleAjaxError(error, 'lưu dữ liệu'); }
+            }
 
-                function validateForm() {
-                     const $formContainer = $(formContainerSelector);
-                     let isValid = true;
-                     // Clear previous states
-                     $formContainer.removeClass('was-validated');
-                     $formContainer.find('.is-invalid').removeClass('is-invalid');
-                     $formContainer.find('.validation-error').text(''); // Clear server errors
-                     $(statusErrorSelector).hide();
-
-                     // Validate Name
-                     const $nameInput = $(nameInputSelector);
-                     if (!$nameInput.val() || !$nameInput.val().trim()) {
-                         $nameInput.addClass('is-invalid');
-                         $nameInput.siblings('.invalid-feedback').show(); // Show HTML5 message
-                         isValid = false;
-                     }
-
-                     // Validate IsActive Radio
-                     const $radioButtons = $formContainer.find('input[name="AreaIsActive"]');
-                     if (!$radioButtons.is(':checked')) {
-                         // Add is-invalid to both radios for visual cue and show custom error message
-                         $radioButtons.addClass('is-invalid');
-                         $(statusErrorSelector).show();
-                         isValid = false;
-                     } else {
-                          $radioButtons.removeClass('is-invalid'); // Remove class if valid
-                     }
-
-
-                     if (!isValid) {
-                        // Add was-validated to trigger Bootstrap's native styles for valid/invalid fields
-                        $formContainer.addClass('was-validated');
-                        // Focus the first invalid input
-                        $formContainer.find('.is-invalid').first().focus();
-                     }
-                     return isValid;
-                }
-
-
-                function handleSave() {
-                    if (!validateForm()) return;
-
-                    const areaId = $(editIdInputSelector).val();
-                    const isEditMode = !!areaId;
-                    const postData = {
-                        __RequestVerificationToken: csrfToken,
-                        Id: areaId || 0,
-                        Name: $(nameInputSelector).val().trim(),
-                        Description: $(descriptionInputSelector).val().trim(),
-                        IsActive: $(formContainerSelector).find('input[name="AreaIsActive"]:checked').val() === 'true'
-                    };
-                    const url = isEditMode ? `/Admin/AreaTable/EditArea/${areaId}` : "/Admin/AreaTable/CreateArea";
-                    const actionText = isEditMode ? 'Cập nhật Khu vực' : 'Thêm Khu vực';
-                    const savingText = isEditMode ? 'Đang cập nhật...' : 'Đang thêm...';
-                    const $saveButton = $(saveBtnSelector);
-
-                    $saveButton.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${savingText}`);
-                    showLoading(modalSelector + ' .modal-content');
-
-                     $.ajax({
-                        url: url, type: 'POST', data: postData, dataType: 'json',
-                        success: function (response) {
-                            hideLoading(modalSelector + ' .modal-content');
-                            if (response.success) {
-                                getModalInstance().hide();
-                                showSuccessToast(response.message || `${actionText} thành công!`);
-                                areaTableModule.reload(null, !isEditMode); // Reset paging on create, keep page on edit
-                                // Crucially, reload the area dropdowns if an area was added/edited
-                                loadAreaFilterOptions();
-                                loadAreaModalOptions();
-                            } else {
-                                let errorMessage = response.message || `Lỗi khi ${actionText.toLowerCase()}.`;
-                                // Display server validation errors if available
-                                if (response.errors) {
-                                     displayServerValidationErrors(formContainerSelector, response.errors);
-                                }
-                                showErrorAlert(`${actionText} thất bại`, errorMessage);
-                                $saveButton.prop('disabled', false).text(isEditMode ? 'Cập nhật Khu vực' : 'Lưu Khu vực');
-                            }
-                        },
-                        error: function (xhr) {
-                            hideLoading(modalSelector + ' .modal-content');
-                            handleAjaxError(xhr, actionText, formContainerSelector); // Pass form selector
-                            $saveButton.prop('disabled', false).text(isEditMode ? 'Cập nhật Khu vực' : 'Lưu Khu vực');
-                        }
-                    });
-                }
-
-                 // Function to display server-side errors (called from handleSave error)
-                function displayServerValidationErrors(formSel, errors) {
-                    const $form = $(formSel);
-                     // Clear previous errors displayed by this function
-                     $form.find('.validation-error').text('');
-                    $form.find('.is-invalid').removeClass('is-invalid'); // Clear Bootstraps state
-
-                    $.each(errors, function(key, value) {
-                         if (value && value.length > 0) {
-                             const inputName = key; // Case might differ, adjust if needed
-                             // Try finding by name first, then maybe ID if naming differs drastically
-                             let $input = $form.find(`[name="${inputName}"]`);
-                             if (!$input.length) {
-                                 $input = $form.find(`#modalArea${inputName}`); // Try ID convention
-                             }
-
-                             // Find the dedicated error placeholder
-                             let $errorContainer = $form.find(`[data-valmsg-for="${inputName}"]`);
-
-                             if ($input.length) {
-                                 $input.addClass('is-invalid');
-                             }
-
-                             if ($errorContainer.length) {
-                                 $errorContainer.text(value.join(' '));
-                             } else if ($input.length) {
-                                 // Fallback if no dedicated container
-                                 // Avoid adding multiple times
-                                 if (!$input.next('.validation-error').length) {
-                                     $input.after(`<div class="text-danger validation-error">${value.join(' ')}</div>`);
-                                 } else {
-                                     $input.next('.validation-error').text(value.join(' '));
-                                 }
-                             } else {
-                                 // If input not found, maybe log or show a general error?
-                                 console.warn(`Could not find input or error container for validation key: ${inputName}`);
-                             }
-                         }
-                    });
-                 }
-
-
-                function showEditModal(id) {
-                     if (!id) return;
-                     resetForm();
-                     showLoading(modalSelector + ' .modal-body', 'Đang tải dữ liệu...');
-
-                     $.ajax({
-                         url: `/Admin/AreaTable/GetAreaDetails/${id}`, type: 'GET', dataType: 'json',
-                         success: function (data) {
-                             hideLoading(modalSelector + ' .modal-body');
-                             if (data) {
-                                 $(editIdInputSelector).val(data.id);
-                                 $(nameInputSelector).val(data.name);
-                                 $(descriptionInputSelector).val(data.description);
-                                 $(data.isActive ? statusTrueSelector : statusFalseSelector).prop('checked', true);
-
-                                 if (data.createdAt) {
-                                     $(createdAtDisplaySelector).text(formatDate(data.createdAt));
-                                     $(createdAtContainerSelector).show();
-                                 } else {
-                                     $(createdAtContainerSelector).hide();
-                                 }
-                                 $(modalTitleSelector).text('Chỉnh sửa Khu vực');
-                                 $(saveBtnSelector).text('Cập nhật Khu vực').removeClass('btn-success').addClass('btn-warning');
-                                 getModalInstance().show();
-                             } else {
-                                 showErrorAlert('Lỗi', 'Không tìm thấy dữ liệu khu vực.');
-                             }
-                         },
-                         error: function (xhr) {
-                             hideLoading(modalSelector + ' .modal-body');
-                             handleAjaxError(xhr, 'tải chi tiết khu vực');
-                         }
-                     });
-                 }
-
-                function setupEvents() {
-                    $('#showAddAreaModalBtn').on('click', function () { resetForm(); getModalInstance().show(); });
-                    $(saveBtnSelector).on('click', handleSave);
-                    // Reset form when modal is hidden
-                     $(modalSelector).on('hidden.bs.modal', function () {
-                         resetForm();
-                     });
-                     // Optional: Handle Enter key press
-                    $(formContainerSelector).on('keypress', 'input, textarea', function (event) {
-                         if (event.key === "Enter" && !$(this).is('textarea')) { // Allow Enter in textarea
-                             event.preventDefault();
-                             $(saveBtnSelector).click();
-                         }
-                    });
-                }
-
-                return { setup: setupEvents, showEditModal: showEditModal };
-            })();
-
-
-            // =========================================================================
-            // MODULE MODAL BÀN (TABLE)
-            // =========================================================================
-            const tableModalModule = (function () {
-                const modalSelector = '#tableModal';
-                const formContainerSelector = '#tableFormContainer';
-                const saveBtnSelector = '#saveTableBtn';
-                const editIdInputSelector = '#editTableId';
-                const nameInputSelector = '#modalTableName';
-                const areaIdSelectSelector = '#modalTableAreaId';
-                const availableTrueSelector = '#modalTableIsAvailableTrue';
-                const availableFalseSelector = '#modalTableIsAvailableFalse';
-                const activeTrueSelector = '#modalTableIsActiveTrue';
-                const activeFalseSelector = '#modalTableIsActiveFalse';
-                const availableErrorSelector = '.table-is-available-error';
-                const activeErrorSelector = '.table-is-active-error';
-                const modalTitleSelector = '#tableModalLabel';
-                let modalInstance = null;
-
-                function getModalInstance() {
-                    if (!modalInstance) {
-                         modalInstance = new bootstrap.Modal(document.getElementById('tableModal'));
+            function handleDelete(type, code, name) {
+                const isArea = type === 'area';
+                const title = isArea ? 'Xác nhận xóa Khu vực' : 'Xác nhận xóa Bàn';
+                const html = `Bạn có chắc muốn xóa vĩnh viễn <strong>${name}</strong>?<br/><strong class='text-danger'>Hành động này không thể hoàn tác.</strong>`;
+                const url = isArea ? '/Admin/AreaTable/DeleteArea' : '/Admin/AreaTable/DeleteTable';
+                let formData = new URLSearchParams();
+                if (isArea) { formData.append('areaCode', code); } else { formData.append('tableCode', code); }
+                formData = appendConnectionId(formData);
+                Swal.fire({ title: title, html: html, icon: 'warning', showCancelButton: true, confirmButtonText: 'Xóa', cancelButtonText: 'Hủy', reverseButtons: true, customClass: { confirmButton: 'btn btn-danger ms-2', cancelButton: 'btn btn-secondary' }, buttonsStyling: false }).then(result => {
+                    if (result.isConfirmed) {
+                        fetch(url, { method: 'POST', headers: { 'RequestVerificationToken': csrfToken }, body: formData })
+                            .then(response => response.json())
+                            .then(res => {
+                                if (res.success) { notyf.success(res.message); if (isArea && code === currentSelectedAreaCode) { currentSelectedAreaCode = null; currentSelectedAreaName = null; } loadAreas(); } else { notyf.error(res.message); }
+                            })
+                            .catch(error => handleAjaxError(error, 'xóa'));
                     }
-                    return modalInstance;
-                }
-
-                function resetForm() {
-                    const $formContainer = $(formContainerSelector);
-                    $(editIdInputSelector).val('');
-                    $(nameInputSelector).val('');
-                    $(areaIdSelectSelector).val(''); // Reset dropdown
-                     // May need to re-init Select2 if used: $(areaIdSelectSelector).val(null).trigger('change');
-                    $(availableTrueSelector).prop('checked', true); // Default available
-                    $(availableFalseSelector).prop('checked', false);
-                    $(activeTrueSelector).prop('checked', true); // Default active
-                    $(activeFalseSelector).prop('checked', false);
-                    $formContainer.removeClass('was-validated');
-                    $formContainer.find('.is-invalid').removeClass('is-invalid');
-                    $formContainer.find('.validation-error').text(''); // Clear server errors
-                    $(availableErrorSelector).hide();
-                    $(activeErrorSelector).hide();
-                    $(modalTitleSelector).text('Thêm Bàn mới');
-                    $(saveBtnSelector).text('Lưu Bàn').prop('disabled', false).removeClass('btn-warning').addClass('btn-primary');
-                }
-
-                function validateForm() {
-                     const $formContainer = $(formContainerSelector);
-                     let isValid = true;
-                     $formContainer.removeClass('was-validated');
-                     $formContainer.find('.is-invalid').removeClass('is-invalid');
-                     $formContainer.find('.validation-error').text('');
-                     $(availableErrorSelector).hide();
-                     $(activeErrorSelector).hide();
-
-                     // Name
-                     const $nameInput = $(nameInputSelector);
-                     if (!$nameInput.val() || !$nameInput.val().trim()) {
-                         $nameInput.addClass('is-invalid'); isValid = false;
-                     }
-                     // Area ID
-                     const $areaSelect = $(areaIdSelectSelector);
-                     if (!$areaSelect.val()) {
-                         $areaSelect.addClass('is-invalid'); isValid = false;
-                     }
-                     // Available Radio
-                     const $availableRadios = $formContainer.find('input[name="TableIsAvailable"]');
-                     if (!$availableRadios.is(':checked')) {
-                         $availableRadios.addClass('is-invalid');
-                         $(availableErrorSelector).show();
-                         isValid = false;
-                     }
-                     // Active Radio
-                     const $activeRadios = $formContainer.find('input[name="TableIsActive"]');
-                     if (!$activeRadios.is(':checked')) {
-                         $activeRadios.addClass('is-invalid');
-                         $(activeErrorSelector).show();
-                         isValid = false;
-                     }
-
-                     if (!isValid) {
-                         $formContainer.addClass('was-validated');
-                         $formContainer.find('.is-invalid').first().focus();
-                     }
-                     return isValid;
-                }
-
-
-                function handleSave() {
-                    if (!validateForm()) return;
-
-                    const tableId = $(editIdInputSelector).val();
-                    const isEditMode = !!tableId;
-                    const postData = {
-                        __RequestVerificationToken: csrfToken,
-                        Id: tableId || 0,
-                        NameTable: $(nameInputSelector).val().trim(),
-                        AreaId: $(areaIdSelectSelector).val(),
-                        IsAvailable: $(formContainerSelector).find('input[name="TableIsAvailable"]:checked').val() === 'true',
-                        IsActive: $(formContainerSelector).find('input[name="TableIsActive"]:checked').val() === 'true'
-                    };
-                    const url = isEditMode ? `/Admin/AreaTable/EditTable/${tableId}` : "/Admin/AreaTable/CreateTable";
-                    const actionText = isEditMode ? 'Cập nhật Bàn' : 'Thêm Bàn';
-                    const savingText = isEditMode ? 'Đang cập nhật...' : 'Đang thêm...';
-                    const $saveButton = $(saveBtnSelector);
-
-                    $saveButton.prop('disabled', true).html(`<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ${savingText}`);
-                    showLoading(modalSelector + ' .modal-content');
-
-                     $.ajax({
-                         url: url, type: 'POST', data: postData, dataType: 'json',
-                         success: function (response) {
-                            hideLoading(modalSelector + ' .modal-content');
-                            if (response.success) {
-                                getModalInstance().hide();
-                                showSuccessToast(response.message || `${actionText} thành công!`);
-                                tableTableModule.reload(null, !isEditMode); // Reset paging on create
-                            } else {
-                                // Display server validation errors
-                                if (response.errors) {
-                                     displayServerValidationErrors(formContainerSelector, response.errors);
-                                }
-                                showErrorAlert(`${actionText} thất bại`, response.message || `Lỗi khi ${actionText.toLowerCase()}.`);
-                                $saveButton.prop('disabled', false).text(isEditMode ? 'Cập nhật Bàn' : 'Lưu Bàn');
-                            }
-                         },
-                         error: function (xhr) {
-                            hideLoading(modalSelector + ' .modal-content');
-                            handleAjaxError(xhr, actionText, formContainerSelector); // Pass form selector
-                            $saveButton.prop('disabled', false).text(isEditMode ? 'Cập nhật Bàn' : 'Lưu Bàn');
-                         }
-                     });
-                }
-
-                // Function to display server-side errors (similar to area modal)
-                function displayServerValidationErrors(formSel, errors) {
-                     const $form = $(formSel);
-                     $form.find('.validation-error').text('');
-                     $form.find('.is-invalid').removeClass('is-invalid');
-
-                     $.each(errors, function(key, value) {
-                         if (value && value.length > 0) {
-                             const inputName = key;
-                             let $input = $form.find(`[name="${inputName}"]`);
-                              if (!$input.length) {
-                                 $input = $form.find(`#modalTable${inputName}`);
-                             }
-                             let $errorContainer = $form.find(`[data-valmsg-for="${inputName}"]`);
-
-                             if ($input.length) $input.addClass('is-invalid');
-
-                             if ($errorContainer.length) {
-                                 $errorContainer.text(value.join(' '));
-                             } else if ($input.length) {
-                                  if (!$input.next('.validation-error').length) {
-                                     $input.after(`<div class="text-danger validation-error">${value.join(' ')}</div>`);
-                                 } else {
-                                      $input.next('.validation-error').text(value.join(' '));
-                                 }
-                             } else {
-                                 console.warn(`Could not find input/error container for validation key: ${inputName}`);
-                             }
-                         }
-                     });
-                }
-
-                function showEditModal(id) {
-                    if (!id) return;
-                    resetForm();
-                    showLoading(modalSelector + ' .modal-body', 'Đang tải dữ liệu...');
-
-                    // Ensure Area dropdown is loaded before showing edit data
-                    loadAreaModalOptions().then(() => {
-                         $.ajax({
-                             url: `/Admin/AreaTable/GetTableDetails/${id}`, type: 'GET', dataType: 'json',
-                             success: function (data) {
-                                 hideLoading(modalSelector + ' .modal-body');
-                                 if (data) {
-                                     $(editIdInputSelector).val(data.id);
-                                     $(nameInputSelector).val(data.nameTable);
-                                     $(areaIdSelectSelector).val(data.areaId); // Set selected area
-                                      // If using Select2: $(areaIdSelectSelector).val(data.areaId).trigger('change');
-                                     $(data.isAvailable ? availableTrueSelector : availableFalseSelector).prop('checked', true);
-                                     $(data.isActive ? activeTrueSelector : activeFalseSelector).prop('checked', true);
-
-                                     $(modalTitleSelector).text('Chỉnh sửa Bàn');
-                                     $(saveBtnSelector).text('Cập nhật Bàn').removeClass('btn-primary').addClass('btn-warning');
-                                     getModalInstance().show();
-                                 } else {
-                                     showErrorAlert('Lỗi', 'Không tìm thấy dữ liệu bàn.');
-                                 }
-                             },
-                             error: function (xhr) {
-                                 hideLoading(modalSelector + ' .modal-body');
-                                 handleAjaxError(xhr, 'tải chi tiết bàn');
-                             }
-                         });
-                    }).catch(error => {
-                         hideLoading(modalSelector + ' .modal-body');
-                         showErrorAlert('Lỗi tải khu vực', 'Không thể tải danh sách khu vực cho modal.');
-                    });
-                 }
-
-
-                function setupEvents() {
-                     $('#showAddTableModalBtn').on('click', function () {
-                         resetForm();
-                         loadAreaModalOptions().then(() => { // Load areas before showing
-                             getModalInstance().show();
-                         }).catch(error => {
-                              showErrorAlert('Lỗi tải khu vực', 'Không thể tải danh sách khu vực cho modal.');
-                         });
-                     });
-                    $(saveBtnSelector).on('click', handleSave);
-                     $(modalSelector).on('hidden.bs.modal', function () {
-                         resetForm();
-                     });
-                    // Optional: Handle Enter key press
-                    $(formContainerSelector).on('keypress', 'input', function (event) {
-                         if (event.key === "Enter") {
-                             event.preventDefault();
-                             $(saveBtnSelector).click();
-                         }
-                    });
-                }
-
-                return { setup: setupEvents, showEditModal: showEditModal };
-            })();
-
-
-            // =========================================================================
-            // HÀM XÓA (Physical Delete for Area & Table)
-            // =========================================================================
-            function deleteArea(id, name) {
-                 const safeName = name ? $('<div>').text(name).html() : 'khu vực này';
-                 // Get current page info for Area table
-                 const areaTable = areaTableModule.getInstance();
-                 let currentPage = areaTable ? areaTable.page() : 0;
-                 let recordsOnCurrentPage = areaTable ? areaTable.rows({ page: 'current' }).count() : 0;
-                 const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
-
-                Swal.fire({
-                    title: 'Xác nhận xóa Khu vực',
-                    html: `Bạn chắc chắn muốn xóa vĩnh viễn khu vực <strong>${safeName}</strong>?<br/><strong class='text-danger'>Hành động này không thể hoàn tác và sẽ xóa khu vực khỏi hệ thống.</strong><br/><small class='text-warning'>Chỉ có thể xóa nếu khu vực không chứa bàn nào.</small>`,
-                    icon: 'error', // Use error icon for permanent delete warning
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-trash-alt me-1"></i>Xóa Vĩnh Viễn',
-                    cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
-                    reverseButtons: true,
-                    customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-delete-btn btn ms-2', cancelButton: 'custom-cancel-btn btn me-2' }, // Use delete style button
-                    buttonsStyling: false, showLoaderOnConfirm: true,
-                    preConfirm: () => {
-                        return $.ajax({
-                             url: `/Admin/AreaTable/DeleteArea/${id}`, type: 'POST',
-                             data: { __RequestVerificationToken: csrfToken }, dataType: 'json'
-                         }).catch(error => {
-                             Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`);
-                         });
-                    },
-                    allowOutsideClick: () => !Swal.isLoading()
-                }).then((result) => {
-                     if (result.isConfirmed && result.value.success) {
-                         showSuccessToast(result.value.message || 'Đã xóa khu vực thành công.');
-                         // Reload area table, adjust page if needed
-                         areaTableModule.reload(function() {
-                             if (shouldGoToPrevPage && areaTable && areaTable.page.info().recordsDisplay > 0) {
-                                 if (areaTable.page() === currentPage) { // Check if page didn't already change
-                                     areaTable.page(currentPage - 1).draw(false);
-                                 }
-                             }
-                             // Reload the area dropdowns as an area was removed
-                             loadAreaFilterOptions();
-                             loadAreaModalOptions();
-                             // Also reload the table list in case removing the area affected it (shouldn't directly, but good practice)
-                             tableTableModule.reload();
-                         }, false); // Reload without resetting page initially
-
-                     } else if (result.isConfirmed && !result.value.success) {
-                         showErrorAlert('Xóa thất bại', result.value.message || 'Không thể xóa khu vực.');
-                     }
                 });
             }
 
-             function deleteTable(id, name, areaName) {
-                 const safeName = name ? $('<div>').text(name).html() : 'bàn này';
-                 const safeAreaName = areaName ? $('<div>').text(areaName).html() : 'khu vực không xác định';
+            async function handleClearRequest(tableCode) {
+                try {
+                    const response = await fetch('/api/TableRequest/Service', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tableCode: tableCode, requestType: 'Clear' }) });
+                    const result = await response.json();
+                    if (response.ok) { notyf.success(`Đã xóa yêu cầu của bàn ${tableCode}.`); } else { notyf.error(result.message || 'Xóa yêu cầu thất bại.'); }
+                } catch (error) { handleAjaxError(error, 'xóa yêu cầu'); }
+            }
 
-                 // Get current page info for Table table
-                 const tableTable = tableTableModule.getInstance();
-                 let currentPage = tableTable ? tableTable.page() : 0;
-                 let recordsOnCurrentPage = tableTable ? tableTable.rows({ page: 'current' }).count() : 0;
-                 const shouldGoToPrevPage = (currentPage > 0 && recordsOnCurrentPage === 1);
+            async function checkConcurrencyBeforeEdit(itemElement, type) {
+                const isArea = type === 'area';
+                const code = isArea ? itemElement.data('areacode') : itemElement.data('tablecode');
+                const localTimestamp = itemElement.data('updatedat');
+                const url = isArea ? `/Admin/AreaTable/GetAreaDetails/${code}` : `/Admin/AreaTable/GetTableDetails/${code}`;
+                const setupModalFunc = isArea ? setupAreaModal : setupTableModal;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Không thể lấy dữ liệu mới nhất.');
+                    const latestData = await response.json();
+                    const serverTimestamp = latestData.updatedAt;
+                    if (localTimestamp && localTimestamp !== serverTimestamp) {
+                        notyf.error('Dữ liệu này vừa được người khác cập nhật! Trang sẽ tự động làm mới.');
+                        itemElement.addClass('border-danger');
+                        setTimeout(() => { if (isArea) loadAreas(); else loadTables(currentSelectedAreaCode); }, 2000);
+                    } else {
+                        setupModalFunc('edit', latestData);
+                    }
+                } catch (error) { handleAjaxError(error, "kiểm tra dữ liệu"); }
+            }
 
+            function safeDestroySortable(instance) { if (instance && typeof instance.destroy === 'function') { if (instance.el && document.body.contains(instance.el)) { instance.destroy(); } } return null; }
+            function destroyAreaSortable() { areaSortable = safeDestroySortable(areaSortable); }
+            function destroyTableSortables() { tableSortableGrid = safeDestroySortable(tableSortableGrid); tableSortableList = safeDestroySortable(tableSortableList); }
+            function cleanupPage() { destroyAreaSortable(); destroyTableSortables(); $('#sortModeBtn, #showAddAreaModalBtn, #showAddTableModalBtn, #saveAreaBtn, #saveTableBtn, #areaList, #tableGridContainer, #audio-activation-overlay').off(); currentSelectedAreaCode = null; currentSelectedAreaName = null; isInEditMode = false; if (signalRConnection) { signalRConnection.stop(); } }
+            function showLoading(selector) { const target = $(selector); if (target.length === 0) return; const timer = setTimeout(() => { if (target.css('position') === 'static') { target.css('position', 'relative'); } if (target.find('.loading-overlay').length === 0) { target.append('<div class="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>'); } }, 300); target.data('loading-timer', timer); }
+            function hideLoading(selector) { const target = $(selector); if (target.length === 0) return; const timer = target.data('loading-timer'); if (timer) { clearTimeout(timer); target.removeData('loading-timer'); } setTimeout(() => { target.find('.loading-overlay').remove(); }, 100); }
+            function handleAjaxError(error, actionText) { hideLoading('#areaCard'); hideLoading('#tableCard'); let errorMsg = `Không thể ${actionText.toLowerCase()}.`; if (typeof error === 'string') { errorMsg = error; } else if (error.responseJSON?.message) { errorMsg = error.responseJSON.message; } else if (error.message) { errorMsg = error.message; } notyf.error(errorMsg); }
+            function setEditMode(isEdit) { isInEditMode = isEdit; $('body').toggleClass('is-edit-mode', isEdit); const sortButton = $('#sortModeBtn'); if (isEdit) { sortButton.removeClass('btn-info').addClass('btn-primary active'); } else { sortButton.removeClass('btn-primary active').addClass('btn-info'); } sortButton.find('span').text(isEdit ? 'Hoàn tất' : 'Sắp xếp'); if (areaSortable) areaSortable.option('disabled', !isEdit); if (tableSortableGrid) tableSortableGrid.option('disabled', !isEdit); if (tableSortableList) tableSortableList.option('disabled', !isEdit); }
 
-                Swal.fire({
-                    title: 'Xác nhận xóa Bàn',
-                    html: `Bạn chắc chắn muốn xóa vĩnh viễn bàn <strong>${safeName}</strong> (thuộc khu vực <strong>${safeAreaName}</strong>)?<br/><strong class='text-danger'>Hành động này không thể hoàn tác.</strong><br/><small class='text-warning'>Chỉ có thể xóa nếu bàn không có hóa đơn liên kết.</small>`,
-                    icon: 'error',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-trash-alt me-1"></i>Xóa Vĩnh Viễn',
-                    cancelButtonText: '<i class="fas fa-times me-1"></i>Hủy',
-                    reverseButtons: true,
-                    customClass: { popup: 'custom-swal-popup', confirmButton: 'custom-delete-btn btn ms-2', cancelButton: 'custom-cancel-btn btn me-2' },
-                    buttonsStyling: false, showLoaderOnConfirm: true,
-                    preConfirm: () => {
-                         return $.ajax({
-                             url: `/Admin/AreaTable/DeleteTable/${id}`, type: 'POST',
-                             data: { __RequestVerificationToken: csrfToken }, dataType: 'json'
-                         }).catch(error => {
-                             Swal.showValidationMessage(`Yêu cầu thất bại: ${error.responseJSON?.message || error.statusText || 'Lỗi không xác định'}`);
-                         });
-                    },
-                     allowOutsideClick: () => !Swal.isLoading()
-                }).then((result) => {
-                     if (result.isConfirmed && result.value.success) {
-                         showSuccessToast(result.value.message || 'Đã xóa bàn thành công.');
-                         // Reload table table, adjust page if needed
-                         tableTableModule.reload(function() {
-                             if (shouldGoToPrevPage && tableTable && tableTable.page.info().recordsDisplay > 0) {
-                                if(tableTable.page() === currentPage){
-                                    tableTable.page(currentPage - 1).draw(false);
-                                }
-                             }
-                              // Reload area table too, as the table count changed
-                              areaTableModule.reload();
-                         }, false);
+            function updateRequestIcon(tableCode, requestStatus) { const tableElements = $(`[data-tablecode="${tableCode}"]`); if (tableElements.length === 0) return; let iconHtml = ''; let iconClass = ''; switch (requestStatus) { case 1: iconClass = 'fas fa-bell request-order'; iconHtml = `<i class="${iconClass}" title="Yêu cầu gọi món"></i>`; break; case 2: iconClass = 'fas fa-credit-card request-payment'; iconHtml = `<i class="${iconClass}" title="Yêu cầu thanh toán"></i>`; break; } tableElements.find('.table-card-request-icon').html(iconHtml); tableElements.find('.list-view-request-icon').html(iconHtml); }
+            function renderAreaList(areas) { const areaListEl = $('#areaList'); areaListEl.empty(); if (!areas || areas.length === 0) { areaListEl.html(`<div class="empty-state-container"><h6 class="fw-normal">Chưa có khu vực nào</h6><p class="small">Nhấn "Thêm Khu vực" để tạo.</p></div>`); return; } areas.forEach(area => { const inactiveClass = !area.isActive ? 'item-inactive' : ''; areaListEl.append(`<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${inactiveClass}" data-areacode="${area.areaCode}" data-areaname="${area.name}" data-isactive="${area.isActive}" data-updatedat="${area.updatedAt}"><div class="d-flex align-items-center" style="cursor: pointer; min-width: 0;"><i class="fas fa-grip-vertical handle edit-mode-item"></i><span class="ms-2 truncate-text" title="${area.name}">${area.name}</span></div><div class="d-flex align-items-center flex-shrink-0"><span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill me-3">${area.tableCount} bàn</span><div class="dropdown"><button class="btn btn-sm action-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item edit-area-btn" href="#"><i class="fas fa-edit fa-fw me-2"></i>Sửa thông tin</a></li><li><a class="dropdown-item delete-area-btn text-danger" href="#"><i class="fas fa-trash fa-fw me-2"></i>Xóa khu vực</a></li></ul></div></div></div>`); }); }
+            function renderTableViews(tables) { const tableGridEl = $('#tableGrid').empty(); const tableListEl = $('#tableList').empty(); const emptyStateEl = $('#tableEmptyState'); if (tables === null) { emptyStateEl.find('h5').text("Hãy chọn một khu vực để xem bàn"); emptyStateEl.show(); tableGridEl.hide(); tableListEl.hide(); return; } if (tables.length === 0) { emptyStateEl.find('h5').text("Khu vực này chưa có bàn"); emptyStateEl.show(); tableGridEl.hide(); tableListEl.hide(); return; } emptyStateEl.hide(); tableGridEl.show(); tableListEl.show(); tables.forEach(table => { const inactiveClass = !table.isActive ? 'item-inactive' : ''; let statusClass, statusText; if (table.isAvailable) { statusClass = 'success'; statusText = 'Trống'; } else { statusClass = 'warning'; statusText = 'Có khách'; } const dropdownMenuItems = `<li><a class="dropdown-item edit-table-btn" href="#"><i class="fas fa-edit fa-fw me-2"></i>Sửa</a></li><li><a class="dropdown-item clear-request-btn" href="#"><i class="fas fa-broom fa-fw me-2"></i>Xóa yêu cầu</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item delete-table-btn text-danger" href="#"><i class="fas fa-trash fa-fw me-2"></i>Xóa</a></li>`; const cardHtml = `<div class="col ${inactiveClass}" data-tablecode="${table.tableCode}" data-tablename="${table.nameTable}" data-updatedat="${table.updatedAt}"><div class="card h-100 table-card"><div class="table-card-request-icon"></div><div class="action-menu-container dropdown"><button class="btn btn-sm action-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end">${dropdownMenuItems}</ul></div><div class="card-body"><h6 class="table-card-title text-dark truncate-text" title="${table.nameTable}">${table.nameTable}</h6><p class="table-card-code truncate-text" title="${table.tableCode}">${table.tableCode}</p><div class="table-card-status"><span class="badge text-bg-${statusClass} w-100 py-2">${statusText}</span></div></div></div></div>`; const listItemHtml = `<div class="list-group-item d-flex justify-content-between ${inactiveClass}" data-tablecode="${table.tableCode}" data-tablename="${table.nameTable}" data-updatedat="${table.updatedAt}"><div class="d-flex align-items-center" style="min-width: 0;"><i class="fas fa-grip-vertical handle edit-mode-item me-3"></i><div class="status-dot bg-${statusClass}"></div><div style="min-width: 0;"><div class="fw-bold truncate-text" title="${table.nameTable}">${table.nameTable}</div><small class="text-muted truncate-text" title="${table.tableCode} - ${statusText}">${table.tableCode} - ${statusText}</small></div><div class="list-view-request-icon ms-2"></div></div><div class="dropdown flex-shrink-0"><button class="btn btn-sm action-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end">${dropdownMenuItems}</ul></div></div>`; tableGridEl.append(cardHtml); tableListEl.append(listItemHtml); if (table.request && table.request > 0) { updateRequestIcon(table.tableCode, table.request); } }); }
 
+            function setupAreaModal(mode, areaData) { const form = $('#areaFormContainer'); form[0].reset(); form.removeClass('was-validated'); $('#modalAreaCode').prop('readonly', mode === 'edit'); $('#areaModal').data('mode', mode); if (mode === 'edit') { $('#areaModalLabel').text('Chỉnh sửa Khu vực'); $('#modalAreaCode').val(areaData.areaCode); $('#modalAreaName').val(areaData.name); $('#modalAreaDescription').val(areaData.description); $(`input[name="IsActive"][value="${areaData.isActive.toString()}"]`, form).prop('checked', true); areaModal.show(); } else { $('#areaModalLabel').text('Thêm Khu vực mới'); areaModal.show(); } }
+            function setupTableModal(mode, tableData) { const form = $('#tableFormContainer'); form[0].reset(); form.removeClass('was-validated'); $('#modalTableCode').prop('readonly', mode === 'edit'); $('#tableModal').data('mode', mode); const areaSelect = $('#modalTableAreaCodeSelect'); areaSelect.empty(); $('#areaList .list-group-item').each(function () { const code = $(this).data('areacode'); const name = $(this).data('areaname'); const isActive = $(this).data('isactive'); if (code && name && isActive) { areaSelect.append(new Option(name, code)); } }); if (mode === 'edit') { $('#tableModalLabel').text('Chỉnh sửa Bàn'); if (areaSelect.find(`option[value="${tableData.areaCode}"]`).length === 0) { const inactiveArea = $(`#areaList .list-group-item[data-areacode="${tableData.areaCode}"]`); if (inactiveArea.length > 0) { areaSelect.append(new Option(inactiveArea.data('areaname'), inactiveArea.data('areacode'))); } } $('#modalTableCode').val(tableData.tableCode); $('#modalTableName').val(tableData.nameTable); areaSelect.val(tableData.areaCode); $(`input[name="IsActive"][value="${tableData.isActive.toString()}"]`, form).prop('checked', true); $(`input[name="IsAvailable"][value="${tableData.isAvailable.toString()}"]`, form).prop('checked', true); tableModal.show(); } else { $('#tableModalLabel').text('Thêm Bàn mới'); areaSelect.val(currentSelectedAreaCode); tableModal.show(); } }
 
-                     } else if (result.isConfirmed && !result.value.success) {
-                         showErrorAlert('Xóa thất bại', result.value.message || 'Không thể xóa bàn.');
-                     }
+            async function loadTables(areaCode) { if (isTableLoading) return; isTableLoading = true; showLoading('#tableCard'); destroyTableSortables(); try { const response = await fetch(`/Admin/AreaTable/GetTablesByArea?areaCode=${areaCode}`); if (!response.ok) { throw new Error(`Lỗi server: ${response.statusText}`); } const contentType = response.headers.get("content-type"); if (contentType && contentType.indexOf("application/json") !== -1) { const tables = await response.json(); renderTableViews(tables); initTableSortables(areaCode); $('#tableGridFooter').toggle(tables.length > 0 && isInEditMode); } else { throw new Error("Dữ liệu trả về không hợp lệ."); } } catch (error) { handleAjaxError(error, 'tải danh sách bàn'); renderTableViews([]); } finally { hideLoading('#tableCard'); isTableLoading = false; } }
+            async function loadAreas() { if (isAreaLoading) return; isAreaLoading = true; showLoading('#areaCard'); try { const response = await fetch('/Admin/AreaTable/GetAreas'); if (!response.ok) throw response; const areas = await response.json(); renderAreaList(areas); initAreaSortable(); if (currentSelectedAreaCode) { const activeArea = $(`#areaList .list-group-item[data-areacode="${currentSelectedAreaCode}"]`); if (activeArea.length) { activeArea.addClass('active'); await loadTables(currentSelectedAreaCode); } else { currentSelectedAreaCode = null; currentSelectedAreaName = null; $('#tableListHeader').html('<i class="fas fa-columns me-2"></i>Bàn').addClass('text-muted'); renderTableViews(null); $('#showAddTableModalBtn').hide(); } } else if (areas && areas.length > 0) { const firstArea = $('#areaList .list-group-item:first'); if (firstArea.length) firstArea.trigger('click'); } else { renderTableViews(null); $('#tableListHeader').html('<i class="fas fa-columns me-2"></i>Bàn').addClass('text-muted'); $('#showAddTableModalBtn').hide(); } } catch (error) { handleAjaxError(error, 'tải danh sách khu vực'); } finally { hideLoading('#areaCard'); isAreaLoading = false; } }
+
+            function initAreaSortable() { destroyAreaSortable(); const el = document.getElementById('areaList'); if (el && el.children.length > 0 && !el.querySelector('.empty-state-container')) { areaSortable = new Sortable(el, { group: { name: 'shared', pull: false, put: true }, handle: '.handle', animation: 150, disabled: !isInEditMode, onEnd: async (evt) => { if (evt.oldIndex === evt.newIndex && evt.from === evt.to) return; const orderedCodes = Array.from(evt.from.children).map(item => $(item).data('areacode')); try { let requestBody = { orderedAreaCodes: orderedCodes }; requestBody = appendConnectionId(requestBody); const response = await fetch('/Admin/AreaTable/UpdateAreaOrder', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrfToken }, body: JSON.stringify(requestBody) }); if (!response.ok) throw response; const result = await response.json(); if (result.success) { notyf.success(result.message); } else { notyf.error(result.message || 'Cập nhật thứ tự thất bại.'); } } catch (error) { handleAjaxError(error, 'sắp xếp khu vực'); await loadAreas(); } }, onMove: function (evt) { $('#areaList .list-group-item').removeClass('drop-target-highlight'); const targetEl = $(evt.related); if (targetEl.length && !targetEl.hasClass('active')) { targetEl.addClass('drop-target-highlight'); } } }); } }
+            function initTableSortables(areaCode) { destroyTableSortables(); const onStart = () => { $('body').addClass('is-dragging-table'); if (areaSortable) areaSortable.option('disabled', true); }; const onEnd = async (evt) => { $('body').removeClass('is-dragging-table'); $('#areaList .list-group-item').removeClass('drop-target-highlight'); if (areaSortable) areaSortable.option('disabled', !isInEditMode); const targetAreaEl = $(evt.originalEvent.target).closest('#areaList .list-group-item'); if (targetAreaEl.length > 0) { const tableCode = $(evt.item).data('tablecode'); const newAreaCode = targetAreaEl.data('areacode'); $(evt.item).remove(); if (evt.from.children.length > evt.oldIndex) { evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]); } else { evt.from.appendChild(evt.item); } if (newAreaCode && newAreaCode !== currentSelectedAreaCode) { handleMoveTable(tableCode, newAreaCode); } return; } if (evt.from === evt.to) { if (evt.oldIndex === evt.newIndex) return; const orderedCodes = Array.from(evt.from.children).map(item => $(item).data('tablecode')); let requestData = { areaCode: areaCode, orderedTableCodes: orderedCodes }; requestData = appendConnectionId(requestData); try { const response = await fetch('/Admin/AreaTable/UpdateTableOrder', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrfToken }, body: JSON.stringify(requestData) }); if (!response.ok) throw new Error("Lỗi server khi cập nhật thứ tự."); const result = await response.json(); if (result.success) { notyf.success(result.message); } else { notyf.error(result.message || "Yêu cầu sắp xếp thất bại."); } } catch (error) { handleAjaxError(error, 'sắp xếp bàn'); await loadTables(areaCode); } } }; const gridEl = document.getElementById('tableGrid'); const listEl = document.getElementById('tableList'); const sortableOptions = { group: { name: 'shared', pull: true, put: false }, animation: 150, disabled: !isInEditMode, onStart: onStart, onEnd: onEnd }; if (gridEl && gridEl.children.length > 0) { tableSortableGrid = new Sortable(gridEl, sortableOptions); } if (listEl && listEl.children.length > 0) { tableSortableList = new Sortable(listEl, { ...sortableOptions, handle: '.handle' }); } }
+
+            function showExternalUpdateNotification(message) { notyf.success({ message: message, duration: 5000, icon: { className: 'fas fa-sync-alt', tagName: 'i', color: 'white' } }); }
+
+            function initializeSignalR() {
+                signalRConnection = new signalR.HubConnectionBuilder().withUrl("/appHub").withAutomaticReconnect().build();
+                signalRConnection.on("ReceiveTableMove", (data) => { const message = `${data.updaterName} vừa di chuyển bàn <strong>${data.tableName}</strong> từ '${data.oldAreaName}' sang '${data.newAreaName}'.`; showExternalUpdateNotification(message); loadAreas(); });
+                signalRConnection.on("ReceiveAreaUpdate", (data) => { showExternalUpdateNotification(`${data.updaterName} vừa cập nhật danh sách khu vực.`); loadAreas(); });
+                signalRConnection.on("ReceiveTableUpdate", (data) => { let message = `${data.updaterName} vừa cập nhật dữ liệu bàn.`; const tableName = data.table ? `<strong>${data.table.nameTable}</strong>` : `bàn có mã <strong>${data.tableCode}</strong>`; switch (data.action) { case 'create': message = `${data.updaterName} vừa thêm bàn mới: ${tableName}.`; break; case 'update': message = `${data.updaterName} vừa cập nhật bàn ${tableName}.`; break; case 'delete': message = `${data.updaterName} vừa xóa ${tableName}.`; break; case 'reorder': message = `${data.updaterName} vừa sắp xếp lại các bàn.`; break; } showExternalUpdateNotification(message); switch (data.action) { case 'create': case 'delete': loadAreas(); break; case 'update': case 'reorder': if (data.areaCode && data.areaCode === currentSelectedAreaCode) { loadTables(currentSelectedAreaCode); } break; } });
+
+                signalRConnection.on("ReceiveTableRequest", (data) => {
+                    updateRequestIcon(data.tableCode, data.requestStatus);
+                    if (isAudioEnabled && data.requestStatus !== 0) {
+                        // === FIX: Lấy tên bàn trực tiếp từ dữ liệu 'data' nhận được ===
+                        const tableName = data.tableName;
+                        const requestText = data.requestStatus === 1 ? 'GỌI MÓN' : 'THANH TOÁN';
+
+                        notificationSound.play().catch(e => console.error("Lỗi phát âm thanh: ", e));
+
+                        // Kiểm tra lại để đảm bảo tableName không phải là undefined
+                        const notyfMessage = `Bàn <strong>${tableName || data.tableCode}</strong> yêu cầu ${requestText}!`;
+                        notyf.open({ type: 'info', message: notyfMessage, duration: 10000, icon: { className: 'fas fa-concierge-bell', tagName: 'i', color: 'white' } });
+                    }
                 });
+
+                signalRConnection.start().then(() => console.log("SignalR Connected.")).catch(err => console.error("SignalR Connection Error: ", err));
             }
 
-            // =========================================================================
-            // HELPER: Load Area Options for Dropdowns
-            // =========================================================================
-            function loadAreaOptions(selectElementId) {
-                const $select = $(`#${selectElementId}`);
-                // Return a promise to allow chaining/waiting
-                return new Promise((resolve, reject) => {
-                    // Add a temporary loading option
-                    const currentVal = $select.val(); // Preserve current selection if any
-                    $select.empty().append('<option value="">Đang tải khu vực...</option>').prop('disabled', true);
-
-                    $.ajax({
-                        url: '/Admin/AreaTable/GetActiveAreasForDropdown', // Use the helper action
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function (data) {
-                            $select.empty(); // Clear loading/old options
-                            if (selectElementId === 'tableAreaFilter') {
-                                $select.append('<option value="0" selected>-- Lọc theo Khu vực --</option>'); // Add default filter option
-                            } else if (selectElementId === 'modalTableAreaId') {
-                                 $select.append('<option value="">-- Chọn khu vực --</option>'); // Add default modal option
-                            }
-                            // Populate with fetched data
-                            if (data && data.length > 0) {
-                                $.each(data, function (i, area) {
-                                    $select.append($('<option>', {
-                                        value: area.id,
-                                        text: area.text // Assumes controller returns {id, text}
-                                    }));
-                                });
-                            }
-                            $select.val(currentVal); // Restore previous selection if it exists
-                            $select.prop('disabled', false);
-                            // If using Select2, initialize or update it here
-                            // if ($select.data('select2')) { $select.select2('destroy'); }
-                            // $select.select2({ theme: "bootstrap-5", placeholder: $select.find('option:first').text() });
-                            resolve(); // Resolve the promise on success
-                        },
-                        error: function (xhr) {
-                            console.error("Lỗi tải danh sách khu vực:", xhr.responseText);
-                            $select.empty().append('<option value="">Lỗi tải khu vực</option>').prop('disabled', true);
-                            reject(xhr); // Reject the promise on error
-                        }
-                    });
-                });
-            }
-
-            // Specific functions to load into each dropdown
-             function loadAreaFilterOptions() {
-                return loadAreaOptions('tableAreaFilter');
-            }
-            function loadAreaModalOptions() {
-                return loadAreaOptions('modalTableAreaId');
-            }
-
-
-            // =========================================================================
-            // KHỞI TẠO KHI TRANG SẴN SÀNG
-            // =========================================================================
-            $(document).ready(function () {
+            function initializePage() {
                 csrfToken = $('input[name="__RequestVerificationToken"]').val();
-                if (!csrfToken) { console.error("CSRF token not found!"); showErrorAlert("Lỗi cấu hình", "Không tìm thấy mã xác thực bảo mật."); return; }
+                notyf = new Notyf({ duration: 4000, position: { x: 'right', y: 'top' }, dismissible: true, types: [{ type: 'info', background: '#5D87FF', icon: false }] });
+                Swal = window.Swal;
+                areaModal = new bootstrap.Modal(document.getElementById('areaModal'));
+                tableModal = new bootstrap.Modal(document.getElementById('tableModal'));
 
-                // Initialize tables
-                areaTableModule.init();
-                tableTableModule.init();
+                $('#audio-activation-overlay').on('click', function () { if (!isAudioEnabled) { initializeAudio(); } $(this).css('opacity', '0'); setTimeout(() => $(this).hide(), 300); });
+                $('#sortModeBtn').on('click', () => setEditMode(!isInEditMode));
+                $('#showAddAreaModalBtn').on('click', () => setupAreaModal('create'));
+                $('#showAddTableModalBtn').on('click', () => setupTableModal('create'));
+                $('#saveAreaBtn').on('click', () => handleSave('area'));
+                $('#saveTableBtn').on('click', () => handleSave('table'));
+                $('#areaList').on('click', '.list-group-item', function (e) { if ($(e.target).closest('.dropdown, .handle').length > 0) return; currentSelectedAreaCode = $(this).data('areacode'); currentSelectedAreaName = $(this).data('areaname'); $('#areaList .list-group-item').removeClass('active'); $(this).addClass('active'); $('#tableListHeader').html(`<i class="fas fa-columns me-2"></i>Bàn tại: <strong>${currentSelectedAreaName}</strong>`).removeClass('text-muted'); $('#showAddTableModalBtn').show(); loadTables(currentSelectedAreaCode); });
+                $('#areaList').on('click', '.edit-area-btn', function (e) { e.preventDefault(); e.stopPropagation(); checkConcurrencyBeforeEdit($(this).closest('[data-areacode]'), 'area'); });
+                $('#tableGridContainer').on('click', '.edit-table-btn', function (e) { e.preventDefault(); e.stopPropagation(); checkConcurrencyBeforeEdit($(this).closest('[data-tablecode]'), 'table'); });
+                $('#areaList').on('click', '.delete-area-btn', function (e) { e.preventDefault(); e.stopPropagation(); const item = $(this).closest('[data-areacode]'); handleDelete('area', item.data('areacode'), item.data('areaname')); });
+                $('#tableGridContainer').on('click', '.delete-table-btn', function (e) { e.preventDefault(); e.stopPropagation(); const item = $(this).closest('[data-tablecode]'); handleDelete('table', item.data('tablecode'), item.data('tablename')); });
+                $('#tableGridContainer').on('click', '.clear-request-btn', function (e) { e.preventDefault(); e.stopPropagation(); const tableCode = $(this).closest('[data-tablecode]').data('tablecode'); handleClearRequest(tableCode); });
 
-                // Initialize modals
-                areaModalModule.setup();
-                tableModalModule.setup();
+                setEditMode(false);
+                loadAreas();
+                initializeSignalR();
+            }
 
-                // Load initial Area options for the filter dropdown
-                loadAreaFilterOptions().catch(() => {
-                    showErrorAlert('Lỗi', 'Không thể tải bộ lọc khu vực ban đầu.');
-                });
-
-
-                console.log("Trang quản lý Khu vực & Bàn đã sẵn sàng.");
+            $(document).ready(function () {
+                cleanupPage();
+                initializePage();
             });
 
         })(jQuery);

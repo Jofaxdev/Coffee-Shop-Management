@@ -1,0 +1,1097 @@
+﻿@{
+    Layout = "~/Areas/Pos/Views/Shared/_PosLayout.cshtml";
+    ViewData["Title"] = "POS Bán Hàng";
+}
+
+@section Styles {
+}
+
+<div id="loading-overlay">
+    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    <p class="mt-3 text-primary fw-bold">Đang tải dữ liệu...</p>
+</div>
+
+<div class="main-wrapper">
+    <nav class="top-nav d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-shop"></i> POS Bán Hàng</h5>
+        <button class="btn btn-primary btn-sm py-2 px-3 position-relative" id="notificationBtn" data-bs-toggle="modal" data-bs-target="#notificationModal">
+            <i class="bi bi-bell-fill"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notification-count">
+                0
+            </span>
+        </button>
+    </nav>
+    <div class="content-wrapper">
+        <main class="products-section">
+            <div class="products-header">
+                <div class="category-and-search-container">
+                    <div id="category-slider-wrapper">
+                        <div id="category-slider">
+                        </div>
+                        <div class="slider-controls">
+                            <button data-controls="prev"></button>
+                            <button data-controls="next"></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group product-search-bar">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" id="productSearchInput" placeholder="Tìm kiếm sản phẩm...">
+                    </div>
+                </div>
+            </div>
+            <div id="product-list">
+                <div class="product-list-inner row g-3 g-md-4">
+                </div>
+            </div>
+        </main>
+        <aside class="billing-section">
+            <div class="billing-header">
+                <h5 id="billing-title">Hóa đơn</h5>
+                <div id="billing-table-info">
+                </div>
+            </div>
+            <div class="order-items" id="order-items-container"></div>
+            <div id="billing-footer" style="display:none;">
+                <div class="billing-summary">
+                    <div class="d-flex justify-content-between mb-2"><span>Tạm tính</span><span id="subtotal">0đ</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Thuế (VAT 8%)</span><span id="tax">0đ</span></div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Tổng cộng</span><span id="total" class="text-primary">0đ</span></div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-lg" id="checkoutBtn" disabled><i class="bi bi-cash-coin"></i> Thanh toán</button>
+                        <button class="btn btn-outline-danger" id="clearCartBtn" disabled>Xóa đơn hàng</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <nav class="bottom-nav">
+        <a href="#" class="nav-link active" id="mobile-products-tab">
+            <div class="nav-link-wrapper">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                <span>Sản phẩm</span>
+            </div>
+        </a>
+        <a href="#" class="nav-link" id="mobile-billing-tab">
+            <div class="nav-link-wrapper">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span>Hóa đơn</span>
+                <span class="badge rounded-pill bg-danger d-none" id="billing-badge">0</span>
+            </div>
+        </a>
+    </nav>
+</div>
+
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel"><i class="bi bi-bell-fill me-2"></i>Lịch sử Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="list-group list-group-flush" id="notification-list">
+                    <li class="list-group-item text-center text-muted d-none" id="no-notification-message">Chưa có thông báo nào.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="tableModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Chọn Khu Vực & Bàn</h5></div><div class="modal-body"><div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3"><ul class="nav nav-pills" id="areaTabs" role="tablist"></ul><button class="btn btn-primary" id="retailSaleBtn"><i class="bi bi-bag-check-fill"></i> Bán lẻ</button></div><div class="tab-content" id="areaTabContent"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button></div></div></div></div>
+<div class="modal fade" id="moveModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Chọn bàn muốn chuyển đến</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p id="moveModalDescription"></p><div id="move-table-areas-container"></div></div></div></div></div>
+<div class="modal fade" id="checkoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Xác nhận Thanh toán</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label class="form-label">Tổng tiền thanh toán</label><input type="text" id="checkoutTotal" class="form-control form-control-lg fs-4 text-success fw-bold" readonly></div><div class="mb-3"><label for="cashReceivedInput" class="form-label">Tiền khách đưa</label><input type="number" class="form-control form-control-lg" id="cashReceivedInput" placeholder="Nhập số tiền khách đưa..." min="0"></div><div class="mb-3"><label class="form-label">Tiền thối lại</label><input type="text" id="changeDue" class="form-control form-control-lg fs-4 text-danger fw-bold" readonly></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-success" id="confirmPaymentBtn">Xác nhận & In Hóa Đơn</button></div></div></div></div>
+<div class="modal fade" id="invoiceModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="invoiceModalLabel">Xem trước Hóa đơn</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div id="invoicePreview" class="invoice-print-area"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button><button type="button" class="btn btn-primary" id="printInvoiceBtn"><i class="bi bi-printer-fill"></i> In Hóa Đơn</button></div></div></div></div>
+<div class="modal fade" id="splitBillModal" data-bs-backdrop="static" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Tách Hóa Đơn</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row"><div class="col-md-6"><h6 class="text-center">Hóa đơn gốc (<span id="split-source-table-name"></span>)</h6><div id="split-source-items" class="split-bill-panel"></div><div id="split-source-total" class="total-display mt-2">Tổng: 0đ</div></div><div class="col-md-6"><h6 class="text-center">Hóa đơn mới (để tách)</h6><div id="split-destination-items" class="split-bill-panel"></div><div id="split-destination-total" class="total-display mt-2">Tổng: 0đ</div></div></div><hr><div class="row align-items-end"><div class="col-md-6"><label for="split-destination-select" class="form-label fw-bold">Chuyển món đến bàn:</label><select id="split-destination-select" class="form-select"></select></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-success" id="confirmSplitBtn">Xác nhận Tách</button></div></div></div></div>
+<div class="modal fade" id="noteModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Thêm Ghi Chú</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="noteCartItemId"><textarea class="form-control" id="noteInput" rows="3" placeholder="Ví dụ: ít đường, không đá..."></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-primary" id="saveNoteBtn">Lưu</button></div></div></div></div>
+<div class="modal fade" id="confirmClearModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Xác nhận Xóa Đơn Hàng</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Bạn có chắc chắn muốn xóa toàn bộ đơn hàng của bàn <strong id="clear-cart-table-name"></strong> không?</p><p class="text-danger small">Hành động này không thể hoàn tác.</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-danger" id="confirmClearCartBtn">Xác nhận Xóa</button></div></div></div></div>
+<div class="modal fade" id="mergeTablesModal" data-bs-backdrop="static" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Gộp Bàn</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Gộp các đơn hàng từ các bàn khác vào bàn đích: <strong id="merge-destination-table-name" class="text-primary fs-5"></strong></p><hr><label class="form-label fw-bold">Chọn các bàn nguồn cần gộp:</label><div id="merge-source-tables-list" class="list-group"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-success" id="confirmMergeBtn"><i class="bi bi-union me-2"></i>Xác nhận Gộp</button></div></div></div></div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const RETAIL_CUSTOMER_ID = null;
+            const RETAIL_CUSTOMER_NAME = "Bán lẻ";
+            const TAX_RATE = 0.08;
+            const API_URL_PREFIX = '/Pos/Home';
+            let allProducts = [], allCategories = [], allAreas = [], allTables = {};
+            let isDataLoaded = false;
+            let currentCart = [];
+            let currentTableId = null;
+            let currentTableName = null;
+            let isFinalPayment = false;
+            let splitSourceItems = [], splitDestinationItems = [];
+            let categorySlider = null;
+            let activeTooltips = [];
+
+            const connection = new signalR.HubConnectionBuilder().withUrl("/appHub").build();
+            const notyf = new Notyf({ duration: 2500, position: { x: 'center', y: 'top' }, types: [{ type: 'success', background: 'var(--teal-dark)', icon: { className: 'bi bi-check-circle-fill', tagName: 'i' } }, { type: 'error', background: 'var(--red)', icon: { className: 'bi bi-exclamation-circle-fill', tagName: 'i' } }] });
+            const tableModal = new bootstrap.Modal(document.getElementById('tableModal'));
+            const moveModal = new bootstrap.Modal(document.getElementById('moveModal'));
+            const checkoutModal = new bootstrap.Modal(document.getElementById('checkoutModal'));
+            const invoiceModal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+            const splitBillModal = new bootstrap.Modal(document.getElementById('splitBillModal'));
+            const noteModal = new bootstrap.Modal(document.getElementById('noteModal'));
+            const confirmClearModal = new bootstrap.Modal(document.getElementById('confirmClearModal'));
+            const mergeTablesModal = new bootstrap.Modal(document.getElementById('mergeTablesModal'));
+
+            const DOM = {
+                mainWrapper: document.querySelector('.main-wrapper'),
+                mobileProductsTab: document.getElementById('mobile-products-tab'),
+                mobileBillingTab: document.getElementById('mobile-billing-tab'),
+                billingBadge: document.getElementById('billing-badge'),
+                loadingOverlay: document.getElementById('loading-overlay'),
+                productList: document.querySelector('#product-list .product-list-inner'),
+                categorySliderWrapper: document.getElementById('category-slider-wrapper'),
+                orderItemsContainer: document.getElementById('order-items-container'),
+                billingFooter: document.getElementById('billing-footer'),
+                subtotal: document.getElementById('subtotal'),
+                tax: document.getElementById('tax'),
+                total: document.getElementById('total'),
+                checkoutBtn: document.getElementById('checkoutBtn'),
+                clearCartBtn: document.getElementById('clearCartBtn'),
+                billingTableInfo: document.getElementById('billing-table-info'),
+                billingTitle: document.getElementById('billing-title'),
+                areaTabs: document.getElementById('areaTabs'),
+                areaTabContent: document.getElementById('areaTabContent'),
+                productSearchInput: document.getElementById('productSearchInput'),
+                retailSaleBtn: document.getElementById('retailSaleBtn'),
+                confirmClearCartBtn: document.getElementById('confirmClearCartBtn'),
+                clearCartTableName: document.getElementById('clear-cart-table-name'),
+                moveModalDescription: document.getElementById('moveModalDescription'),
+                moveTableAreasContainer: document.getElementById('move-table-areas-container'),
+                checkoutTotal: document.getElementById('checkoutTotal'),
+                cashReceivedInput: document.getElementById('cashReceivedInput'),
+                changeDue: document.getElementById('changeDue'),
+                confirmPaymentBtn: document.getElementById('confirmPaymentBtn'),
+                invoicePreview: document.getElementById('invoicePreview'),
+                printInvoiceBtn: document.getElementById('printInvoiceBtn'),
+                invoiceModalLabel: document.getElementById('invoiceModalLabel'),
+                noteInput: document.getElementById('noteInput'),
+                saveNoteBtn: document.getElementById('saveNoteBtn'),
+                noteCartItemId: document.getElementById('noteCartItemId'),
+                splitSourceTableName: document.getElementById('split-source-table-name'),
+                splitSourceItems: document.getElementById('split-source-items'),
+                splitDestinationItems: document.getElementById('split-destination-items'),
+                splitSourceTotal: document.getElementById('split-source-total'),
+                splitDestinationTotal: document.getElementById('split-destination-total'),
+                splitDestinationSelect: document.getElementById('split-destination-select'),
+                confirmSplitBtn: document.getElementById('confirmSplitBtn'),
+                mergeDestinationTableName: document.getElementById('merge-destination-table-name'),
+                mergeSourceTablesList: document.getElementById('merge-source-tables-list'),
+                confirmMergeBtn: document.getElementById('confirmMergeBtn'),
+                notificationBtn: document.getElementById('notificationBtn'),
+                notificationCount: document.getElementById('notification-count'),
+                notificationList: document.getElementById('notification-list'),
+                noNotificationMessage: document.getElementById('no-notification-message')
+            };
+
+            const initialOrderHTML = `<div id="empty-cart-message" class="text-center text-muted d-flex flex-column justify-content-center align-items-center h-100"><i class="bi bi-shop-window display-1 mb-3" style="color: var(--blue-light);"></i><h5 class="fw-bold">Bắt đầu phiên bán hàng</h5><p>Chọn bàn phục vụ hoặc bán lẻ để thêm sản phẩm.</p><button class="btn btn-primary btn-lg mt-3" id="start-order-btn"><i class="bi bi-plus-circle-fill me-2"></i>Chọn Bàn / Bán Lẻ</button></div>`;
+
+            async function initialize() {
+                setupEventListeners();
+                setupAntiCopy();
+                await startSignalRConnection();
+                resetToInitialState();
+                await loadInitialData();
+                isDataLoaded = true;
+                DOM.loadingOverlay.style.opacity = '0';
+                setTimeout(() => { DOM.loadingOverlay.style.display = 'none'; }, 300);
+            }
+
+            function setupAntiCopy() {
+                document.addEventListener('contextmenu', event => event.preventDefault());
+                document.addEventListener('copy', event => {
+                    event.preventDefault();
+                    notyf.error('Hành động sao chép đã bị vô hiệu hóa.');
+                    return false;
+                });
+            }
+
+            function initializeTooltips() {
+                activeTooltips.forEach(t => t.dispose());
+                activeTooltips = [];
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                activeTooltips = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            }
+
+            async function startSignalRConnection() {
+                try {
+                    await connection.start();
+                    console.log("SignalR Connected.");
+
+                    connection.on("ReceiveTableStatusUpdate", (update) => {
+                        if (allTables[update.tableId]) {
+                            allTables[update.tableId].status = update.newStatus;
+                            updateTableVisuals(update.tableId, update.newStatus);
+                        }
+                    });
+
+                    connection.on("ReceiveTableRequest", (data) => {
+                        console.log("Received table request:", data);
+                        if (allTables[data.tableCode]) {
+                            allTables[data.tableCode].request = data.requestStatus;
+                            updateTableRequestVisual(data.tableCode, data.requestStatus);
+                        }
+                        if (data.requestStatus !== 0) {
+                            addNotification(data, true);
+                        }
+                    });
+
+                    connection.on("NotificationAcknowledged", (data) => {
+                        const notifElement = document.getElementById(`notif-${data.NotificationId}`);
+                        if (notifElement) {
+                            notifElement.classList.add('is-read');
+                            notifElement.classList.remove('fw-bold');
+                            const ackInfo = notifElement.querySelector('.ack-info');
+                            const ackButton = notifElement.querySelector('.ack-btn');
+                            if (ackInfo) {
+                                ackInfo.textContent = `Đã tiếp nhận bởi: ${data.AcknowledgedBy}`;
+                                ackInfo.classList.remove('d-none');
+                            }
+                            if (ackButton) ackButton.classList.add('d-none');
+                        }
+                        updateNotificationCount();
+                    });
+
+                } catch (err) {
+                    console.error(err.toString());
+                    setTimeout(startSignalRConnection, 5000);
+                }
+            }
+
+            function updateTableVisuals(tableId, newStatus) {
+                const tableElements = document.querySelectorAll(`.table-visual[data-table-id='${tableId}']`);
+                tableElements.forEach(el => {
+                    el.className = `table-visual status-${newStatus}`;
+                    el.innerHTML = `<i class="bi ${newStatus === 'occupied' ? 'bi-cup-hot-fill' : 'bi-circle'}"></i><span>${allTables[tableId].name}</span>`;
+                    if (allTables[tableId] && allTables[tableId].request > 0) {
+                        updateTableRequestVisual(tableId, allTables[tableId].request);
+                    }
+                });
+                if (tableId === currentTableId) {
+                    updateUIForNewTable();
+                    renderCart();
+                }
+            }
+
+            async function loadInitialData() {
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/GetPosData`);
+                    if (!response.ok) throw new Error('Không thể tải dữ liệu ban đầu.');
+                    const data = await response.json();
+                    allProducts = data.products;
+                    allCategories = data.categories;
+                    allAreas = data.areas;
+                    allTables = {};
+                    allAreas.forEach(area => {
+                        area.tables.forEach(table => {
+                            allTables[table.id] = { ...table, area: area.name };
+                        });
+                    });
+                    renderCategories();
+                    renderProducts(allProducts);
+
+                    Object.values(allTables).forEach(table => {
+                        if (table.request > 0) {
+                            updateTableRequestVisual(table.id, table.request);
+                        }
+                    });
+
+                    await loadRecentNotifications();
+
+                } catch (error) {
+                    notyf.error(error.message);
+                }
+            }
+
+            async function loadRecentNotifications() {
+                try {
+                    const response = await fetch('/api/TableRequest/GetRecentNotifications');
+                    const notifications = await response.json();
+                    DOM.notificationList.innerHTML = '';
+                    if (notifications.length > 0) {
+                        notifications.forEach(notif => addNotification(notif, false));
+                    }
+                    updateNotificationCount();
+                } catch (error) {
+                    console.error("Failed to load notifications:", error);
+                }
+            }
+
+            function updateTableRequestVisual(tableCode, requestStatus) {
+                const tableEl = document.querySelector(`.table-visual[data-table-id='${tableCode}']`);
+                if (!tableEl) return;
+
+                const oldIcon = tableEl.querySelector('.request-icon');
+                if (oldIcon) oldIcon.remove();
+
+                if (requestStatus === 1) {
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-bell-fill request-icon shake text-warning';
+                    tableEl.appendChild(icon);
+                } else if (requestStatus === 2) {
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-wallet-fill request-icon shake text-success';
+                    tableEl.appendChild(icon);
+                }
+            }
+
+            function addNotification(data, isNew) {
+                DOM.noNotificationMessage.classList.add('d-none');
+
+                if (document.getElementById(`notif-${data.notificationId}`)) return;
+
+                const notifElement = document.createElement('li');
+                notifElement.className = 'list-group-item notification-item p-3';
+                notifElement.id = `notif-${data.notificationId}`;
+
+                const iconClass = data.requestType === 'Order' ? 'bi-bell-fill text-warning' : 'bi-wallet-fill text-success';
+
+                const acknowledgedByHtml = data.isRead && data.acknowledgedByUserName
+                    ? `<small class="text-muted ack-info">Đã tiếp nhận bởi: ${data.acknowledgedByUserName}</small>`
+                    : `<small class="text-muted ack-info d-none"></small>`;
+
+                const buttonHtml = !data.isRead
+                    ? `<button class="btn btn-sm btn-outline-primary ack-btn" data-id="${data.notificationId}">Tiếp nhận</button>`
+                    : `<button class="btn btn-sm btn-outline-primary ack-btn d-none" data-id="${data.notificationId}">Tiếp nhận</button>`;
+
+                notifElement.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div class="me-3">
+                                    <h6 class="mb-1"><i class="bi ${iconClass} me-2"></i>${data.message}</h6>
+                                    <small class="text-muted">${new Date(data.createdAt).toLocaleString('vi-VN')}</small>
+                                </div>
+                                <div class="flex-shrink-0" title="Chọn bàn" style="cursor: pointer;" data-table-code="${data.tableCode}">
+                                     <i class="bi bi-box-arrow-in-right fs-4"></i>
+                                </div>
+                            </div>
+                            <div class="notification-footer">
+                                ${acknowledgedByHtml}
+                                ${buttonHtml}
+                            </div>
+                        `;
+
+                if (!data.isRead) {
+                    notifElement.classList.add('fw-bold');
+                } else {
+                    notifElement.classList.add('is-read');
+                }
+
+                notifElement.querySelector('.ack-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const notifId = e.currentTarget.dataset.id;
+                    acknowledgeSingleNotification(notifId);
+                });
+
+                notifElement.querySelector('[data-table-code]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleTableSelect(e.currentTarget.dataset.tableCode);
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
+                    if (modal) modal.hide();
+                });
+
+                DOM.notificationList.prepend(notifElement);
+
+                if (isNew) {
+                    notyf.success(data.message);
+                }
+                updateNotificationCount();
+            }
+
+            function updateNotificationCount() {
+                const unreadCount = DOM.notificationList.querySelectorAll('.notification-item:not(.is-read)').length;
+                if (unreadCount > 0) {
+                    DOM.notificationCount.textContent = unreadCount;
+                    DOM.notificationCount.classList.remove('d-none');
+                } else {
+                    DOM.notificationCount.classList.add('d-none');
+                }
+                DOM.noNotificationMessage.classList.toggle('d-none', DOM.notificationList.children.length > 0 && DOM.notificationList.children[0].id !== 'no-notification-message');
+            }
+
+            async function acknowledgeSingleNotification(notificationId) {
+                try {
+                    const btn = document.querySelector(`.ack-btn[data-id='${notificationId}']`);
+                    if (btn) btn.disabled = true;
+
+                    await fetch(`/api/TableRequest/AcknowledgeNotification/${notificationId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                } catch (error) {
+                    console.error("Failed to acknowledge notification:", error);
+                    notyf.error("Lỗi khi tiếp nhận thông báo.");
+                    const btn = document.querySelector(`.ack-btn[data-id='${notificationId}']`);
+                    if (btn) btn.disabled = false;
+                }
+            }
+
+            async function fetchOrderForTable(tableCode) {
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/GetOrder?tableCode=${tableCode}`);
+                    if (!response.ok) throw new Error('Không thể tải đơn hàng.');
+                    const orderData = await response.json();
+                    currentTableId = orderData.tableId;
+                    const foundTable = allTables[tableCode];
+                    currentTableName = foundTable ? foundTable.name : "Không xác định";
+                    currentCart = orderData.items.map(item => {
+                        const product = allProducts.find(p => p.id === item.id);
+                        return { ...item, cartItemId: Date.now() + Math.random(), name: product ? product.name : 'Sản phẩm không xác định', image: product ? product.image : null };
+                    });
+                    updateUIForNewTable();
+                    renderCart();
+                } catch (error) {
+                    notyf.error(error.message);
+                }
+            }
+
+            async function saveCurrentOrder() {
+                if (currentTableId === RETAIL_CUSTOMER_ID || currentTableId === null) return;
+                const orderViewModel = {
+                    tableId: currentTableId,
+                    statusPayment: allTables[currentTableId]?.status === 'paid' ? 1 : 0,
+                    items: currentCart.map(item => ({ id: item.id, quantity: item.quantity, note: item.note || '', price: item.price }))
+                };
+                try {
+                    await fetch(`${API_URL_PREFIX}/SaveOrder`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderViewModel)
+                    });
+                } catch (error) {
+                    notyf.error('Lỗi kết nối khi lưu đơn hàng.');
+                }
+            }
+
+            function renderProducts(productsToRender) {
+                if (!DOM.productList) return;
+                DOM.productList.innerHTML = '';
+                if (!productsToRender || productsToRender.length === 0) {
+                    DOM.productList.innerHTML = '<div class="col-12"><p class="text-center text-muted mt-4">Không tìm thấy sản phẩm.</p></div>';
+                    return;
+                }
+                productsToRender.forEach(product => {
+                    const productEl = document.createElement('div');
+                    productEl.className = 'col-6 col-lg-5-items';
+                    const imageUrl = product.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh';
+                    productEl.innerHTML = `<div class="card product-card h-100"><img src="${imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh'" class="card-img-top" alt="${product.name}"><div class="card-body d-flex flex-column"><h5 class="card-title flex-grow-1">${product.name}</h5><p class="card-text">${formatCurrency(product.price)}</p></div></div>`;
+                    productEl.addEventListener('click', () => addProductToCart(product.id));
+                    DOM.productList.appendChild(productEl);
+                });
+            }
+
+            function renderCategories() {
+                const wrapper = DOM.categorySliderWrapper;
+                const sliderContainer = document.getElementById('category-slider');
+                const controls = wrapper.querySelector('.slider-controls');
+                if (!sliderContainer || !controls) return;
+                if (categorySlider) {
+                    try {
+                        categorySlider.destroy();
+                    } catch (e) {
+                        console.error("Error destroying slider:", e);
+                    }
+                    categorySlider = null;
+                }
+                sliderContainer.innerHTML = '';
+                if (allCategories && allCategories.length > 0) {
+                    controls.style.display = 'flex';
+                    allCategories.forEach(category => {
+                        const slideItem = document.createElement('div');
+                        slideItem.className = 'nav-link-wrapper';
+                        slideItem.innerHTML = `<a class="nav-link ${category === 'Tất cả' ? 'active' : ''}" href="#" data-category="${category}">${category}</a>`;
+                        sliderContainer.appendChild(slideItem);
+                    });
+                    sliderContainer.querySelectorAll('.nav-link').forEach(link => {
+                        link.addEventListener('click', (e) => handleCategoryFilter(e, link.dataset.category));
+                    });
+                    initializeCategorySlider();
+                } else {
+                    controls.style.display = 'none';
+                    sliderContainer.innerHTML = '<p class="text-muted text-center w-100" style="padding: 0.5rem 0;">Không có danh mục nào</p>';
+                }
+            }
+
+            function initializeCategorySlider() {
+                categorySlider = tns({
+                    container: '#category-slider',
+                    controlsContainer: ".slider-controls",
+                    nav: false,
+                    mouseDrag: true,
+                    autoWidth: true,
+                    slideBy: 'page',
+                    loop: false,
+                    preventScrollOnTouch: 'force',
+                });
+                const prevButton = DOM.categorySliderWrapper.querySelector('[data-controls="prev"]');
+                const nextButton = DOM.categorySliderWrapper.querySelector('[data-controls="next"]');
+                if (prevButton) prevButton.innerHTML = '<i class="bi bi-chevron-left"></i>';
+                if (nextButton) nextButton.innerHTML = '<i class="bi bi-chevron-right"></i>';
+            }
+
+            function renderAreaAndTableSelection(tabsContainer, contentContainer, selectHandler, idPrefix, filterCallback = null) {
+                tabsContainer.innerHTML = '';
+                contentContainer.innerHTML = '';
+                let firstArea = true;
+                allAreas.forEach(area => {
+                    let tablesInArea = area.tables;
+                    if (filterCallback) {
+                        tablesInArea = tablesInArea.filter(filterCallback);
+                    }
+                    if (tablesInArea.length === 0 && filterCallback) return;
+                    const areaId = `${idPrefix}${area.name.replace(/\s+/g, '-')}`;
+                    const tabEl = document.createElement('li');
+                    tabEl.className = 'nav-item';
+                    tabEl.innerHTML = `<button class="nav-link ${firstArea ? 'active' : ''}" data-bs-toggle="tab" data-bs-target="#${areaId}-pane" type="button">${area.name}</button>`;
+                    tabsContainer.appendChild(tabEl);
+                    const contentEl = document.createElement('div');
+                    contentEl.className = `tab-pane fade ${firstArea ? 'show active' : ''}`;
+                    contentEl.id = `${areaId}-pane`;
+                    const tableLayout = document.createElement('div');
+                    tableLayout.className = 'table-layout-container';
+                    tablesInArea.forEach(table => {
+                        const tableDiv = document.createElement('div');
+                        tableDiv.setAttribute('data-table-id', table.id);
+                        tableDiv.className = `table-visual status-${allTables[table.id]?.status || 'available'}`;
+                        tableDiv.innerHTML = `<i class="bi ${allTables[table.id]?.status === 'occupied' ? 'bi-cup-hot-fill' : 'bi-circle'}"></i><span>${table.name}</span>`;
+                        if (table.id === currentTableId) tableDiv.classList.add('disabled');
+                        else tableDiv.addEventListener('click', () => selectHandler(table.id));
+                        tableLayout.appendChild(tableDiv);
+                    });
+                    contentEl.appendChild(tableLayout);
+                    contentContainer.appendChild(contentEl);
+                    firstArea = false;
+                });
+            }
+
+            function renderCart() {
+                DOM.orderItemsContainer.innerHTML = '';
+                if (currentTableId === null && currentTableName !== RETAIL_CUSTOMER_NAME) {
+                    DOM.orderItemsContainer.innerHTML = initialOrderHTML;
+                    DOM.billingFooter.style.display = 'none';
+                    const startBtn = document.getElementById('start-order-btn');
+                    if (startBtn) startBtn.addEventListener('click', () => {
+                        renderAreaAndTableSelection(DOM.areaTabs, DOM.areaTabContent, handleTableSelect, 'main-', null);
+                        tableModal.show()
+                    });
+                    return;
+                }
+                DOM.billingFooter.style.display = 'block';
+                if (currentCart.length === 0) {
+                    DOM.orderItemsContainer.innerHTML = `<div class="text-center text-muted mt-5 d-flex flex-column justify-content-center align-items-center h-100"><i class="bi bi-cup-hot-fill display-1 mb-3" style="color: var(--teal-light);"></i><h5>Bàn đang trống</h5><p>Chọn sản phẩm để thêm vào hóa đơn.</p></div>`;
+                } else {
+                    currentCart.forEach(item => {
+                        const product = allProducts.find(p => p.id === item.id);
+                        if (!product) return;
+                        const noteHtml = item.note ? `<div class="item-note" data-bs-toggle="tooltip" data-bs-placement="top" title="${item.note}">Ghi chú: ${item.note}</div>` : '';
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'order-item mb-3';
+                        const imageUrl = product.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh';
+                        itemEl.innerHTML = ` <img src="${imageUrl}" class="rounded" width="50" height="50" style="object-fit:cover; flex-shrink: 0;" alt="${product.name}"> <div class="order-item-details"> <div class="fw-bold small">${product.name}</div> ${noteHtml} </div> <div class="order-item-controls"> <button class="btn btn-sm p-0 add-note-btn" data-id="${item.cartItemId}"><i class="bi bi-pencil-square text-muted"></i></button> <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 decrease-qty ms-2" style="width:25px;height:25px;" data-id="${item.cartItemId}">-</button> <span class="px-2 fw-bold">${item.quantity}</span> <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 increase-qty" style="width:25px;height:25px;" data-id="${item.cartItemId}">+</button> </div> <button class="btn btn-sm text-danger delete-btn ms-2" style="flex-shrink: 0;" data-id="${item.cartItemId}"><i class="bi bi-trash3-fill"></i></button> `;
+                        DOM.orderItemsContainer.appendChild(itemEl);
+                    });
+                }
+                DOM.orderItemsContainer.querySelectorAll('.increase-qty').forEach(btn => btn.addEventListener('click', (e) => updateQuantity(e.currentTarget.dataset.id, 1)));
+                DOM.orderItemsContainer.querySelectorAll('.decrease-qty').forEach(btn => btn.addEventListener('click', (e) => updateQuantity(e.currentTarget.dataset.id, -1)));
+                DOM.orderItemsContainer.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => removeProductFromCart(e.currentTarget.dataset.id)));
+                DOM.orderItemsContainer.querySelectorAll('.add-note-btn').forEach(btn => btn.addEventListener('click', (e) => handleAddNote(e.currentTarget.dataset.id)));
+                updateSummaryAndState();
+                initializeTooltips();
+            }
+
+            function updateSummaryAndState() {
+                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const tax = subtotal * TAX_RATE;
+                const total = subtotal + tax;
+                DOM.subtotal.textContent = formatCurrency(subtotal);
+                DOM.tax.textContent = formatCurrency(tax);
+                DOM.total.textContent = formatCurrency(total);
+                const hasItems = currentCart.length > 0;
+                DOM.checkoutBtn.disabled = !hasItems;
+                DOM.clearCartBtn.disabled = !hasItems;
+                if (hasItems) {
+                    DOM.billingBadge.textContent = currentCart.reduce((total, item) => total + item.quantity, 0);
+                    DOM.billingBadge.classList.remove('d-none');
+                } else {
+                    DOM.billingBadge.classList.add('d-none');
+                }
+                updateActionButtonsState();
+            }
+
+            function updateActionButtonsState() {
+                const hasOrder = currentCart.length > 0;
+                const canPerformTableActions = hasOrder && currentTableName !== RETAIL_CUSTOMER_NAME;
+                const switchTableBtn = DOM.billingTableInfo.querySelector('#switchTableBtn');
+                const provisionalBillBtn = DOM.billingTableInfo.querySelector('#provisionalBillBtn');
+                const splitBillBtn = DOM.billingTableInfo.querySelector('#splitBillBtn');
+                const mergeTablesBtn = DOM.billingTableInfo.querySelector('#mergeTablesBtn');
+                const mainDropdown = DOM.billingTableInfo.querySelector('.dropdown-toggle');
+                if (mainDropdown) {
+                    mainDropdown.disabled = (currentTableId === null && currentTableName !== RETAIL_CUSTOMER_NAME);
+                }
+                if (switchTableBtn) {
+                    switchTableBtn.classList.toggle('disabled', !canPerformTableActions);
+                }
+                if (provisionalBillBtn) {
+                    provisionalBillBtn.classList.toggle('disabled', !hasOrder);
+                }
+                if (splitBillBtn) {
+                    splitBillBtn.classList.toggle('disabled', !canPerformTableActions);
+                }
+                if (mergeTablesBtn) {
+                    mergeTablesBtn.classList.toggle('disabled', !canPerformTableActions);
+                }
+            }
+
+            function setupEventListeners() {
+                if (DOM.retailSaleBtn) DOM.retailSaleBtn.addEventListener('click', handleRetailSelect);
+                if (DOM.productSearchInput) DOM.productSearchInput.addEventListener('keyup', handleSearch);
+                if (DOM.clearCartBtn) DOM.clearCartBtn.addEventListener('click', confirmClearCart);
+                if (DOM.confirmClearCartBtn) DOM.confirmClearCartBtn.addEventListener('click', executeClearCart);
+                if (DOM.checkoutBtn) DOM.checkoutBtn.addEventListener('click', showCheckoutModal);
+                if (DOM.cashReceivedInput) DOM.cashReceivedInput.addEventListener('input', calculateChange);
+                if (DOM.confirmPaymentBtn) DOM.confirmPaymentBtn.addEventListener('click', handleConfirmPayment);
+                if (DOM.printInvoiceBtn) DOM.printInvoiceBtn.addEventListener('click', () => {
+                    finishPaymentProcess();
+                    window.print();
+                });
+                if (DOM.saveNoteBtn) DOM.saveNoteBtn.addEventListener('click', handleSaveNote);
+                if (DOM.confirmSplitBtn) DOM.confirmSplitBtn.addEventListener('click', handleConfirmSplit);
+                if (DOM.confirmMergeBtn) DOM.confirmMergeBtn.addEventListener('click', handleConfirmMerge);
+                DOM.mobileProductsTab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOM.mainWrapper.classList.remove('mobile-view-billing');
+                    DOM.mobileBillingTab.classList.remove('active');
+                    DOM.mobileProductsTab.classList.add('active');
+                });
+                DOM.mobileBillingTab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOM.mainWrapper.classList.add('mobile-view-billing');
+                    DOM.mobileProductsTab.classList.remove('active');
+                    DOM.mobileBillingTab.classList.add('active');
+                });
+            }
+
+            function updateUIForNewTable() {
+                DOM.billingTitle.textContent = currentTableName === RETAIL_CUSTOMER_NAME ? 'Hóa đơn bán lẻ' : `Hóa đơn`;
+                if (currentTableId !== null || currentTableName === RETAIL_CUSTOMER_NAME) {
+                    const status = allTables[currentTableId]?.status || 'available';
+                    const badgeClass = currentTableName === RETAIL_CUSTOMER_NAME ? 'bg-primary' : (status === 'occupied' ? 'bg-success' : 'bg-secondary');
+                    DOM.billingTableInfo.innerHTML = ` <span id="current-table-badge" class="badge fs-6 ${badgeClass}">${currentTableName}</span> <div class="btn-group"> <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"> <i class="bi bi-three-dots"></i> </button> <ul class="dropdown-menu dropdown-menu-end"> <li><a class="dropdown-item" href="#" id="changeTableBtn"><i class="bi bi-arrows-fullscreen me-2"></i>Đổi phiên làm việc...</a></li> <li><a class="dropdown-item" href="#" id="switchTableBtn"><i class="bi bi-arrow-repeat me-2"></i>Chuyển bàn...</a></li> <li><hr class="dropdown-divider"></li> <li><a class="dropdown-item" href="#" id="provisionalBillBtn"><i class="bi bi-eye me-2"></i>Xem tạm tính</a></li> <li><a class="dropdown-item" href="#" id="splitBillBtn"><i class="bi bi-arrows-angle-contract me-2"></i>Tách hóa đơn</a></li> <li><a class="dropdown-item" href="#" id="mergeTablesBtn"><i class="bi bi-union me-2"></i>Gộp bàn</a></li> </ul> </div> `;
+                    DOM.billingTableInfo.querySelector('#current-table-badge').addEventListener('click', () => {
+                        renderAreaAndTableSelection(DOM.areaTabs, DOM.areaTabContent, handleTableSelect, 'main-', null);
+                        tableModal.show();
+                    });
+                    DOM.billingTableInfo.querySelector('#changeTableBtn').addEventListener('click', () => {
+                        renderAreaAndTableSelection(DOM.areaTabs, DOM.areaTabContent, handleTableSelect, 'main-', null);
+                        tableModal.show();
+                    });
+                    DOM.billingTableInfo.querySelector('#switchTableBtn').addEventListener('click', showSwitchTableModal);
+                    DOM.billingTableInfo.querySelector('#provisionalBillBtn').addEventListener('click', handleProvisionalBill);
+                    DOM.billingTableInfo.querySelector('#splitBillBtn').addEventListener('click', showSplitBillModal);
+                    DOM.billingTableInfo.querySelector('#mergeTablesBtn').addEventListener('click', showMergeTablesModal);
+                } else {
+                    DOM.billingTableInfo.innerHTML = '';
+                }
+                updateActionButtonsState();
+            }
+
+            function handleSearch() {
+                const activeCategoryLink = document.querySelector('#category-slider .nav-link.active');
+                const activeCategory = activeCategoryLink ? activeCategoryLink.dataset.category : 'Tất cả';
+                const searchTerm = DOM.productSearchInput.value.toLowerCase();
+                let filtered = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
+                if (activeCategory && activeCategory !== 'Tất cả') {
+                    filtered = filtered.filter(p => p.category === activeCategory);
+                }
+                renderProducts(filtered);
+            }
+
+            function handleCategoryFilter(e, category) {
+                e.preventDefault();
+                document.querySelectorAll('#category-slider .nav-link').forEach(link => link.classList.remove('active'));
+                e.target.classList.add('active');
+                handleSearch();
+            }
+
+            function handleTableSelect(tableCode) {
+                if (tableCode === currentTableId) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
+                    if (modal) modal.hide();
+                    return;
+                }
+                fetchOrderForTable(tableCode);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
+                if (modal) modal.hide();
+            }
+
+            function handleRetailSelect() {
+                currentTableId = RETAIL_CUSTOMER_ID;
+                currentTableName = RETAIL_CUSTOMER_NAME;
+                currentCart = [];
+                updateUIForNewTable();
+                renderCart();
+                tableModal.hide();
+            }
+
+            function addProductToCart(productId) {
+                if (!isDataLoaded) {
+                    notyf.error('Dữ liệu chưa sẵn sàng, vui lòng đợi.');
+                    return;
+                }
+                if (currentTableId === null && currentTableName !== RETAIL_CUSTOMER_NAME) {
+                    notyf.error('Vui lòng chọn bàn trước khi thêm món!');
+                    renderAreaAndTableSelection(DOM.areaTabs, DOM.areaTabContent, handleTableSelect, 'main-');
+                    tableModal.show();
+                    return;
+                }
+                const product = allProducts.find(p => p.id === productId);
+                if (!product) return;
+                const existingItem = currentCart.find(item => item.id === productId && !item.note);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    currentCart.push({
+                        cartItemId: Date.now() + Math.random(),
+                        id: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        note: '',
+                        image: product.image
+                    });
+                }
+                notyf.success(`Đã thêm: ${product.name}`);
+                renderCart();
+                saveCurrentOrder();
+            }
+
+            function updateQuantity(cartItemId, change) {
+                const itemIndex = currentCart.findIndex(i => i.cartItemId == cartItemId);
+                if (itemIndex > -1) {
+                    currentCart[itemIndex].quantity += change;
+                    if (currentCart[itemIndex].quantity <= 0) currentCart.splice(itemIndex, 1);
+                    renderCart();
+                    saveCurrentOrder();
+                }
+            }
+
+            function removeProductFromCart(cartItemId) {
+                currentCart = currentCart.filter(item => item.cartItemId != cartItemId);
+                renderCart();
+                saveCurrentOrder();
+            }
+
+            function handleAddNote(cartItemId) {
+                const item = currentCart.find(i => i.cartItemId == cartItemId);
+                if (item) {
+                    DOM.noteCartItemId.value = cartItemId;
+                    DOM.noteInput.value = item.note || '';
+                    noteModal.show();
+                }
+            }
+
+            function handleSaveNote() {
+                const cartItemId = DOM.noteCartItemId.value;
+                const newNote = DOM.noteInput.value.trim();
+                const itemIndex = currentCart.findIndex(i => i.cartItemId == cartItemId);
+                if (itemIndex > -1) {
+                    const originalItem = currentCart[itemIndex];
+                    if (originalItem.quantity > 1 && newNote && !originalItem.note) {
+                        originalItem.quantity--;
+                        const newItemWithNote = {
+                            ...originalItem,
+                            cartItemId: Date.now() + Math.random(),
+                            quantity: 1,
+                            note: newNote
+                        };
+                        currentCart.push(newItemWithNote);
+                    } else {
+                        originalItem.note = newNote;
+                    }
+                    noteModal.hide();
+                    renderCart();
+                    saveCurrentOrder();
+                }
+            }
+
+            function confirmClearCart() {
+                if (!currentTableName) return;
+                DOM.clearCartTableName.textContent = currentTableName;
+                confirmClearModal.show();
+            }
+
+            async function executeClearCart() {
+                const clearedTableId = currentTableId;
+                currentCart = [];
+                await saveCurrentOrder();
+                if (allTables[clearedTableId]) {
+                    allTables[clearedTableId].status = 'available';
+                    updateTableVisuals(clearedTableId, 'available');
+                }
+                confirmClearModal.hide();
+                notyf.success(`Đã xóa đơn hàng của ${currentTableName}.`);
+                resetToInitialState();
+            }
+
+            function resetToInitialState() {
+                currentTableId = null;
+                currentTableName = null;
+                currentCart = [];
+                isFinalPayment = false;
+                updateUIForNewTable();
+                renderCart();
+            }
+
+            function showSwitchTableModal() {
+                DOM.moveModalDescription.textContent = `Chuyển toàn bộ đơn hàng của bàn "${currentTableName}" sang một bàn trống khác.`;
+                const container = DOM.moveTableAreasContainer;
+                container.innerHTML = '';
+                const tabs = document.createElement('ul');
+                tabs.className = 'nav nav-pills';
+                const content = document.createElement('div');
+                content.className = 'tab-content';
+                container.append(tabs, content);
+                renderAreaAndTableSelection(tabs, content, handleSwitchTableSelect, 'move-', (table) => table.status === 'available');
+                moveModal.show();
+            }
+
+            async function handleSwitchTableSelect(toTableCode) {
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/MoveTable`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fromTableCode: currentTableId, toTableCode: toTableCode })
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || "Lỗi chuyển bàn.");
+                    }
+                    const result = await response.json();
+                    notyf.success(result.message);
+                    moveModal.hide();
+                    await fetchOrderForTable(toTableCode);
+                } catch (error) {
+                    notyf.error(error.message);
+                }
+            }
+
+            function showCheckoutModal() {
+                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const totalValue = subtotal * (1 + TAX_RATE);
+                DOM.checkoutTotal.value = formatCurrency(totalValue);
+                DOM.cashReceivedInput.value = '';
+                DOM.changeDue.value = '';
+                checkoutModal.show();
+            }
+
+            function calculateChange() {
+                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const totalValue = subtotal * (1 + TAX_RATE);
+                const cashReceived = parseFloat(DOM.cashReceivedInput.value);
+                DOM.changeDue.value = (isNaN(cashReceived) || cashReceived < totalValue) ? formatCurrency(0) : formatCurrency(cashReceived - totalValue);
+            }
+
+            function handleConfirmPayment() {
+                isFinalPayment = true;
+                DOM.invoiceModalLabel.textContent = 'Hóa Đơn Thanh Toán';
+                DOM.invoicePreview.innerHTML = generateInvoiceHtml(false);
+                checkoutModal.hide();
+                invoiceModal.show();
+            }
+
+            async function finishPaymentProcess() {
+                if (currentTableId === RETAIL_CUSTOMER_ID) {
+                    notyf.success("Thanh toán bán lẻ thành công!");
+                    resetToInitialState();
+                    invoiceModal.hide();
+                    return;
+                }
+                const checkoutVM = { tableCode: currentTableId, cashReceived: parseFloat(DOM.cashReceivedInput.value) || 0 };
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/Checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(checkoutVM)
+                    });
+                    if (!response.ok) throw new Error("Lỗi khi xác nhận thanh toán.");
+                    const result = await response.json();
+                    notyf.success(result.message);
+                    resetToInitialState();
+                } catch (error) {
+                    notyf.error(error.message);
+                } finally {
+                    isFinalPayment = false;
+                    invoiceModal.hide();
+                }
+            }
+
+            function handleProvisionalBill() {
+                if (currentCart.length === 0) {
+                    notyf.error("Không có sản phẩm để tạm tính.");
+                    return;
+                }
+                isFinalPayment = false;
+                DOM.invoiceModalLabel.textContent = 'Phiếu Tạm Tính';
+                DOM.invoicePreview.innerHTML = generateInvoiceHtml(true);
+                invoiceModal.show();
+            }
+
+            function showSplitBillModal() {
+                if (currentCart.length === 0) {
+                    notyf.error("Không có món nào để tách.");
+                    return;
+                }
+                DOM.splitSourceTableName.textContent = currentTableName;
+                splitSourceItems = JSON.parse(JSON.stringify(currentCart));
+                splitDestinationItems = [];
+                populateSplitDestinationSelect();
+                renderSplitPanels();
+                splitBillModal.show();
+            }
+
+            function populateSplitDestinationSelect() {
+                const select = DOM.splitDestinationSelect;
+                select.innerHTML = '';
+                Object.values(allTables).forEach(table => {
+                    if (table.id !== currentTableId) {
+                        const option = document.createElement('option');
+                        option.value = table.id;
+                        const statusText = table.status === 'available' ? ' (Trống)' : ' (Có khách)';
+                        option.textContent = `${table.name} (${table.area})${statusText}`;
+                        select.appendChild(option);
+                    }
+                });
+                if (select.options.length === 0) {
+                    const option = document.createElement('option');
+                    option.textContent = "Không có bàn nào khác để tách/gộp";
+                    option.disabled = true;
+                    select.appendChild(option);
+                }
+            }
+
+            function renderSplitPanels() {
+                const createItemHTML = (item, panelType) => {
+                    const imageUrl = item.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh';
+                    let controlHTML = '';
+                    if (panelType === 'source') {
+                        controlHTML = `<div class="btn-group btn-group-sm"><button class="btn btn-outline-success move-item-btn" data-id="${item.cartItemId}" data-move-type="one" title="Chuyển 1">&gt;</button><button class="btn btn-outline-primary move-item-btn" data-id="${item.cartItemId}" data-move-type="all" title="Chuyển tất cả">&gt;&gt;</button></div>`;
+                        return `<div class="split-item-row d-flex align-items-center"><img src="${imageUrl}" class="rounded" width="40" height="40" style="object-fit:cover" alt="${item.name}"><div class="mx-2 flex-grow-1"><div class="fw-bold small">${item.quantity} x ${item.name}</div>${item.note ? `<div class="text-muted fst-italic small">${item.note}</div>` : ''}</div>${controlHTML}</div>`;
+                    } else {
+                        controlHTML = `<div class="btn-group btn-group-sm"><button class="btn btn-outline-warning move-item-btn" data-id="${item.cartItemId}" data-move-type="one-back" title="Trả lại 1">&lt;</button><button class="btn btn-outline-danger move-item-btn" data-id="${item.cartItemId}" data-move-type="all-back" title="Trả lại tất cả">&lt;&lt;</button></div>`;
+                        return `<div class="split-item-row d-flex align-items-center">${controlHTML}<div class="mx-2 flex-grow-1 text-end"><div class="fw-bold small">${item.quantity} x ${item.name}</div>${item.note ? `<div class="text-muted fst-italic small">${item.note}</div>` : ''}</div><img src="${imageUrl}" class="rounded" width="40" height="40" style="object-fit:cover" alt="${item.name}"></div>`;
+                    }
+                };
+                DOM.splitSourceItems.innerHTML = splitSourceItems.map(item => createItemHTML(item, 'source')).join('') || '<p class="text-center text-muted mt-3">Hóa đơn gốc trống</p>';
+                DOM.splitDestinationItems.innerHTML = splitDestinationItems.map(item => createItemHTML(item, 'dest')).join('') || '<p class="text-center text-muted mt-3">Chuyển món vào đây</p>';
+                DOM.splitSourceItems.querySelectorAll('.move-item-btn').forEach(btn => btn.addEventListener('click', (e) => handleMoveSplitItem(e.currentTarget.dataset.id, e.currentTarget.dataset.moveType)));
+                DOM.splitDestinationItems.querySelectorAll('.move-item-btn').forEach(btn => btn.addEventListener('click', (e) => handleMoveSplitItem(e.currentTarget.dataset.id, e.currentTarget.dataset.moveType)));
+                updateSplitTotals();
+            }
+
+            function handleMoveSplitItem(cartItemId, moveType) {
+                const toDestination = moveType === 'one' || moveType === 'all';
+                let sourceList = toDestination ? splitSourceItems : splitDestinationItems;
+                let destList = toDestination ? splitDestinationItems : splitSourceItems;
+                const itemIndex = sourceList.findIndex(i => i.cartItemId == cartItemId);
+                if (itemIndex === -1) return;
+                const itemToMove = sourceList[itemIndex];
+                const quantityToMove = (moveType === 'one' || moveType === 'one-back') ? 1 : itemToMove.quantity;
+                let destItem = destList.find(i => i.id === itemToMove.id && (i.note || '') === (itemToMove.note || ''));
+                if (destItem) {
+                    destItem.quantity += quantityToMove;
+                } else {
+                    destList.push({ ...itemToMove, quantity: quantityToMove, cartItemId: Date.now() + Math.random() });
+                }
+                itemToMove.quantity -= quantityToMove;
+                if (itemToMove.quantity <= 0) sourceList.splice(itemIndex, 1);
+                renderSplitPanels();
+            }
+
+            function updateSplitTotals() {
+                const sourceTotal = splitSourceItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const destTotal = splitDestinationItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                DOM.splitSourceTotal.textContent = `Tổng: ${formatCurrency(sourceTotal)}`;
+                DOM.splitDestinationTotal.textContent = `Tổng: ${formatCurrency(destTotal)}`;
+            }
+
+            async function handleConfirmSplit() {
+                const destinationTableCode = DOM.splitDestinationSelect.value;
+                if (!destinationTableCode) { notyf.error("Vui lòng chọn bàn đích để tách."); return; }
+                if (splitDestinationItems.length === 0) { notyf.error("Vui lòng chuyển ít nhất một món sang hóa đơn mới."); return; }
+                const splitVM = { sourceTableCode: currentTableId, destinationTableCode: destinationTableCode, itemsToMove: splitDestinationItems.map(item => ({ id: item.id, quantity: item.quantity, note: item.note, price: item.price })) };
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/SplitBill`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(splitVM) });
+                    if (!response.ok) { const errorText = await response.text(); throw new Error(JSON.parse(errorText).message || errorText || "Lỗi khi tách hóa đơn."); }
+                    const result = await response.json();
+                    notyf.success(result.message);
+                    splitBillModal.hide();
+                    await fetchOrderForTable(currentTableId);
+                } catch (error) { notyf.error(error.message); }
+            }
+
+            function showMergeTablesModal() {
+                if (!currentTableId) { notyf.error("Vui lòng chọn bàn đích trước."); return; }
+                DOM.mergeDestinationTableName.textContent = currentTableName;
+                renderMergeSourceTablesList();
+                mergeTablesModal.show();
+            }
+
+            function renderMergeSourceTablesList() {
+                DOM.mergeSourceTablesList.innerHTML = '';
+                const availableToMerge = Object.values(allTables).filter(table => table.status === 'occupied' && table.id !== currentTableId);
+                if (availableToMerge.length === 0) {
+                    DOM.mergeSourceTablesList.innerHTML = '<p class="text-muted text-center">Không có bàn nào khác có đơn hàng để gộp.</p>';
+                    return;
+                }
+                availableToMerge.forEach(table => {
+                    const itemHTML = `<label class="list-group-item d-flex justify-content-between align-items-center"><span><i class="bi bi-table me-2"></i><strong>${table.name}</strong> (${table.area})</span><input class="form-check-input" type="checkbox" data-table-code="${table.id}"></label>`;
+                    DOM.mergeSourceTablesList.insertAdjacentHTML('beforeend', itemHTML);
+                });
+            }
+
+            async function handleConfirmMerge() {
+                const selectedCheckboxes = DOM.mergeSourceTablesList.querySelectorAll('input[type="checkbox"]:checked');
+                const sourceTableCodes = Array.from(selectedCheckboxes).map(cb => cb.dataset.tableCode);
+                if (sourceTableCodes.length === 0) { notyf.error("Bạn phải chọn ít nhất một bàn nguồn để gộp."); return; }
+                const mergeVM = { destinationTableCode: currentTableId, sourceTableCodes: sourceTableCodes };
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/MergeTables`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mergeVM) });
+                    if (!response.ok) { const errorText = await response.text(); throw new Error(errorText || "Lỗi khi gộp bàn."); }
+                    const result = await response.json();
+                    notyf.success(result.message);
+                    mergeTablesModal.hide();
+                    await fetchOrderForTable(currentTableId);
+                } catch (error) { notyf.error(error.message); }
+            }
+
+            function generateInvoiceHtml(isProvisional) {
+                const now = new Date();
+                const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const tax = subtotal * TAX_RATE;
+                const total = subtotal + tax;
+                const billTitle = isProvisional ? "PHIẾU TẠM TÍNH" : "HÓA ĐƠN THANH TOÁN";
+                let itemsHtml = currentCart.map(item => `<tr><td>${item.name}${item.note ? `<br><small class='text-muted fst-italic'>&nbsp;&nbsp;- ${item.note}</small>` : ''}</td><td>${item.quantity}</td><td>${formatCurrency(item.price)}</td><td style="text-align:right;">${formatCurrency(item.price * item.quantity)}</td></tr>`).join('');
+                let paymentInfoHtml = '';
+                if (!isProvisional) {
+                    const cashReceived = parseFloat(DOM.cashReceivedInput.value) || 0;
+                    const changeDue = Math.max(0, cashReceived - total);
+                    paymentInfoHtml = `<p><strong>Tiền khách đưa:</strong> <span style="float:right;">${formatCurrency(cashReceived)}</span></p><p><strong>Tiền thối lại:</strong> <span style="float:right;">${formatCurrency(changeDue)}</span></p>`;
+                }
+                return `<div class="container p-4"><div class="text-center"><h4>${billTitle}</h4><p class="mb-0">Gemini Cafe</p><p>123 Đường ABC, Q.1, TP. HCM</p></div><hr><p><strong>Bàn:</strong> ${currentTableName}</p><p><strong>Ngày:</strong> ${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN')}</p><hr><table class="table table-sm"><thead><tr><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th style="text-align:right;">Thành tiền</th></tr></thead><tbody>${itemsHtml}</tbody></table><hr><div style="width: 250px; float: right; text-align: right;"><p><strong>Tạm tính:</strong> ${formatCurrency(subtotal)}</p><p><strong>Thuế (VAT 8%):</strong> ${formatCurrency(tax)}</p><h4 class="mt-2"><strong>Tổng cộng:</strong> ${formatCurrency(total)}</h4>${paymentInfoHtml}</div><div style="clear: both;"></div><hr><div class="text-center mt-4"><p>Cảm ơn quý khách và hẹn gặp lại!</p></div></div>`;
+            }
+
+            function formatCurrency(value) {
+                if (isNaN(value)) return "0đ";
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.round(value));
+            }
+
+            initialize();
+        });
+    </script>
+}

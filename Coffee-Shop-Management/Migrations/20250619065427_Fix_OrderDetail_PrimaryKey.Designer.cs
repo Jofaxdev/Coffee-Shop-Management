@@ -4,6 +4,7 @@ using Coffee_Shop_Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Coffee_Shop_Management.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250619065427_Fix_OrderDetail_PrimaryKey")]
+    partial class Fix_OrderDetail_PrimaryKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -366,56 +369,6 @@ namespace Coffee_Shop_Management.Migrations
                     b.HasIndex("IngredientId", "TransactionDate");
 
                     b.ToTable("InventoryTransactions");
-                });
-
-            modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AcknowledgedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("AcknowledgedByUserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RequestType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TableCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TableName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AcknowledgedByUserId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Order", b =>
@@ -1066,15 +1019,6 @@ namespace Coffee_Shop_Management.Migrations
                     b.Navigation("Supplier");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Notification", b =>
-                {
-                    b.HasOne("Coffee_Shop_Management.Models.AppUser", "AcknowledgedByUser")
-                        .WithMany()
-                        .HasForeignKey("AcknowledgedByUserId");
-
-                    b.Navigation("AcknowledgedByUser");
                 });
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Order", b =>

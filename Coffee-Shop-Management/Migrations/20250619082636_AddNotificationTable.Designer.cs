@@ -4,6 +4,7 @@ using Coffee_Shop_Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Coffee_Shop_Management.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250619082636_AddNotificationTable")]
+    partial class AddNotificationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -376,12 +379,6 @@ namespace Coffee_Shop_Management.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AcknowledgedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("AcknowledgedByUserName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -412,8 +409,6 @@ namespace Coffee_Shop_Management.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AcknowledgedByUserId");
 
                     b.ToTable("Notifications");
                 });
@@ -1066,15 +1061,6 @@ namespace Coffee_Shop_Management.Migrations
                     b.Navigation("Supplier");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Notification", b =>
-                {
-                    b.HasOne("Coffee_Shop_Management.Models.AppUser", "AcknowledgedByUser")
-                        .WithMany()
-                        .HasForeignKey("AcknowledgedByUserId");
-
-                    b.Navigation("AcknowledgedByUser");
                 });
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Order", b =>

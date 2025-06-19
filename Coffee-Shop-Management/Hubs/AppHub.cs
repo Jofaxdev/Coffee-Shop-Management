@@ -1,9 +1,8 @@
-﻿// Coffee-Shop-Management/Hubs/NotificationHub.cs
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 
 namespace Coffee_Shop_Management.Hubs
 {
-    public class NotificationHub : Hub
+    public class AppHub : Hub
     {
         public override async Task OnConnectedAsync()
         {

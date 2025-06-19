@@ -1,0 +1,652 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Gemini Cafe POS</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css">
+
+    <style>
+        :root {
+            --blue-light: #8E97FE;
+            --blue-dark: #6C63FF;
+            --teal-light: #7EDCE2;
+            --teal-dark: #18D2A9;
+            --yellow: #FFC947;
+            --red: #F96C6C;
+            --purple: #A582F7;
+            --bg-color: #F5F7FA;
+            --surface-color: #FFFFFF;
+            --text-dark: #27273F;
+            --text-light: #7B7B93;
+            --border-color: #EAEBFC;
+            --shadow-color: rgba(108, 99, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--blue-light), var(--blue-dark));
+            border-radius: 10px;
+        }
+
+        #product-list::-webkit-scrollbar {
+            width: 9px;
+            background-color: #F5F7FA;
+        }
+
+        #product-list::-webkit-scrollbar-track {
+            background-color: #F5F7FA;
+            border-radius: 10px;
+        }
+
+        #product-list::-webkit-scrollbar-thumb {
+            background-color: var(--blue-light);
+            border-radius: 10px;
+            border: 2px solid #F5F7FA;
+        }
+
+            #product-list::-webkit-scrollbar-thumb:hover {
+                background-color: var(--blue-dark);
+            }
+
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .top-nav {
+            background-color: var(--surface-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            padding: 0.75rem 1.5rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+            .top-nav h5 {
+                white-space: nowrap;
+            }
+
+        #changeTableDisplayBtn, #switchTableBtn {
+            white-space: nowrap;
+        }
+
+        .content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        .products-section {
+            flex: 1;
+            background-color: var(--surface-color);
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .products-header {
+            flex-shrink: 0;
+            padding: 1.5rem;
+            padding-bottom: 1rem;
+            background-color: var(--surface-color);
+            z-index: 5;
+            position: relative;
+        }
+
+        #product-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .product-list-inner {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        .category-and-search-container {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        #category-slider-wrapper {
+            position: relative;
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        #category-slider {
+            padding: 2px 45px;
+            margin: 0 -45px;
+        }
+
+            #category-slider .nav-link-wrapper {
+                padding: 0 8px;
+            }
+
+            #category-slider .nav-link {
+                border: 1px solid var(--border-color);
+                border-radius: 2rem;
+                color: var(--text-light);
+                padding: 0.5rem 1.25rem;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                text-align: center;
+                white-space: nowrap;
+                background-color: var(--surface-color);
+                display: block;
+                cursor: pointer;
+            }
+
+                #category-slider .nav-link.active,
+                #category-slider .nav-link:hover {
+                    background: linear-gradient(45deg, var(--blue-light), var(--blue-dark));
+                    color: #fff;
+                    border-color: var(--blue-dark);
+                    box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
+                    transform: translateY(-2px);
+                }
+
+        .product-search-bar {
+            max-width: 300px;
+            flex-shrink: 0;
+        }
+
+        .slider-controls {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+            .slider-controls button {
+                pointer-events: auto;
+                background: #fff;
+                border: 1px solid var(--border-color);
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                font-size: 1.2rem;
+                color: var(--blue-dark);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                cursor: pointer;
+            }
+
+                .slider-controls button:hover {
+                    background-color: var(--blue-dark);
+                    color: #fff;
+                    border-color: var(--blue-dark);
+                }
+
+                .slider-controls button[disabled] {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                    background-color: #f0f0f0;
+                }
+
+        .product-card {
+            border: none;
+            border-radius: 1rem;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            overflow: hidden;
+            background-color: var(--surface-color);
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+
+            .product-card .card-img-top {
+                width: 100%;
+                height: 150px;
+                object-fit: cover;
+            }
+
+            .product-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px var(--shadow-color);
+            }
+        
+        /* === TỐI ƯU THẺ SẢN PHẨM === */
+        .product-card .card-title {
+            min-height: 48px; /* Đảm bảo đủ không gian cho 2 dòng text, giúp các thẻ có chiều cao đồng đều */
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* === KẾT THÚC TỐI ƯU THẺ SẢN PHẨM === */
+
+        .billing-section {
+            width: 400px;
+            flex-shrink: 0;
+            background-color: var(--surface-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+        
+        .billing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        #billing-table-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #current-table-badge {
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .order-items {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-right: -1.5rem;
+            padding-right: 1.5rem;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center; /* Căn giữa theo chiều dọc */
+            gap: 0.75rem;
+        }
+
+        .order-item-details {
+            flex-grow: 1; /* Cho phép phần text co giãn */
+            min-width: 0; /* Cho phép co lại nếu cần */
+        }
+
+            .order-item-details .fw-bold {
+                margin-bottom: 0.2rem;
+            }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Không cho co lại */
+        }
+
+        .item-note {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%; /* Giới hạn chiều rộng của ghi chú theo container */
+            display: block; /* Chuyển thành block để nằm dưới tên sản phẩm */
+        }
+
+        .billing-summary {
+            border-top: 1px dashed var(--border-color);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            border-radius: 0.75rem;
+            font-weight: 600;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+        #billing-footer .btn-group > .btn {
+            padding-left: 0.6rem;
+            padding-right: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .modal-content, .dropdown-menu {
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            background: linear-gradient(90deg, var(--bg-color), var(--surface-color));
+            border-bottom: 1px solid var(--border-color);
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        .table-layout-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-color);
+            border-radius: .5rem;
+            min-height: 200px;
+        }
+
+        .table-visual {
+            width: 100px;
+            height: 100px;
+            border-radius: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: var(--surface-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .table-visual.status-available {
+                border: 2px solid var(--border-color);
+                color: var(--text-light);
+            }
+
+            .table-visual.status-occupied {
+                background: linear-gradient(45deg, var(--teal-light), var(--teal-dark));
+                color: #fff;
+                border: 2px solid var(--teal-dark);
+            }
+
+            .table-visual.disabled {
+                cursor: not-allowed;
+                background-color: #e9ecef;
+                opacity: 0.7;
+            }
+
+            .table-visual:hover:not(.disabled) {
+                transform: scale(1.05);
+            }
+
+        .split-bill-panel {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 1rem;
+            height: 350px;
+            overflow-y: auto;
+        }
+
+        .split-item-row {
+            padding: 0.75rem;
+            background-color: var(--surface-color);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        #merge-source-tables-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            padding: 1rem;
+        }
+
+        .bottom-nav {
+            display: none;
+        }
+        
+        /* === CSS MỚI CHO 5 CỘT SẢN PHẨM TRÊN DESKTOP === */
+        @@media (min-width: 992px) {
+            .col-lg-5-items {
+                flex: 0 0 auto;
+                width: 20%; /* 100% / 5 cột = 20% */
+            }
+        }
+        /* === KẾT THÚC CSS MỚI === */
+
+
+        @@media (max-width: 992px) {
+            .main-wrapper {
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .content-wrapper {
+                flex-direction: row;
+                width: 200vw;
+                height: calc(100vh - 125px);
+                padding: 0;
+                transition: transform 0.35s ease-in-out;
+            }
+
+            .main-wrapper.mobile-view-billing .content-wrapper {
+                transform: translateX(-50%);
+            }
+
+            .products-section, .billing-section {
+                width: 100vw;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .products-header {
+                padding: 0.75rem;
+            }
+
+            #product-list {
+                padding: 0;
+            }
+
+            .product-list-inner {
+                padding: 0 0.75rem 0.75rem 0.75rem;
+            }
+
+            .billing-section {
+                display: flex;
+            }
+            
+            /* === TỐI ƯU GIAO DIỆN HÓA ĐƠN TRÊN MOBILE === */
+            .billing-header {
+                padding: 0.75rem 1rem; /* Giảm padding cho gọn hơn */
+            }
+
+            #billing-table-info .btn-group, #billing-table-info .btn {
+                display: flex;
+                align-items: center; /* Đảm bảo nút ... được căn giữa dọc */
+            }
+            /* === KẾT THÚC TỐI ƯU TRÊN MOBILE === */
+
+
+            .order-items {
+                flex-grow: 1;
+                overflow-y: auto;
+                margin-right: 0;
+                padding: 0 0.75rem;
+            }
+
+            #billing-footer {
+                flex-shrink: 0;
+                position: sticky;
+                bottom: 0;
+                background-color: var(--surface-color);
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+                padding: 1rem;
+                margin: 0;
+            }
+
+            .bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: var(--surface-color);
+                box-shadow: 0 -4px 15px var(--shadow-color);
+                z-index: 1001;
+                height: 65px;
+                padding: 0 1rem;
+                border-top: 1px solid var(--border-color);
+            }
+
+                .bottom-nav .nav-link {
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    color: var(--text-light);
+                    font-weight: 600;
+                    text-decoration: none;
+                }
+
+                    .bottom-nav .nav-link.active {
+                        color: var(--blue-dark);
+                    }
+
+            .nav-link-wrapper {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #billing-badge {
+                position: absolute;
+                top: -2px;
+                right: -12px;
+                font-size: 10px;
+                padding: 2px 5px;
+                line-height: 1;
+            }
+        }
+
+        @@media (max-width: 767px) {
+            .category-and-search-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            #category-slider-wrapper {
+                width: 100%;
+            }
+
+            #category-slider {
+                padding: 2px 40px;
+                margin: 0 -40px;
+            }
+
+            .slider-controls button {
+                width: 30px;
+                height: 30px;
+            }
+
+            .product-search-bar {
+                max-width: none;
+                width: 100%;
+            }
+        }
+
+        @@media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #invoicePreview, #invoicePreview * {
+                visibility: visible;
+            }
+
+            #invoicePreview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            .modal-footer button {
+                display: none;
+            }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    @RenderBody()
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="~/js/signalr/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.2/min/tiny-slider.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

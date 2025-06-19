@@ -1,181 +1,120 @@
-﻿using Coffee_Shop_Management.Models;
+﻿using Coffee_Shop_Management.Hubs;
+using Coffee_Shop_Management.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering; // Needed for SelectList
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core; // Ensure installed
+using System.Security.Claims;
 using System.Threading.Tasks;
-using static Coffee_Shop_Management.Models.AppDbContext; // If models are nested
+using static Coffee_Shop_Management.Models.AppDbContext;
 
 namespace Coffee_Shop_Management.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Route("Admin/[controller]")]
     public class AreaTableController : Controller
     {
         private readonly AppDbContext _context;
-        // private readonly ILogger<AreaTableController> _logger; // Optional
+        private readonly IHubContext<AppHub> _hubContext;
 
-        public AreaTableController(AppDbContext context /*, ILogger<AreaTableController> logger */)
+        public AreaTableController(AppDbContext context, IHubContext<AppHub> hubContext)
         {
             _context = context;
-            // _logger = logger;
+            _hubContext = hubContext;
         }
 
-        // GET: Admin/AreaTable
+        private (string updaterId, string updaterName) GetCurrentUserInfo()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userName = User.Identity.Name ?? "Một người dùng";
+            return (userId, userName);
+        }
+
+        [Route("Index")]
+        [Route("")]
         public IActionResult Index()
         {
-            // We might pre-load areas for the Table filter dropdown here,
-            // but doing it via AJAX on view load is often better for performance.
             return View();
         }
 
-        // =========================================================================
-        // AREA MANAGEMENT ACTIONS
-        // =========================================================================
-
-        // POST: Admin/AreaTable/GetDataAreas
-        [HttpPost]
-        public async Task<IActionResult> GetDataAreas()
+        [HttpGet("GetAreas")]
+        public async Task<IActionResult> GetAreas()
         {
             try
             {
-                var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Request.Form["start"].FirstOrDefault();
-                var length = Request.Form["length"].FirstOrDefault();
-                var orderColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
-                var sortColumn = Request.Form[$"columns[{orderColumnIndex}][name]"].FirstOrDefault();
-                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault();
-
-                int pageSize = length != null ? Convert.ToInt32(length) : 10;
-                int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsFiltered = 0;
-
-                var areaQuery = _context.Areas.AsQueryable(); // No DeleteTemp for Area
-
-                int recordsTotal = await areaQuery.CountAsync();
-
-                if (!string.IsNullOrEmpty(searchValue))
-                {
-                    areaQuery = areaQuery.Where(a => a.Name.ToLower().Contains(searchValue.ToLower()) ||
-                                                     (a.Description != null && a.Description.ToLower().Contains(searchValue.ToLower())));
-                }
-
-                recordsFiltered = await areaQuery.CountAsync();
-
-                // Default sort: CreatedAt descending
-                string defaultSortColumn = "CreatedAt";
-                string defaultSortDirection = "desc";
-                string finalSortColumn = string.IsNullOrEmpty(sortColumn) ? defaultSortColumn : sortColumn;
-                string finalSortDirection = string.IsNullOrEmpty(sortColumnDirection) ? defaultSortDirection : sortColumnDirection;
-                var validColumns = new[] { "Name", "Description", "IsActive", "CreatedAt", "UpdatedAt", "TableCount" }; // Allow sorting by TableCount
-
-                if (!validColumns.Contains(finalSortColumn))
-                {
-                    finalSortColumn = defaultSortColumn;
-                    finalSortDirection = defaultSortDirection;
-                }
-
-                // Handle sorting by TableCount specifically
-                if (finalSortColumn == "TableCount")
-                {
-                    // Use OrderBy directly before applying dynamic sort for other columns
-                    if (finalSortDirection.ToLower() == "asc")
+                var areas = await _context.Areas
+                    .OrderBy(a => a.DisplayOrder)
+                    .ThenBy(a => a.Name)
+                    .Select(a => new
                     {
-                        areaQuery = areaQuery.OrderBy(a => a.Tables.Count());
-                    }
-                    else
-                    {
-                        areaQuery = areaQuery.OrderByDescending(a => a.Tables.Count());
-                    }
-                    // Apply secondary sorting if needed, or skip dynamic sort if TableCount is primary
-                    // For simplicity, we'll let TableCount be the primary sort if chosen.
-                }
-                else
-                {
-                    try
-                    {
-                        string ordering = $"{finalSortColumn} {finalSortDirection}";
-                        areaQuery = areaQuery.OrderBy(ordering);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error applying dynamic sort '{finalSortColumn} {finalSortDirection}' for Areas: {ex.Message}");
-                        areaQuery = areaQuery.OrderByDescending(a => a.CreatedAt); // Fallback
-                    }
-                }
-
-
-                var data = await areaQuery
-                                .Skip(skip)
-                                .Take(pageSize)
-                                .Select(a => new // Select specific fields + Table Count
-                                {
-                                    a.Id,
-                                    a.Name,
-                                    a.Description,
-                                    a.IsActive,
-                                    TableCount = a.Tables.Count(), // Calculate table count
-                                    CreatedAt = a.CreatedAt,
-                                    UpdatedAt = a.UpdatedAt
-                                })
-                                .ToListAsync();
-
-                var jsonData = new
-                {
-                    draw = draw,
-                    recordsFiltered = Math.Max(0, recordsFiltered),
-                    recordsTotal = Math.Max(0, recordsTotal),
-                    data = data
-                };
-                return Ok(jsonData);
+                        areaCode = a.AreaCode,
+                        name = a.Name,
+                        tableCount = a.Tables.Count(),
+                        isActive = a.IsActive,
+                        updatedAt = a.UpdatedAt
+                    })
+                    .ToListAsync();
+                return Json(areas);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetDataAreas: {ex.Message}");
-                return StatusCode(500, new { error = "Lỗi máy chủ nội bộ khi tải danh sách khu vực." });
+                Console.WriteLine($"Error in GetAreas: {ex.Message}");
+                return StatusCode(500, new { message = "Lỗi máy chủ khi tải danh sách khu vực." });
             }
         }
 
-        // POST: Admin/AreaTable/CreateArea
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateArea([FromForm][Bind("Name,Description,IsActive")] Area area)
+        [HttpGet("GetTablesByArea")]
+        public async Task<IActionResult> GetTablesByArea(string areaCode)
         {
-            if (ModelState.IsValid)
+            if (string.IsNullOrEmpty(areaCode))
             {
-                bool nameExists = await _context.Areas.AnyAsync(a => a.Name.ToLower() == area.Name.ToLower());
-                if (nameExists)
-                {
-                    return Json(new { success = false, message = "Tên khu vực đã tồn tại." });
-                }
-
-                try
-                {
-                    area.CreatedAt = DateTime.Now;
-                    area.UpdatedAt = DateTime.Now;
-                    _context.Add(area);
-                    await _context.SaveChangesAsync();
-                    return Json(new { success = true, message = "Thêm khu vực thành công!" });
-                }
-                catch (DbUpdateException ex)
-                {
-                    Console.WriteLine($"Error Creating Area: {ex.InnerException?.Message ?? ex.Message}");
-                    return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu." });
-                }
+                return BadRequest(new { message = "Mã khu vực không được để trống." });
             }
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors = errors });
+            try
+            {
+                var tables = await _context.Tables
+                    .Where(t => t.AreaCode == areaCode)
+                    .OrderBy(t => t.DisplayOrder)
+                    .ThenBy(t => t.NameTable)
+                    .Select(t => new
+                    {
+                        tableCode = t.TableCode,
+                        nameTable = t.NameTable,
+                        isAvailable = t.IsAvailable,
+                        isActive = t.IsActive,
+                        updatedAt = t.UpdatedAt,
+                        request = t.Request
+
+                    })
+                    .ToListAsync();
+                return Json(tables);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTablesByArea: {ex.Message}");
+                return StatusCode(500, new { message = "Lỗi máy chủ khi tải danh sách bàn." });
+            }
         }
 
-        // GET: Admin/AreaTable/GetAreaDetails/5
-        [HttpGet]
-        public async Task<IActionResult> GetAreaDetails(int id)
+        [HttpGet("GetAreaDetails/{areaCode}")]
+        public async Task<IActionResult> GetAreaDetails(string areaCode)
         {
+            if (string.IsNullOrEmpty(areaCode))
+            {
+                return BadRequest(new { message = "Mã khu vực không hợp lệ." });
+            }
             var area = await _context.Areas
-                .Where(a => a.Id == id)
-                .Select(a => new { a.Id, a.Name, a.Description, a.IsActive, a.CreatedAt })
+                .Where(a => a.AreaCode == areaCode)
+                .Select(a => new
+                {
+                    a.AreaCode,
+                    a.Name,
+                    a.Description,
+                    a.IsActive,
+                    a.UpdatedAt
+                })
                 .FirstOrDefaultAsync();
 
             if (area == null)
@@ -185,283 +124,23 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return Json(area);
         }
 
-        // POST: Admin/AreaTable/EditArea/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditArea(int id, [FromForm][Bind("Id,Name,Description,IsActive")] Area area)
+        [HttpGet("GetTableDetails/{tableCode}")]
+        public async Task<IActionResult> GetTableDetails(string tableCode)
         {
-            if (id != area.Id) return BadRequest(new { message = "ID không khớp." });
-
-            var existingArea = await _context.Areas.FindAsync(id);
-            if (existingArea == null) return NotFound(new { message = "Không tìm thấy khu vực để cập nhật." });
-
-            if (ModelState.IsValid)
+            if (string.IsNullOrEmpty(tableCode))
             {
-                bool nameExists = await _context.Areas.AnyAsync(a => a.Id != id && a.Name.ToLower() == area.Name.ToLower());
-                if (nameExists) return Json(new { success = false, message = "Tên khu vực đã tồn tại." });
-
-                try
-                {
-                    existingArea.Name = area.Name;
-                    existingArea.Description = area.Description;
-                    existingArea.IsActive = area.IsActive;
-                    existingArea.UpdatedAt = DateTime.Now;
-
-                    _context.Update(existingArea);
-                    await _context.SaveChangesAsync();
-                    return Json(new { success = true, message = "Cập nhật khu vực thành công!" });
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!await _context.Areas.AnyAsync(e => e.Id == area.Id))
-                        return NotFound(new { message = "Khu vực không còn tồn tại." });
-                    else
-                    {
-                        Console.WriteLine($"Concurrency Error Editing Area ID: {id}");
-                        return Json(new { success = false, message = "Lỗi trùng lặp dữ liệu, vui lòng thử lại." });
-                    }
-                }
-                catch (DbUpdateException ex)
-                {
-                    Console.WriteLine($"Error Editing Area: {ex.InnerException?.Message ?? ex.Message}");
-                    return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu." });
-                }
+                return BadRequest(new { message = "Mã bàn không hợp lệ." });
             }
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors = errors });
-        }
-
-        // POST: Admin/AreaTable/DeleteArea/5 (PHYSICAL DELETE)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteArea(int id)
-        {
-            var area = await _context.Areas.FindAsync(id);
-            if (area == null) return Json(new { success = true, message = "Khu vực không tồn tại hoặc đã được xóa." }); // Considered success if not found
-
-            // Check for related Tables (Enforce Restrict constraint)
-            bool hasTables = await _context.Tables.AnyAsync(t => t.AreaId == id);
-            if (hasTables)
-            {
-                return Json(new { success = false, message = "Không thể xóa khu vực này vì vẫn còn bàn thuộc khu vực. Vui lòng xóa hoặc chuyển bàn trước." });
-            }
-
-            try
-            {
-                _context.Areas.Remove(area);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Xóa khu vực thành công!" });
-            }
-            catch (DbUpdateException ex) // Catch potential FK issues if check failed somehow
-            {
-                Console.WriteLine($"Error Deleting Area: {ex.InnerException?.Message ?? ex.Message}");
-                // More specific error might be needed based on SQL error code if possible
-                return Json(new { success = false, message = "Đã xảy ra lỗi khi xóa khu vực. Có thể do ràng buộc dữ liệu." });
-            }
-        }
-
-        // =========================================================================
-        // TABLE MANAGEMENT ACTIONS
-        // =========================================================================
-
-        // GET: Helper to get active areas for dropdowns
-        [HttpGet]
-        public async Task<IActionResult> GetActiveAreasForDropdown()
-        {
-            var areas = await _context.Areas
-                                .Where(a => a.IsActive)
-                                .OrderBy(a => a.Name)
-                                .Select(a => new { id = a.Id, text = a.Name }) // Format for Select2 or simple dropdown
-                                .ToListAsync();
-            return Json(areas);
-        }
-
-
-        // POST: Admin/AreaTable/GetDataTables
-        [HttpPost]
-        public async Task<IActionResult> GetDataTables()
-        {
-            try
-            {
-                var draw = Request.Form["draw"].FirstOrDefault();
-                var start = Request.Form["start"].FirstOrDefault();
-                var length = Request.Form["length"].FirstOrDefault();
-                var orderColumnIndex = Request.Form["order[0][column]"].FirstOrDefault();
-                var sortColumn = Request.Form[$"columns[{orderColumnIndex}][name]"].FirstOrDefault();
-                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
-                var searchValue = Request.Form["search[value]"].FirstOrDefault();
-                // Custom filters from View
-                var areaFilter = Request.Form["areaFilter"].FirstOrDefault();
-                var statusFilter = Request.Form["statusFilter"].FirstOrDefault(); // Combined filter for IsAvailable/IsActive
-
-                int pageSize = length != null ? Convert.ToInt32(length) : 10;
-                int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsFiltered = 0;
-
-                // Include Area for displaying name and filtering/sorting
-                var tableQuery = _context.Tables.Include(t => t.Area).AsQueryable();
-
-                int recordsTotal = await tableQuery.CountAsync();
-
-                // Apply Area Filter
-                if (!string.IsNullOrEmpty(areaFilter) && int.TryParse(areaFilter, out int areaId) && areaId > 0)
-                {
-                    tableQuery = tableQuery.Where(t => t.AreaId == areaId);
-                }
-
-                // Apply Status Filter (IsAvailable / IsActive)
-                if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "all")
-                {
-                    switch (statusFilter)
-                    {
-                        case "available_true":
-                            tableQuery = tableQuery.Where(t => t.IsAvailable == true);
-                            break;
-                        case "available_false":
-                            tableQuery = tableQuery.Where(t => t.IsAvailable == false);
-                            break;
-                        case "active_true":
-                            tableQuery = tableQuery.Where(t => t.IsActive == true);
-                            break;
-                        case "active_false":
-                            tableQuery = tableQuery.Where(t => t.IsActive == false);
-                            break;
-                    }
-                }
-
-
-                // Apply Search Filter (Table Name or Area Name)
-                if (!string.IsNullOrEmpty(searchValue))
-                {
-                    string lowerSearch = searchValue.ToLower();
-                    tableQuery = tableQuery.Where(t => t.NameTable.ToLower().Contains(lowerSearch) ||
-                                                     (t.Area != null && t.Area.Name.ToLower().Contains(lowerSearch)));
-                }
-
-                recordsFiltered = await tableQuery.CountAsync();
-
-                // Sorting
-                string defaultSortColumn = "NameTable"; // Default sort by Table Name
-                string defaultSortDirection = "asc";
-                string finalSortColumn = string.IsNullOrEmpty(sortColumn) ? defaultSortColumn : sortColumn;
-                string finalSortDirection = string.IsNullOrEmpty(sortColumnDirection) ? defaultSortDirection : sortColumnDirection;
-                // Valid columns including related data
-                var validColumns = new[] { "NameTable", "AreaName", "IsAvailable", "IsActive", "Request" };
-
-                if (!validColumns.Contains(finalSortColumn))
-                {
-                    finalSortColumn = defaultSortColumn;
-                    finalSortDirection = defaultSortDirection;
-                }
-
-                try
-                {
-                    // Adjust for related data sorting
-                    string ordering = finalSortColumn switch
-                    {
-                        "AreaName" => $"Area.Name {finalSortDirection}", // Sort by related property
-                        _ => $"{finalSortColumn} {finalSortDirection}" // Default sort
-                    };
-                    tableQuery = tableQuery.OrderBy(ordering);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error applying dynamic sort '{finalSortColumn} {finalSortDirection}' for Tables: {ex.Message}");
-                    tableQuery = tableQuery.OrderBy(t => t.NameTable); // Fallback
-                }
-
-
-                var data = await tableQuery
-                                .Skip(skip)
-                                .Take(pageSize)
-                                .Select(t => new
-                                {
-                                    t.Id,
-                                    t.NameTable,
-                                    AreaId = t.AreaId,
-                                    AreaName = t.Area != null ? t.Area.Name : "N/A", // Handle null Area if necessary
-                                    t.IsAvailable,
-                                    t.IsActive,
-                                    t.Request
-                                })
-                                .ToListAsync();
-
-                var jsonData = new
-                {
-                    draw = draw,
-                    recordsFiltered = Math.Max(0, recordsFiltered),
-                    recordsTotal = Math.Max(0, recordsTotal),
-                    data = data
-                };
-                return Ok(jsonData);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetDataTables: {ex.Message}");
-                return StatusCode(500, new { error = "Lỗi máy chủ nội bộ khi tải danh sách bàn." });
-            }
-        }
-
-        // POST: Admin/AreaTable/CreateTable
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateTable([FromForm][Bind("NameTable,AreaId,IsAvailable,IsActive")] Table table)
-        {
-            // Ensure AreaId exists and is active before creating
-            var areaExists = await _context.Areas.AnyAsync(a => a.Id == table.AreaId && a.IsActive);
-            if (!areaExists)
-            {
-                ModelState.AddModelError("AreaId", "Khu vực được chọn không hợp lệ hoặc không hoạt động.");
-            }
-
-            // Check for duplicate name within the SAME Area
-            if (ModelState.IsValid) // Check after potentially adding AreaId error
-            {
-                bool nameExistsInArea = await _context.Tables.AnyAsync(t => t.AreaId == table.AreaId && t.NameTable.ToLower() == table.NameTable.ToLower());
-                if (nameExistsInArea)
-                {
-                    ModelState.AddModelError("NameTable", "Tên bàn đã tồn tại trong khu vực này.");
-                }
-            }
-
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    table.Request = 0; // Default value
-                    // CreatedAt/UpdatedAt are not in the Table model, add if needed
-                    _context.Add(table);
-                    await _context.SaveChangesAsync();
-                    return Json(new { success = true, message = "Thêm bàn thành công!" });
-                }
-                catch (DbUpdateException ex)
-                {
-                    Console.WriteLine($"Error Creating Table: {ex.InnerException?.Message ?? ex.Message}");
-                    return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu." });
-                }
-            }
-            var errors = ModelState.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                );
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors = errors }); // Return structured errors
-        }
-
-        // GET: Admin/AreaTable/GetTableDetails/5
-        [HttpGet]
-        public async Task<IActionResult> GetTableDetails(int id)
-        {
             var table = await _context.Tables
-                .Where(t => t.Id == id)
+                .Where(t => t.TableCode == tableCode)
                 .Select(t => new
                 {
-                    t.Id,
+                    t.TableCode,
                     t.NameTable,
-                    t.AreaId, // Need AreaId to pre-select dropdown
+                    t.AreaCode,
                     t.IsAvailable,
-                    t.IsActive
-                    // Include other fields if needed for display in modal
+                    t.IsActive,
+                    t.UpdatedAt
                 })
                 .FirstOrDefaultAsync();
 
@@ -472,101 +151,491 @@ namespace Coffee_Shop_Management.Areas.Admin.Controllers
             return Json(table);
         }
 
-        // POST: Admin/AreaTable/EditTable/5
-        [HttpPost]
+        [HttpPost("CreateArea")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditTable(int id, [FromForm][Bind("Id,NameTable,AreaId,IsAvailable,IsActive")] Table table)
+        public async Task<IActionResult> CreateArea([FromForm] Area area, [FromForm] string __ConnectionId)
         {
-            if (id != table.Id) return BadRequest(new { message = "ID không khớp." });
-
-            var existingTable = await _context.Tables.FindAsync(id);
-            if (existingTable == null) return NotFound(new { message = "Không tìm thấy bàn để cập nhật." });
-
-            // Ensure AreaId exists and is active before saving
-            var areaExists = await _context.Areas.AnyAsync(a => a.Id == table.AreaId && a.IsActive);
-            if (!areaExists)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("AreaId", "Khu vực được chọn không hợp lệ hoặc không hoạt động.");
+                return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
             }
-
-            // Check for duplicate name within the SAME Area, EXCLUDING self
-            if (ModelState.IsValid) // Check after potentially adding AreaId error
+            try
             {
-                bool nameExistsInArea = await _context.Tables
-                                            .AnyAsync(t => t.Id != id && // Exclude self
-                                                         t.AreaId == table.AreaId &&
-                                                         t.NameTable.ToLower() == table.NameTable.ToLower());
-                if (nameExistsInArea)
+                bool codeExists = await _context.Areas.AnyAsync(a => a.AreaCode.ToLower() == area.AreaCode.ToLower());
+                if (codeExists)
                 {
-                    ModelState.AddModelError("NameTable", "Tên bàn đã tồn tại trong khu vực này.");
+                    return Json(new { success = false, message = "Mã khu vực này đã tồn tại." });
                 }
+                bool nameExists = await _context.Areas.AnyAsync(a => a.Name.ToLower() == area.Name.ToLower());
+                if (nameExists)
+                {
+                    return Json(new { success = false, message = "Tên khu vực này đã tồn tại." });
+                }
+                var maxOrder = await _context.Areas.MaxAsync(a => (int?)a.DisplayOrder) ?? 0;
+                area.DisplayOrder = maxOrder + 1;
+                area.CreatedAt = DateTime.Now;
+                area.UpdatedAt = DateTime.Now;
+
+                _context.Add(area);
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveAreaUpdate", new { areaCode = area.AreaCode, tableCount = 0, updaterId, updaterName });
+
+                return Json(new { success = true, message = "Thêm khu vực thành công!" });
             }
-
-
-            if (ModelState.IsValid)
+            catch (DbUpdateException ex)
             {
-                try
-                {
-                    existingTable.NameTable = table.NameTable;
-                    existingTable.AreaId = table.AreaId;
-                    existingTable.IsAvailable = table.IsAvailable;
-                    existingTable.IsActive = table.IsActive;
-                    // Update 'UpdatedAt' if the model has it
-
-                    _context.Update(existingTable);
-                    await _context.SaveChangesAsync();
-                    return Json(new { success = true, message = "Cập nhật bàn thành công!" });
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!await _context.Tables.AnyAsync(e => e.Id == table.Id))
-                        return NotFound(new { message = "Bàn không còn tồn tại." });
-                    else
-                    {
-                        Console.WriteLine($"Concurrency Error Editing Table ID: {id}");
-                        return Json(new { success = false, message = "Lỗi trùng lặp dữ liệu, vui lòng thử lại." });
-                    }
-                }
-                catch (DbUpdateException ex)
-                {
-                    Console.WriteLine($"Error Editing Table: {ex.InnerException?.Message ?? ex.Message}");
-                    return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu." });
-                }
+                Console.WriteLine($"Error Creating Area: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu vào cơ sở dữ liệu." });
             }
-            var errors = ModelState.ToDictionary(
-                   kvp => kvp.Key,
-                   kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-               );
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ.", errors = errors });
         }
 
-        // POST: Admin/AreaTable/DeleteTable/5 (PHYSICAL DELETE)
-        [HttpPost]
+        [HttpPost("EditArea/{areaCode}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteTable(int id)
+        public async Task<IActionResult> EditArea(string areaCode, [FromForm] Area area, [FromForm] string __ConnectionId)
         {
-            var table = await _context.Tables.FindAsync(id);
-            if (table == null) return Json(new { success = true, message = "Bàn không tồn tại hoặc đã được xóa." });
+            if (areaCode != area.AreaCode)
+            {
+                return BadRequest(new { message = "Dữ liệu không khớp." });
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            }
+            var existingArea = await _context.Areas.FindAsync(areaCode);
+            if (existingArea == null)
+            {
+                return NotFound(new { message = "Không tìm thấy khu vực để cập nhật." });
+            }
+            bool nameExists = await _context.Areas.AnyAsync(a => a.AreaCode != areaCode && a.Name.ToLower() == area.Name.ToLower());
+            if (nameExists)
+            {
+                return Json(new { success = false, message = "Tên khu vực này đã được sử dụng." });
+            }
+            try
+            {
+                existingArea.Name = area.Name;
+                existingArea.Description = area.Description;
+                existingArea.IsActive = area.IsActive;
+                existingArea.UpdatedAt = DateTime.Now;
+                _context.Update(existingArea);
+                await _context.SaveChangesAsync();
 
-            // Check for related Orders (Enforce Restrict constraint)
-            // Note: Adjust based on your actual Order model and FK relationship
-            bool hasOrders = await _context.Orders.AnyAsync(o => o.TableId == id);
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveAreaUpdate", new { areaCode = existingArea.AreaCode, updaterId, updaterName });
+
+                return Json(new { success = true, message = "Cập nhật khu vực thành công!" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false, message = "Dữ liệu đã được sửa đổi bởi người khác. Vui lòng tải lại trang." });
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Error Editing Area: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi cập nhật dữ liệu." });
+            }
+        }
+
+        [HttpPost("DeleteArea")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteArea([FromForm] string areaCode, [FromForm] string __ConnectionId)
+        {
+            if (string.IsNullOrEmpty(areaCode))
+            {
+                return BadRequest(new { message = "Mã khu vực không hợp lệ." });
+            }
+            var area = await _context.Areas.FindAsync(areaCode);
+            if (area == null)
+            {
+                return Json(new { success = true, message = "Khu vực không tồn tại hoặc đã được xóa." });
+            }
+            bool hasTables = await _context.Tables.AnyAsync(t => t.AreaCode == areaCode);
+            if (hasTables)
+            {
+                return Json(new { success = false, message = "Không thể xóa khu vực này vì vẫn còn bàn. Vui lòng xóa hoặc chuyển các bàn trước." });
+            }
+            try
+            {
+                _context.Areas.Remove(area);
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveAreaUpdate", new { areaCode = area.AreaCode, updaterId, updaterName });
+
+                return Json(new { success = true, message = "Xóa khu vực thành công!" });
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Error Deleting Area: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi xóa khu vực do ràng buộc dữ liệu." });
+            }
+        }
+
+        [HttpPost("CreateTable")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTable([FromForm] Table table, [FromForm] string __ConnectionId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            }
+            try
+            {
+                bool codeExists = await _context.Tables.AnyAsync(t => t.TableCode.ToLower() == table.TableCode.ToLower());
+                if (codeExists)
+                {
+                    return Json(new { success = false, message = "Mã bàn này đã tồn tại." });
+                }
+                bool nameExistsInArea = await _context.Tables.AnyAsync(t => t.AreaCode == table.AreaCode && t.NameTable.ToLower() == table.NameTable.ToLower());
+                if (nameExistsInArea)
+                {
+                    return Json(new { success = false, message = "Tên bàn đã tồn tại trong khu vực này." });
+                }
+                var maxOrder = await _context.Tables.Where(t => t.AreaCode == table.AreaCode).MaxAsync(t => (int?)t.DisplayOrder) ?? 0;
+                table.DisplayOrder = maxOrder + 1;
+                table.Request = 0;
+                table.UpdatedAt = DateTime.Now;
+                _context.Add(table);
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new
+                {
+                    action = "create",
+                    table = new { tableCode = table.TableCode, nameTable = table.NameTable, isAvailable = table.IsAvailable, isActive = table.IsActive, areaCode = table.AreaCode },
+                    areaCode = table.AreaCode,
+                    updaterId,
+                    updaterName
+                });
+
+                // === FIX START: Đã xóa dòng BroadcastAreaUpdate ở đây để tránh 2 thông báo ===
+                // await BroadcastAreaUpdate(table.AreaCode, updaterId, updaterName, excludedConnection);
+                // === FIX END ===
+
+                return Json(new { success = true, message = "Thêm bàn thành công!" });
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Error Creating Table: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi lưu dữ liệu bàn." });
+            }
+        }
+
+        [HttpPost("EditTable/{tableCode}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTable(string tableCode, [FromForm] Table table, [FromForm] string __ConnectionId)
+        {
+            if (tableCode != table.TableCode)
+            {
+                return BadRequest(new { message = "Dữ liệu không khớp." });
+            }
+            var existingTable = await _context.Tables.FindAsync(tableCode);
+            if (existingTable == null)
+            {
+                return NotFound(new { message = "Không tìm thấy bàn để cập nhật." });
+            }
+            string oldAreaCode = existingTable.AreaCode;
+            bool areaChanged = oldAreaCode != table.AreaCode;
+            bool nameExistsInSameArea = await _context.Tables.AnyAsync(t =>
+                t.TableCode != tableCode &&
+                t.AreaCode == table.AreaCode &&
+                t.NameTable.ToLower() == table.NameTable.ToLower());
+
+            if (nameExistsInSameArea)
+            {
+                return Json(new { success = false, message = "Tên bàn đã tồn tại trong khu vực này." });
+            }
+            try
+            {
+                existingTable.NameTable = table.NameTable;
+                existingTable.AreaCode = table.AreaCode;
+                existingTable.IsAvailable = table.IsAvailable;
+                existingTable.IsActive = table.IsActive;
+                existingTable.UpdatedAt = DateTime.Now;
+
+                _context.Update(existingTable);
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+
+                if (areaChanged)
+                {
+                    // This scenario is now handled by the MoveTableToArea logic on the client.
+                    // However, if direct editing can change the area, this logic is a fallback.
+                    // For a cleaner UI, it's better to guide users to use the "Move" feature.
+                    // For now, we keep this logic, but the primary path is drag-and-drop.
+                    await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new { action = "delete", tableCode, areaCode = oldAreaCode, updaterId, updaterName });
+                    await BroadcastAreaUpdate(oldAreaCode, updaterId, updaterName, excludedConnection);
+                    await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new
+                    {
+                        action = "create",
+                        table = new { tableCode = existingTable.TableCode, nameTable = existingTable.NameTable, isAvailable = existingTable.IsAvailable, isActive = existingTable.IsActive, areaCode = existingTable.AreaCode },
+                        areaCode = existingTable.AreaCode,
+                        updaterId,
+                        updaterName
+                    });
+                    await BroadcastAreaUpdate(existingTable.AreaCode, updaterId, updaterName, excludedConnection);
+                }
+                else
+                {
+                    await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new
+                    {
+                        action = "update",
+                        table = new { tableCode = existingTable.TableCode, nameTable = existingTable.NameTable, isAvailable = existingTable.IsAvailable, isActive = existingTable.IsActive, areaCode = existingTable.AreaCode },
+                        areaCode = existingTable.AreaCode,
+                        updaterId,
+                        updaterName
+                    });
+                }
+                return Json(new { success = true, message = "Cập nhật bàn thành công!" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Json(new { success = false, message = "Dữ liệu đã được sửa đổi bởi người khác. Vui lòng tải lại trang." });
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Error Editing Table: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi cập nhật dữ liệu bàn." });
+            }
+        }
+
+        [HttpPost("DeleteTable")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTable([FromForm] string tableCode, [FromForm] string __ConnectionId)
+        {
+            if (string.IsNullOrEmpty(tableCode))
+            {
+                return BadRequest(new { message = "Mã bàn không hợp lệ." });
+            }
+            var table = await _context.Tables.FindAsync(tableCode);
+            if (table == null)
+            {
+                return Json(new { success = true, message = "Bàn không tồn tại hoặc đã được xóa." });
+            }
+            bool hasOrders = await _context.Orders.AnyAsync(o => o.TableCode == tableCode);
             if (hasOrders)
             {
-                return Json(new { success = false, message = "Không thể xóa bàn này vì đã có hóa đơn liên kết. Vui lòng xử lý hóa đơn trước." });
+                return Json(new { success = false, message = "Không thể xóa bàn này vì đã có hóa đơn liên kết. Vui lòng xử lý các hóa đơn trước." });
             }
-
+            string originalAreaCode = table.AreaCode;
             try
             {
                 _context.Tables.Remove(table);
                 await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new { action = "delete", tableCode, areaCode = originalAreaCode, updaterId, updaterName });
+
+                // === FIX START: Đã xóa dòng BroadcastAreaUpdate ở đây để tránh 2 thông báo ===
+                // await BroadcastAreaUpdate(originalAreaCode, updaterId, updaterName, excludedConnection);
+                // === FIX END ===
+
                 return Json(new { success = true, message = "Xóa bàn thành công!" });
             }
             catch (DbUpdateException ex)
             {
                 Console.WriteLine($"Error Deleting Table: {ex.InnerException?.Message ?? ex.Message}");
-                return Json(new { success = false, message = "Đã xảy ra lỗi khi xóa bàn. Có thể do ràng buộc dữ liệu." });
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi xóa bàn do ràng buộc dữ liệu." });
             }
         }
+
+        [HttpPost("MoveTableToArea")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MoveTableToArea([FromForm] string tableCode, [FromForm] string newAreaCode, [FromForm] string __ConnectionId)
+        {
+            if (string.IsNullOrEmpty(tableCode) || string.IsNullOrEmpty(newAreaCode))
+            {
+                return BadRequest(new { message = "Dữ liệu không hợp lệ." });
+            }
+            var tableToMove = await _context.Tables.FindAsync(tableCode);
+            if (tableToMove == null)
+            {
+                return NotFound(new { message = "Không tìm thấy bàn để di chuyển." });
+            }
+            var newArea = await _context.Areas.FindAsync(newAreaCode);
+            if (newArea == null)
+            {
+                return NotFound(new { message = "Không tìm thấy khu vực đích." });
+            }
+            if (tableToMove.AreaCode == newAreaCode)
+            {
+                return Json(new { success = true, message = "Bàn đã ở trong khu vực này." });
+            }
+            bool nameExistsInNewArea = await _context.Tables.AnyAsync(t => t.AreaCode == newAreaCode && t.NameTable.ToLower() == tableToMove.NameTable.ToLower());
+            if (nameExistsInNewArea)
+            {
+                return Json(new { success = false, message = $"Tên bàn '{tableToMove.NameTable}' đã tồn tại trong khu vực '{newArea.Name}'. Vui lòng đổi tên bàn trước khi di chuyển." });
+            }
+
+            string oldAreaCode = tableToMove.AreaCode;
+            var oldArea = await _context.Areas.AsNoTracking().FirstOrDefaultAsync(a => a.AreaCode == oldAreaCode);
+
+            try
+            {
+                tableToMove.AreaCode = newAreaCode;
+                tableToMove.UpdatedAt = DateTime.Now;
+                _context.Update(tableToMove);
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(__ConnectionId);
+
+                // *** CHỈ GỬI 1 THÔNG BÁO DUY NHẤT ***
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableMove", new
+                {
+                    updaterName,
+                    tableCode = tableToMove.TableCode,
+                    tableName = tableToMove.NameTable,
+                    oldAreaCode = oldAreaCode,
+                    oldAreaName = oldArea?.Name ?? "khu vực cũ",
+                    newAreaCode = newArea.AreaCode,
+                    newAreaName = newArea.Name
+                });
+
+                return Json(new { success = true, message = $"Đã di chuyển bàn '{tableToMove.NameTable}' đến khu vực '{newArea.Name}' thành công!" });
+            }
+            catch (DbUpdateException ex)
+            {
+                Console.WriteLine($"Error Moving Table: {ex.InnerException?.Message ?? ex.Message}");
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi cập nhật dữ liệu." });
+            }
+        }
+
+        [HttpPost("UpdateAreaOrder")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAreaOrder([FromBody] UpdateAreaOrderRequest request)
+        {
+            if (request == null || request.OrderedAreaCodes == null || !request.OrderedAreaCodes.Any())
+            {
+                return BadRequest("Dữ liệu thứ tự không hợp lệ.");
+            }
+            try
+            {
+                var areasToUpdate = await _context.Areas.Where(a => request.OrderedAreaCodes.Contains(a.AreaCode)).ToListAsync();
+                DateTime now = DateTime.Now;
+                for (int i = 0; i < request.OrderedAreaCodes.Count; i++)
+                {
+                    var area = areasToUpdate.FirstOrDefault(a => a.AreaCode == request.OrderedAreaCodes[i]);
+                    if (area != null)
+                    {
+                        area.DisplayOrder = i + 1;
+                        area.UpdatedAt = now;
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(request.__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveAreaUpdate", new { message = "Area order has been changed.", updaterId, updaterName });
+
+                return Ok(new { success = true, message = "Cập nhật thứ tự khu vực thành công." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating area order: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi cập nhật thứ tự khu vực." });
+            }
+        }
+
+        [HttpPost("UpdateTableOrder")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateTableOrder([FromBody] UpdateTableOrderRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.AreaCode) || request.OrderedTableCodes == null)
+            {
+                return BadRequest("Dữ liệu yêu cầu không hợp lệ.");
+            }
+            try
+            {
+                var tablesToUpdate = await _context.Tables
+                    .Where(t => t.AreaCode == request.AreaCode && request.OrderedTableCodes.Contains(t.TableCode))
+                    .ToListAsync();
+
+                var orderMap = request.OrderedTableCodes
+                    .Select((code, index) => new { Code = code, Index = index })
+                    .ToDictionary(item => item.Code, item => item.Index);
+
+                DateTime now = DateTime.Now;
+                foreach (var table in tablesToUpdate)
+                {
+                    if (orderMap.TryGetValue(table.TableCode, out int newIndex))
+                    {
+                        table.DisplayOrder = newIndex + 1;
+                        table.UpdatedAt = now;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                var (updaterId, updaterName) = GetCurrentUserInfo();
+                var excludedConnection = GetExcludedConnectionList(request.__ConnectionId);
+                await _hubContext.Clients.AllExcept(excludedConnection).SendAsync("ReceiveTableUpdate", new
+                {
+                    action = "reorder",
+                    areaCode = request.AreaCode,
+                    updaterId,
+                    updaterName
+                });
+
+                return Ok(new { success = true, message = "Cập nhật thứ tự bàn thành công." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating table order: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Lỗi máy chủ khi cập nhật thứ tự bàn." });
+            }
+        }
+
+        private async Task BroadcastAreaUpdate(string areaCode, string updaterId, string updaterName, List<string> excludedConnectionIds = null)
+        {
+            var area = await _context.Areas.Include(a => a.Tables).FirstOrDefaultAsync(a => a.AreaCode == areaCode);
+            if (area != null)
+            {
+                var clients = (excludedConnectionIds != null && excludedConnectionIds.Any())
+                                ? _hubContext.Clients.AllExcept(excludedConnectionIds)
+                                : _hubContext.Clients.All;
+
+                await clients.SendAsync("ReceiveAreaUpdate", new
+                {
+                    areaCode = area.AreaCode,
+                    tableCount = area.Tables.Count,
+                    updaterId,
+                    updaterName
+                });
+            }
+        }
+
+        private List<string> GetExcludedConnectionList(string connectionId)
+        {
+            var excludedList = new List<string>();
+            if (!string.IsNullOrEmpty(connectionId))
+            {
+                excludedList.Add(connectionId);
+            }
+            return excludedList;
+        }
+    }
+
+    // Các lớp Request Model để nhận dữ liệu từ Client
+    public class UpdateAreaOrderRequest
+    {
+        public List<string> OrderedAreaCodes { get; set; }
+        public string __ConnectionId { get; set; }
+    }
+    public class UpdateTableOrderRequest
+    {
+        public string AreaCode { get; set; }
+        public List<string> OrderedTableCodes { get; set; }
+        public string __ConnectionId { get; set; }
     }
 }

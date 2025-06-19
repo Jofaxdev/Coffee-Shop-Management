@@ -131,7 +131,7 @@ namespace Coffee_Shop_Management
 
             app.UseAuthorization();
             // Thêm MapHub cho SignalR ở đây
-            app.MapHub<NotificationHub>("/notificationHub");
+            app.MapHub<AppHub>("/appHub");
 
             app.MapControllerRoute(
                     name: "areas",

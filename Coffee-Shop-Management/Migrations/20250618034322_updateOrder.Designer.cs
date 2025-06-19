@@ -4,6 +4,7 @@ using Coffee_Shop_Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Coffee_Shop_Management.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250618034322_updateOrder")]
+    partial class updateOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,9 +27,11 @@ namespace Coffee_Shop_Management.Migrations
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Area", b =>
                 {
-                    b.Property<string>("AreaCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -34,11 +39,6 @@ namespace Coffee_Shop_Management.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
-
-                    b.Property<int>("DisplayOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -51,7 +51,7 @@ namespace Coffee_Shop_Management.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("AreaCode");
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -368,56 +368,6 @@ namespace Coffee_Shop_Management.Migrations
                     b.ToTable("InventoryTransactions");
                 });
 
-            modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AcknowledgedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("AcknowledgedByUserName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RequestType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TableCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TableName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AcknowledgedByUserId");
-
-                    b.ToTable("Notifications");
-                });
-
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Order", b =>
                 {
                     b.Property<int>("Id")
@@ -458,8 +408,8 @@ namespace Coffee_Shop_Management.Migrations
                     b.Property<int>("StatusPayment")
                         .HasColumnType("int");
 
-                    b.Property<string>("TableCode")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int?>("TableId")
+                        .HasColumnType("int");
 
                     b.Property<string>("TableName")
                         .IsRequired()
@@ -479,18 +429,22 @@ namespace Coffee_Shop_Management.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TableCode");
+                    b.HasIndex("TableId");
 
                     b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+OrderDetail", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("OrderId")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<int>("ProductId")
+                        .HasMaxLength(20)
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
 
                     b.Property<string>("NameProduct")
                         .IsRequired()
@@ -498,12 +452,6 @@ namespace Coffee_Shop_Management.Migrations
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -520,9 +468,7 @@ namespace Coffee_Shop_Management.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
+                    b.HasKey("OrderId", "ProductId");
 
                     b.ToTable("OrderDetails");
                 });
@@ -690,18 +636,14 @@ namespace Coffee_Shop_Management.Migrations
 
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Table", b =>
                 {
-                    b.Property<string>("TableCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("AreaCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("DisplayOrder")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AreaId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -717,12 +659,9 @@ namespace Coffee_Shop_Management.Migrations
                     b.Property<int>("Request")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.HasKey("Id");
 
-                    b.HasKey("TableCode");
-
-                    b.HasIndex("AreaCode");
+                    b.HasIndex("AreaId");
 
                     b.ToTable("Tables");
                 });
@@ -1068,21 +1007,12 @@ namespace Coffee_Shop_Management.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Notification", b =>
-                {
-                    b.HasOne("Coffee_Shop_Management.Models.AppUser", "AcknowledgedByUser")
-                        .WithMany()
-                        .HasForeignKey("AcknowledgedByUserId");
-
-                    b.Navigation("AcknowledgedByUser");
-                });
-
             modelBuilder.Entity("Coffee_Shop_Management.Models.AppDbContext+Order", b =>
                 {
                     b.HasOne("Coffee_Shop_Management.Models.AppDbContext+Table", "Table")
                         .WithMany("Orders")
-                        .HasForeignKey("TableCode")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Table");
                 });
@@ -1140,7 +1070,7 @@ namespace Coffee_Shop_Management.Migrations
                 {
                     b.HasOne("Coffee_Shop_Management.Models.AppDbContext+Area", "Area")
                         .WithMany("Tables")
-                        .HasForeignKey("AreaCode")
+                        .HasForeignKey("AreaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
