@@ -259,17 +259,8 @@
                 transform: translateY(-5px);
                 box-shadow: 0 8px 25px var(--shadow-color);
             }
-        
-        /* === TỐI ƯU THẺ SẢN PHẨM === */
-        .product-card .card-title {
-            min-height: 48px; /* Đảm bảo đủ không gian cho 2 dòng text, giúp các thẻ có chiều cao đồng đều */
-            display: -webkit-box;
-            -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        /* === KẾT THÚC TỐI ƯU THẺ SẢN PHẨM === */
+
+        /* === FIX: Đã XÓA bỏ đoạn CSS .product-card .card-title bị xung đột ở đây === */
 
         .billing-section {
             width: 400px;
@@ -280,7 +271,7 @@
             flex-direction: column;
             box-shadow: 0 4px 20px var(--shadow-color);
         }
-        
+
         .billing-header {
             display: flex;
             justify-content: space-between;
@@ -309,7 +300,7 @@
             margin-right: -1.5rem;
             padding-right: 1.5rem;
         }
-        
+
         .order-item {
             display: flex;
             align-items: center; /* Căn giữa theo chiều dọc */
@@ -456,7 +447,7 @@
         .bottom-nav {
             display: none;
         }
-        
+
         /* === CSS MỚI CHO 5 CỘT SẢN PHẨM TRÊN DESKTOP === */
         @@media (min-width: 992px) {
             .col-lg-5-items {
@@ -510,7 +501,6 @@
             .billing-section {
                 display: flex;
             }
-            
             /* === TỐI ƯU GIAO DIỆN HÓA ĐƠN TRÊN MOBILE === */
             .billing-header {
                 padding: 0.75rem 1rem; /* Giảm padding cho gọn hơn */
@@ -638,6 +628,9 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
+    <form id="antiForgeryForm" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
 
     @RenderBody()
 

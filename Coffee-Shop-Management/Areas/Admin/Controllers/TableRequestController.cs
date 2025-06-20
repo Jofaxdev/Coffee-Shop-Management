@@ -30,6 +30,28 @@ public class TableRequestController : ControllerBase
         _hubContext = hubContext;
     }
 
+    // === HÀM HELPER: GỬI TOÀN BỘ LỊCH SỬ THÔNG BÁO MỚI NHẤT ===
+    private async Task BroadcastNotificationHistoryUpdate()
+    {
+        var notifications = await _context.Notifications
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(30) // Luôn lấy 30 thông báo gần nhất
+            .Select(n => new {
+                notificationId = n.Id,
+                tableCode = n.TableCode,
+                tableName = n.TableName,
+                requestType = n.RequestType,
+                message = n.Message,
+                createdAt = n.CreatedAt,
+                isRead = n.IsRead,
+                acknowledgedByUserName = n.AcknowledgedByUserName
+            })
+            .ToListAsync();
+
+        // Gửi sự kiện 'ReceiveNotificationHistoryUpdate' chứa toàn bộ danh sách mới
+        await _hubContext.Clients.All.SendAsync("ReceiveNotificationHistoryUpdate", notifications);
+    }
+
     [HttpPost("Service")]
     public async Task<IActionResult> HandleServiceRequest([FromBody] ServiceRequestPayload payload)
     {
@@ -81,31 +103,29 @@ public class TableRequestController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        var notificationData = new
-        {
-            notificationId = notification.Id,
-            tableCode = table.TableCode,
-            tableName = table.NameTable,
-            requestType = payload.RequestType,
-            requestStatus = table.Request,
-            message = message,
-            createdAt = notification.CreatedAt,
-            isRead = false,
-            acknowledgedByUserName = (string)null
-        };
+        // Cập nhật icon trên bàn
+        await _hubContext.Clients.All.SendAsync("ReceiveTableRequest", new { tableCode = table.TableCode, requestStatus = newRequestStatus });
 
-        await _hubContext.Clients.All.SendAsync("ReceiveTableRequest", notificationData);
+        // === THÊM MỚI: Gửi alert Notyf tức thì cho các client ===
+        await _hubContext.Clients.All.SendAsync("ReceiveNewNotificationAlert", message);
+        // === KẾT THÚC THÊM MỚI ===
+
+        // Gửi toàn bộ lịch sử mới cho tất cả client
+        await BroadcastNotificationHistoryUpdate();
+
         return Ok(new { message = $"Đã ghi nhận yêu cầu '{payload.RequestType}' cho bàn '{table.NameTable}' thành công." });
     }
 
-    // === API MỚI ĐỂ XÁC NHẬN MỘT THÔNG BÁO CỤ THỂ ===
-    [Authorize] // Đảm bảo chỉ người dùng đăng nhập mới có thể xác nhận
+    [Authorize]
     [HttpPost("AcknowledgeNotification/{notificationId}")]
+    [ValidateAntiForgeryToken] // <-- FIX: Thêm thuộc tính này để yêu cầu token chống giả mạo
     public async Task<IActionResult> AcknowledgeSingleNotification(int notificationId)
     {
         var notification = await _context.Notifications.FindAsync(notificationId);
-        if (notification == null) return NotFound();
-        if (notification.IsRead) return Ok(); // Đã có người khác xác nhận
+        if (notification == null || notification.IsRead)
+        {
+            return Ok();
+        }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var userName = User.Identity.Name;
@@ -115,7 +135,6 @@ public class TableRequestController : ControllerBase
         notification.AcknowledgedByUserId = userId;
         notification.AcknowledgedByUserName = userName;
 
-        // Reset trạng thái yêu cầu của bàn tương ứng
         var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableCode == notification.TableCode);
         if (table != null)
         {
@@ -124,24 +143,22 @@ public class TableRequestController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        // Gửi thông báo tới các client
+        // Cập nhật icon trên bàn
         await _hubContext.Clients.All.SendAsync("ReceiveTableRequest", new { tableCode = notification.TableCode, requestStatus = 0 });
-        await _hubContext.Clients.All.SendAsync("NotificationAcknowledged", new
-        {
-            NotificationId = notification.Id,
-            AcknowledgedBy = userName,
-            ReadAt = notification.ReadAt
-        });
+
+        // Gửi toàn bộ lịch sử mới cho tất cả client
+        await BroadcastNotificationHistoryUpdate();
 
         return Ok();
     }
 
+    // API này dùng cho lần tải trang đầu tiên
     [HttpGet("GetRecentNotifications")]
     public async Task<IActionResult> GetRecentNotifications()
     {
         var notifications = await _context.Notifications
             .OrderByDescending(n => n.CreatedAt)
-            .Take(30) // Lấy 30 thông báo gần nhất
+            .Take(30)
             .Select(n => new {
                 notificationId = n.Id,
                 tableCode = n.TableCode,

@@ -1,0 +1,199 @@
+﻿@{
+    ViewData["Title"] = "Quét Mã QR Điểm Danh";
+}
+
+@* Bổ sung CSS cho giao diện mới *@
+@section Styles {
+    <style>
+        .scanner-card-header {
+            background-color: var(--bs-primary); /* Sử dụng màu primary của Bootstrap */
+            color: white;
+        }
+
+        #qr-reader {
+            position: relative;
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            overflow: hidden; /* Che các phần thừa của video */
+        }
+
+        /* Ẩn các UI không mong muốn của thư viện */
+        #qr-reader__dashboard_section_csr,
+        #qr-reader__dashboard_section_swap_camera,
+        #qr-reader__dashboard_action_stop_scanning,
+        #qr-reader__status_span,
+        #qr-reader__footer {
+            display: none !important;
+        }
+
+        .scanner-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+            .scanner-controls .form-select {
+                flex-grow: 1;
+            }
+
+    </style>
+}
+
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+            <div class="card shadow-sm">
+                <div class="card-header scanner-card-header text-center">
+                    <h4 class="card-title mb-0 text-white"><i class="fas fa-qrcode me-2"></i>@ViewData["Title"]</h4>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <p class="text-center text-muted mb-3">Chọn camera và nhấn "Bắt đầu quét" để ghi nhận điểm danh.</p>
+
+                    @* Vùng hiển thị camera *@
+                    <div id="qr-reader"></div>
+
+                    @* Các nút điều khiển được thiết kế lại *@
+                    <div class="scanner-controls">
+                        <select id="camera-select" class="form-select" aria-label="Chọn camera"></select>
+                        <button id="scan-toggle-btn" class="btn btn-primary" style="min-width: 140px;">
+                            <i class="fas fa-play me-2"></i>Bắt đầu quét
+                        </button>
+                    </div>
+
+                </div>
+                <div class="card-footer text-center" id="scan-result" style="transition: background-color 0.3s;">
+                    <small class="text-muted">Trạng thái: Sẵn sàng</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/html5-qrcode/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const scanResultEl = document.getElementById('scan-result');
+            const cameraSelectEl = document.getElementById('camera-select');
+            const scanToggleButton = document.getElementById('scan-toggle-btn');
+
+            let isScanning = false;
+            let isProcessing = false;
+            const html5QrCode = new Html5Qrcode("qr-reader");
+
+            // --- Các hàm xử lý giao diện ---
+            function setButtonState(scanning) {
+                isScanning = scanning;
+                if (scanning) {
+                    scanToggleButton.innerHTML = '<i class="fas fa-stop me-2"></i>Dừng quét';
+                    scanToggleButton.classList.remove('btn-primary');
+                    scanToggleButton.classList.add('btn-danger');
+                    scanResultEl.innerHTML = '<small class="text-muted">Trạng thái: Đang quét...</small>';
+                } else {
+                    scanToggleButton.innerHTML = '<i class="fas fa-play me-2"></i>Bắt đầu quét';
+                    scanToggleButton.classList.remove('btn-danger');
+                    scanToggleButton.classList.add('btn-primary');
+                    scanResultEl.innerHTML = '<small class="text-muted">Trạng thái: Đã dừng</small>';
+                }
+            }
+
+            function onScanSuccess(decodedText, decodedResult) {
+                if (isProcessing) return;
+                isProcessing = true;
+
+                scanResultEl.innerHTML = '<small class="text-primary fw-bold">Đã nhận diện mã. Đang xử lý...</small>';
+                navigator.vibrate(100);
+
+                html5QrCode.stop().then(() => {
+                    setButtonState(false);
+                    sendQrDataToServer(decodedText);
+                }).catch(err => {
+                    console.error("Lỗi khi dừng quét:", err);
+                    isProcessing = false;
+                });
+            }
+
+            function onScanFailure(error) {
+                // Không cần xử lý
+            }
+
+            function sendQrDataToServer(qrData) {
+                const url = '@Url.Action("RecordAttendance", "AttendanceScanner", new { Area = "Admin" })';
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ qrData: qrData })
+                })
+                    .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({ icon: 'success', title: 'Thành công!', html: `${data.message}<br><b>Trạng thái: ${data.status}</b>`, timer: 3500, timerProgressBar: true });
+                            scanResultEl.innerHTML = `<small class="text-success fw-bold">${data.message.split('.')[0]}. Trạng thái: ${data.status}</small>`;
+                        } else {
+                            throw new Error(data.message || 'Yêu cầu không thành công.');
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({ icon: 'error', title: 'Thất bại!', text: error.message });
+                        scanResultEl.innerHTML = `<small class="text-danger fw-bold">${error.message}</small>`;
+                    })
+                    .finally(() => {
+                        isProcessing = false;
+                    });
+            }
+
+            // --- Logic chính ---
+
+            // 1. Lấy danh sách camera và đưa vào dropdown
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    devices.forEach(device => {
+                        let option = document.createElement('option');
+                        option.value = device.id;
+                        option.text = device.label || `Camera ${cameraSelectEl.length + 1}`;
+                        cameraSelectEl.appendChild(option);
+                    });
+                } else {
+                    scanToggleButton.disabled = true;
+                    scanResultEl.innerHTML = '<small class="text-danger fw-bold">Không tìm thấy camera trên thiết bị.</small>';
+                }
+            }).catch(err => {
+                console.error("Lỗi khi lấy danh sách camera:", err);
+                scanToggleButton.disabled = true;
+                scanResultEl.innerHTML = '<small class="text-danger fw-bold">Không thể truy cập camera.</small>';
+            });
+
+            // 2. Xử lý sự kiện click nút Bắt đầu/Dừng quét
+            scanToggleButton.addEventListener('click', () => {
+                if (isScanning) {
+                    html5QrCode.stop().then(() => {
+                        setButtonState(false);
+                    }).catch(err => console.error("Lỗi khi dừng quét:", err));
+                } else {
+                    const cameraId = cameraSelectEl.value;
+                    if (!cameraId) {
+                        Swal.fire('Lỗi', 'Vui lòng chọn một camera.', 'error');
+                        return;
+                    }
+
+                    const config = {
+                        fps: 10,
+                        qrbox: (w, h) => { return { width: Math.min(w, h) * 0.7, height: Math.min(w, h) * 0.7 } }
+                    };
+
+                    html5QrCode.start(cameraId, config, onScanSuccess, onScanFailure)
+                        .then(() => {
+                            setButtonState(true);
+                        })
+                        .catch(err => {
+                            Swal.fire('Lỗi Camera', `Không thể bắt đầu quét. Lỗi: ${err}`, 'error');
+                        });
+                }
+            });
+
+        });
+    </script>
+}

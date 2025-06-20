@@ -5,6 +5,10 @@
     {
       "library": "microsoft-signalr@8.0.7",
       "destination": "wwwroot/js/signalr/"
+    },
+    {
+      "library": "html5-qrcode@2.3.8",
+      "destination": "wwwroot/lib/html5-qrcode/"
     }
   ]
 }

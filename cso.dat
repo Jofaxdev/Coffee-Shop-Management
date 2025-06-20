@@ -24,3 +24,14 @@ V1
 2:batches,K
 2:b,TZ
 2:SelectTable,q
+2:GenerateQrCode,o
+2:shiftId,qR
+2:AttendanceScannerController,TR
+2:_context,yZ
+2:_userManager,yU
+2:_configuration,K5
+2:.ctor,G
+2:context,X7
+2:RecordAttendance,W_
+2:model,oI
+2:,lR

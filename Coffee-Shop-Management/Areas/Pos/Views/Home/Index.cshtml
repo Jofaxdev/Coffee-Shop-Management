@@ -4,6 +4,75 @@
 }
 
 @section Styles {
+    <style>
+        #retailSaleBtn {
+            white-space: nowrap;
+        }
+
+        /* === CSS CHO GIAO DIỆN SẢN PHẨM MỚI === */
+        .product-card {
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            background-color: var(--surface-color);
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+            .product-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(108, 99, 255, 0.12);
+                border-color: var(--blue-light);
+            }
+
+            .product-card .product-image-container {
+                position: relative;
+                height: 150px;
+            }
+
+                .product-card .product-image-container .card-img-top {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+            .product-card .price-tag {
+                position: absolute;
+                top: 12px;
+                right: -1px;
+                background: linear-gradient(45deg, var(--blue-dark), var(--blue-light));
+                color: white;
+                padding: 0.35rem 1rem;
+                border-top-left-radius: 50px;
+                border-bottom-left-radius: 50px;
+                font-size: 0.9rem;
+                font-weight: 700;
+                box-shadow: -2px 2px 8px rgba(0,0,0,0.2);
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            }
+
+            .product-card .card-body {
+                padding: 1rem;
+                text-align: center;
+                /* Chuyển thành flex container để căn chỉnh nội dung */
+                display: flex;
+                flex-direction: column;
+                justify-content: center; /* Đây là chìa khóa để căn giữa theo chiều dọc */
+            }
+
+            .product-card .card-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--text-dark);
+                margin: 0;
+                line-height: 1.4; /* Đảm bảo các dòng không quá sát nhau */
+                display: -webkit-box;
+                -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+    </style>
 }
 
 <div id="loading-overlay">
@@ -114,6 +183,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // FIX: Lấy Anti-Forgery Token từ form ẩn trong layout
+            const antiForgeryToken = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]').value;
+
             const RETAIL_CUSTOMER_ID = null;
             const RETAIL_CUSTOMER_NAME = "Bán lẻ";
             const TAX_RATE = 0.08;
@@ -129,7 +201,32 @@
             let activeTooltips = [];
 
             const connection = new signalR.HubConnectionBuilder().withUrl("/appHub").build();
-            const notyf = new Notyf({ duration: 2500, position: { x: 'center', y: 'top' }, types: [{ type: 'success', background: 'var(--teal-dark)', icon: { className: 'bi bi-check-circle-fill', tagName: 'i' } }, { type: 'error', background: 'var(--red)', icon: { className: 'bi bi-exclamation-circle-fill', tagName: 'i' } }] });
+            const notyf = new Notyf({
+                duration: 2500,
+                position: { x: 'center', y: 'top' },
+                types: [
+                    {
+                        type: 'success',
+                        background: 'var(--teal-dark)',
+                        icon: {
+                            className: 'bi bi-check-circle-fill',
+                            tagName: 'i',
+                            color: '#fff' // Chỉ định rõ màu sắc cho icon
+                        },
+                        dismissible: true // Cho phép tắt thông báo
+                    },
+                    {
+                        type: 'error',
+                        background: 'var(--red)',
+                        icon: {
+                            className: 'bi bi-exclamation-circle-fill',
+                            tagName: 'i',
+                            color: '#fff' // Chỉ định rõ màu sắc cho icon
+                        },
+                        dismissible: true // Cho phép tắt thông báo
+                    }
+                ]
+            });
             const tableModal = new bootstrap.Modal(document.getElementById('tableModal'));
             const moveModal = new bootstrap.Modal(document.getElementById('moveModal'));
             const checkoutModal = new bootstrap.Modal(document.getElementById('checkoutModal'));
@@ -192,6 +289,54 @@
 
             const initialOrderHTML = `<div id="empty-cart-message" class="text-center text-muted d-flex flex-column justify-content-center align-items-center h-100"><i class="bi bi-shop-window display-1 mb-3" style="color: var(--blue-light);"></i><h5 class="fw-bold">Bắt đầu phiên bán hàng</h5><p>Chọn bàn phục vụ hoặc bán lẻ để thêm sản phẩm.</p><button class="btn btn-primary btn-lg mt-3" id="start-order-btn"><i class="bi bi-plus-circle-fill me-2"></i>Chọn Bàn / Bán Lẻ</button></div>`;
 
+            function renderProducts(productsToRender) {
+                if (!DOM.productList) return;
+                DOM.productList.innerHTML = '';
+                if (!productsToRender || productsToRender.length === 0) {
+                    DOM.productList.innerHTML = '<div class="col-12"><p class="text-center text-muted mt-4">Không tìm thấy sản phẩm.</p></div>';
+                    return;
+                }
+                productsToRender.forEach(product => {
+                    const productEl = document.createElement('div');
+                    productEl.className = 'col-6 col-lg-5-items';
+                    const imageUrl = product.image || 'https://placehold.co/400x300/e8e8e8/999?text=Image';
+
+                    productEl.innerHTML = `
+                                            <div class="card product-card h-100">
+                                                <div class="product-image-container">
+                                                    <img src="${imageUrl}" class="card-img-top" alt="${product.name}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e8e8e8/999?text=Image'">
+                                                    <div class="price-tag">${formatCurrency(product.price)}</div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h5 class="card-title" data-bs-toggle="tooltip" data-bs-placement="top" title="${product.name}">
+                                                        ${product.name}
+                                                    </h5>
+                                                </div>
+                                            </div>
+                                        `;
+                    productEl.addEventListener('click', () => addProductToCart(product.id));
+                    DOM.productList.appendChild(productEl);
+                });
+
+                initializeTooltips();
+            }
+
+            function initializeTooltips() {
+                activeTooltips.forEach(t => t.dispose());
+                activeTooltips = [];
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                activeTooltips = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+            }
+
+            function resetToInitialState() {
+                currentTableId = RETAIL_CUSTOMER_ID;
+                currentTableName = RETAIL_CUSTOMER_NAME;
+                currentCart = [];
+                isFinalPayment = false;
+                updateUIForNewTable();
+                renderCart();
+            }
+
             async function initialize() {
                 setupEventListeners();
                 setupAntiCopy();
@@ -212,13 +357,6 @@
                 });
             }
 
-            function initializeTooltips() {
-                activeTooltips.forEach(t => t.dispose());
-                activeTooltips = [];
-                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                activeTooltips = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-            }
-
             async function startSignalRConnection() {
                 try {
                     await connection.start();
@@ -232,30 +370,43 @@
                     });
 
                     connection.on("ReceiveTableRequest", (data) => {
-                        console.log("Received table request:", data);
                         if (allTables[data.tableCode]) {
                             allTables[data.tableCode].request = data.requestStatus;
                             updateTableRequestVisual(data.tableCode, data.requestStatus);
                         }
-                        if (data.requestStatus !== 0) {
-                            addNotification(data, true);
-                        }
                     });
 
-                    connection.on("NotificationAcknowledged", (data) => {
-                        const notifElement = document.getElementById(`notif-${data.NotificationId}`);
-                        if (notifElement) {
-                            notifElement.classList.add('is-read');
-                            notifElement.classList.remove('fw-bold');
-                            const ackInfo = notifElement.querySelector('.ack-info');
-                            const ackButton = notifElement.querySelector('.ack-btn');
-                            if (ackInfo) {
-                                ackInfo.textContent = `Đã tiếp nhận bởi: ${data.AcknowledgedBy}`;
-                                ackInfo.classList.remove('d-none');
-                            }
-                            if (ackButton) ackButton.classList.add('d-none');
+                    // === THÊM MỚI: Lắng nghe sự kiện để hiển thị Notyf alert ===
+                    connection.on("ReceiveNewNotificationAlert", (message) => {
+                        notyf.success({
+                            message: message,
+                            duration: 5000,
+                            ripple: true,
+                            dismissible: true,
+                            position: { x: 'right', y: 'top' }
+                        });
+                    });
+                    // === KẾT THÚC THÊM MỚI ===
+
+                    connection.on("ReceiveNotificationHistoryUpdate", (notifications) => {
+                        console.log("Received full notification history update.");
+                        renderNotificationList(notifications);
+                    });
+
+                    connection.on("OrderUpdated", (orderData) => {
+                        if (orderData.tableCode === currentTableId) {
+                            console.log(`Real-time order update received for table ${currentTableId}`);
+                            currentCart = orderData.items.map(item => {
+                                const product = allProducts.find(p => p.id === item.id);
+                                return {
+                                    ...item,
+                                    cartItemId: Date.now() + Math.random(),
+                                    name: product ? product.name : 'Sản phẩm không xác định',
+                                    image: product ? product.image : null
+                                };
+                            });
+                            renderCart();
                         }
-                        updateNotificationCount();
                     });
 
                 } catch (err) {
@@ -264,48 +415,76 @@
                 }
             }
 
-            function updateTableVisuals(tableId, newStatus) {
-                const tableElements = document.querySelectorAll(`.table-visual[data-table-id='${tableId}']`);
-                tableElements.forEach(el => {
-                    el.className = `table-visual status-${newStatus}`;
-                    el.innerHTML = `<i class="bi ${newStatus === 'occupied' ? 'bi-cup-hot-fill' : 'bi-circle'}"></i><span>${allTables[tableId].name}</span>`;
-                    if (allTables[tableId] && allTables[tableId].request > 0) {
-                        updateTableRequestVisual(tableId, allTables[tableId].request);
-                    }
-                });
-                if (tableId === currentTableId) {
-                    updateUIForNewTable();
-                    renderCart();
+            function renderNotificationList(notifications) {
+                DOM.notificationList.innerHTML = '';
+                if (!notifications || notifications.length === 0) {
+                    DOM.notificationList.innerHTML = '<li class="list-group-item text-center text-muted" id="no-notification-message">Chưa có thông báo nào.</li>';
+                    updateNotificationCount(0);
+                    return;
                 }
+                let unreadCount = 0;
+                notifications.forEach(data => {
+                    if (!data.isRead) unreadCount++;
+                    const notifElement = document.createElement('li');
+                    notifElement.className = 'list-group-item notification-item p-3';
+                    notifElement.id = `notif-${data.notificationId}`;
+                    const iconClass = data.requestType === 'Order' ? 'bi-bell-fill text-warning' : 'bi-wallet-fill text-success';
+                    const acknowledgedByHtml = data.isRead && data.acknowledgedByUserName ? `<small class="text-muted ack-info">Đã tiếp nhận bởi: ${data.acknowledgedByUserName}</small>` : `<small class="text-muted ack-info d-none"></small>`;
+                    const buttonHtml = !data.isRead ? `<button class="btn btn-sm btn-outline-primary ack-btn" data-id="${data.notificationId}">Tiếp nhận</button>` : ``;
+                    notifElement.innerHTML = `
+                                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                                        <div class="me-3">
+                                                            <h6 class="mb-1"><i class="bi ${iconClass} me-2"></i>${data.message}</h6>
+                                                            <small class="text-muted">${new Date(data.createdAt).toLocaleString('vi-VN')}</small>
+                                                        </div>
+                                                        <div class="flex-shrink-0" title="Chọn bàn" style="cursor: pointer;" data-table-code="${data.tableCode}">
+                                                             <i class="bi bi-box-arrow-in-right fs-4"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="notification-footer">
+                                                        ${acknowledgedByHtml}
+                                                        ${buttonHtml}
+                                                    </div>
+                                                `;
+                    if (!data.isRead) {
+                        notifElement.classList.add('fw-bold');
+                    } else {
+                        notifElement.classList.add('is-read');
+                    }
+                    const ackBtn = notifElement.querySelector('.ack-btn');
+                    if (ackBtn) {
+                        ackBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            acknowledgeSingleNotification(e.currentTarget.dataset.id);
+                        });
+                    }
+                    notifElement.querySelector('[data-table-code]').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleTableSelect(e.currentTarget.dataset.tableCode);
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
+                        if (modal) modal.hide();
+                    });
+                    DOM.notificationList.appendChild(notifElement);
+                });
+                updateNotificationCount(unreadCount);
             }
 
-            async function loadInitialData() {
+            async function acknowledgeSingleNotification(notificationId) {
+                const btn = document.querySelector(`.ack-btn[data-id='${notificationId}']`);
+                if (!btn || btn.disabled) return;
+                btn.disabled = true;
                 try {
-                    const response = await fetch(`${API_URL_PREFIX}/GetPosData`);
-                    if (!response.ok) throw new Error('Không thể tải dữ liệu ban đầu.');
-                    const data = await response.json();
-                    allProducts = data.products;
-                    allCategories = data.categories;
-                    allAreas = data.areas;
-                    allTables = {};
-                    allAreas.forEach(area => {
-                        area.tables.forEach(table => {
-                            allTables[table.id] = { ...table, area: area.name };
-                        });
-                    });
-                    renderCategories();
-                    renderProducts(allProducts);
-
-                    Object.values(allTables).forEach(table => {
-                        if (table.request > 0) {
-                            updateTableRequestVisual(table.id, table.request);
+                    // FIX: Thêm token vào headers của yêu cầu POST
+                    await fetch(`/api/TableRequest/AcknowledgeNotification/${notificationId}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': antiForgeryToken
                         }
                     });
-
-                    await loadRecentNotifications();
-
                 } catch (error) {
-                    notyf.error(error.message);
+                    console.error("Failed to send acknowledge request:", error);
+                    notyf.error("Lỗi kết nối. Không thể tiếp nhận thông báo.");
+                    if (btn) btn.disabled = false;
                 }
             }
 
@@ -313,23 +492,84 @@
                 try {
                     const response = await fetch('/api/TableRequest/GetRecentNotifications');
                     const notifications = await response.json();
-                    DOM.notificationList.innerHTML = '';
-                    if (notifications.length > 0) {
-                        notifications.forEach(notif => addNotification(notif, false));
-                    }
-                    updateNotificationCount();
+                    renderNotificationList(notifications);
                 } catch (error) {
                     console.error("Failed to load notifications:", error);
+                }
+            }
+
+            function updateNotificationCount(unreadCount) {
+                if (unreadCount > 0) {
+                    DOM.notificationCount.textContent = unreadCount;
+                    DOM.notificationCount.classList.remove('d-none');
+                } else {
+                    DOM.notificationCount.classList.add('d-none');
+                }
+            }
+
+            function setupEventListeners() {
+                if (DOM.retailSaleBtn) DOM.retailSaleBtn.addEventListener('click', handleRetailSelect);
+                if (DOM.productSearchInput) DOM.productSearchInput.addEventListener('keyup', handleSearch);
+                if (DOM.clearCartBtn) DOM.clearCartBtn.addEventListener('click', confirmClearCart);
+                if (DOM.confirmClearCartBtn) DOM.confirmClearCartBtn.addEventListener('click', executeClearCart);
+                if (DOM.checkoutBtn) DOM.checkoutBtn.addEventListener('click', showCheckoutModal);
+                if (DOM.cashReceivedInput) DOM.cashReceivedInput.addEventListener('input', calculateChange);
+                if (DOM.confirmPaymentBtn) DOM.confirmPaymentBtn.addEventListener('click', handleConfirmPayment);
+                if (DOM.printInvoiceBtn) DOM.printInvoiceBtn.addEventListener('click', () => {
+                    finishPaymentProcess();
+                    window.print();
+                });
+                if (DOM.saveNoteBtn) DOM.saveNoteBtn.addEventListener('click', handleSaveNote);
+                if (DOM.confirmSplitBtn) DOM.confirmSplitBtn.addEventListener('click', handleConfirmSplit);
+                if (DOM.confirmMergeBtn) DOM.confirmMergeBtn.addEventListener('click', handleConfirmMerge);
+                DOM.mobileProductsTab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOM.mainWrapper.classList.remove('mobile-view-billing');
+                    DOM.mobileBillingTab.classList.remove('active');
+                    DOM.mobileProductsTab.classList.add('active');
+                });
+                DOM.mobileBillingTab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOM.mainWrapper.classList.add('mobile-view-billing');
+                    DOM.mobileProductsTab.classList.remove('active');
+                    DOM.mobileBillingTab.classList.add('active');
+                });
+                const notificationModalEl = document.getElementById('notificationModal');
+                if (notificationModalEl) {
+                    notificationModalEl.addEventListener('show.bs.modal', function () {
+                        const modalBody = notificationModalEl.querySelector('.modal-body');
+                        if (modalBody) {
+                            modalBody.scrollTop = 0;
+                        }
+                    });
+                }
+            }
+
+            async function saveCurrentOrder() {
+                if (currentTableId === RETAIL_CUSTOMER_ID || currentTableId === null) return;
+                const orderViewModel = {
+                    tableId: currentTableId,
+                    items: currentCart.map(item => ({ id: item.id, quantity: item.quantity, note: item.note || '', price: item.price }))
+                };
+                try {
+                    const response = await fetch(`${API_URL_PREFIX}/SaveOrder`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderViewModel)
+                    });
+                    if (!response.ok) {
+                        notyf.error('Lỗi khi lưu đơn hàng.');
+                    }
+                } catch (error) {
+                    notyf.error('Lỗi kết nối khi lưu đơn hàng.');
                 }
             }
 
             function updateTableRequestVisual(tableCode, requestStatus) {
                 const tableEl = document.querySelector(`.table-visual[data-table-id='${tableCode}']`);
                 if (!tableEl) return;
-
                 const oldIcon = tableEl.querySelector('.request-icon');
                 if (oldIcon) oldIcon.remove();
-
                 if (requestStatus === 1) {
                     const icon = document.createElement('i');
                     icon.className = 'bi bi-bell-fill request-icon shake text-warning';
@@ -338,96 +578,6 @@
                     const icon = document.createElement('i');
                     icon.className = 'bi bi-wallet-fill request-icon shake text-success';
                     tableEl.appendChild(icon);
-                }
-            }
-
-            function addNotification(data, isNew) {
-                DOM.noNotificationMessage.classList.add('d-none');
-
-                if (document.getElementById(`notif-${data.notificationId}`)) return;
-
-                const notifElement = document.createElement('li');
-                notifElement.className = 'list-group-item notification-item p-3';
-                notifElement.id = `notif-${data.notificationId}`;
-
-                const iconClass = data.requestType === 'Order' ? 'bi-bell-fill text-warning' : 'bi-wallet-fill text-success';
-
-                const acknowledgedByHtml = data.isRead && data.acknowledgedByUserName
-                    ? `<small class="text-muted ack-info">Đã tiếp nhận bởi: ${data.acknowledgedByUserName}</small>`
-                    : `<small class="text-muted ack-info d-none"></small>`;
-
-                const buttonHtml = !data.isRead
-                    ? `<button class="btn btn-sm btn-outline-primary ack-btn" data-id="${data.notificationId}">Tiếp nhận</button>`
-                    : `<button class="btn btn-sm btn-outline-primary ack-btn d-none" data-id="${data.notificationId}">Tiếp nhận</button>`;
-
-                notifElement.innerHTML = `
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <div class="me-3">
-                                    <h6 class="mb-1"><i class="bi ${iconClass} me-2"></i>${data.message}</h6>
-                                    <small class="text-muted">${new Date(data.createdAt).toLocaleString('vi-VN')}</small>
-                                </div>
-                                <div class="flex-shrink-0" title="Chọn bàn" style="cursor: pointer;" data-table-code="${data.tableCode}">
-                                     <i class="bi bi-box-arrow-in-right fs-4"></i>
-                                </div>
-                            </div>
-                            <div class="notification-footer">
-                                ${acknowledgedByHtml}
-                                ${buttonHtml}
-                            </div>
-                        `;
-
-                if (!data.isRead) {
-                    notifElement.classList.add('fw-bold');
-                } else {
-                    notifElement.classList.add('is-read');
-                }
-
-                notifElement.querySelector('.ack-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const notifId = e.currentTarget.dataset.id;
-                    acknowledgeSingleNotification(notifId);
-                });
-
-                notifElement.querySelector('[data-table-code]').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleTableSelect(e.currentTarget.dataset.tableCode);
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
-                    if (modal) modal.hide();
-                });
-
-                DOM.notificationList.prepend(notifElement);
-
-                if (isNew) {
-                    notyf.success(data.message);
-                }
-                updateNotificationCount();
-            }
-
-            function updateNotificationCount() {
-                const unreadCount = DOM.notificationList.querySelectorAll('.notification-item:not(.is-read)').length;
-                if (unreadCount > 0) {
-                    DOM.notificationCount.textContent = unreadCount;
-                    DOM.notificationCount.classList.remove('d-none');
-                } else {
-                    DOM.notificationCount.classList.add('d-none');
-                }
-                DOM.noNotificationMessage.classList.toggle('d-none', DOM.notificationList.children.length > 0 && DOM.notificationList.children[0].id !== 'no-notification-message');
-            }
-
-            async function acknowledgeSingleNotification(notificationId) {
-                try {
-                    const btn = document.querySelector(`.ack-btn[data-id='${notificationId}']`);
-                    if (btn) btn.disabled = true;
-
-                    await fetch(`/api/TableRequest/AcknowledgeNotification/${notificationId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                    });
-                } catch (error) {
-                    console.error("Failed to acknowledge notification:", error);
-                    notyf.error("Lỗi khi tiếp nhận thông báo.");
-                    const btn = document.querySelector(`.ack-btn[data-id='${notificationId}']`);
-                    if (btn) btn.disabled = false;
                 }
             }
 
@@ -450,39 +600,31 @@
                 }
             }
 
-            async function saveCurrentOrder() {
-                if (currentTableId === RETAIL_CUSTOMER_ID || currentTableId === null) return;
-                const orderViewModel = {
-                    tableId: currentTableId,
-                    statusPayment: allTables[currentTableId]?.status === 'paid' ? 1 : 0,
-                    items: currentCart.map(item => ({ id: item.id, quantity: item.quantity, note: item.note || '', price: item.price }))
-                };
+            async function loadInitialData() {
                 try {
-                    await fetch(`${API_URL_PREFIX}/SaveOrder`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(orderViewModel)
+                    const response = await fetch(`${API_URL_PREFIX}/GetPosData`);
+                    if (!response.ok) throw new Error('Không thể tải dữ liệu ban đầu.');
+                    const data = await response.json();
+                    allProducts = data.products;
+                    allCategories = data.categories;
+                    allAreas = data.areas;
+                    allTables = {};
+                    allAreas.forEach(area => {
+                        area.tables.forEach(table => {
+                            allTables[table.id] = { ...table, area: area.name };
+                        });
                     });
+                    renderCategories();
+                    renderProducts(allProducts);
+                    Object.values(allTables).forEach(table => {
+                        if (table.request > 0) {
+                            updateTableRequestVisual(table.id, table.request);
+                        }
+                    });
+                    await loadRecentNotifications();
                 } catch (error) {
-                    notyf.error('Lỗi kết nối khi lưu đơn hàng.');
+                    notyf.error(error.message);
                 }
-            }
-
-            function renderProducts(productsToRender) {
-                if (!DOM.productList) return;
-                DOM.productList.innerHTML = '';
-                if (!productsToRender || productsToRender.length === 0) {
-                    DOM.productList.innerHTML = '<div class="col-12"><p class="text-center text-muted mt-4">Không tìm thấy sản phẩm.</p></div>';
-                    return;
-                }
-                productsToRender.forEach(product => {
-                    const productEl = document.createElement('div');
-                    productEl.className = 'col-6 col-lg-5-items';
-                    const imageUrl = product.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh';
-                    productEl.innerHTML = `<div class="card product-card h-100"><img src="${imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh'" class="card-img-top" alt="${product.name}"><div class="card-body d-flex flex-column"><h5 class="card-title flex-grow-1">${product.name}</h5><p class="card-text">${formatCurrency(product.price)}</p></div></div>`;
-                    productEl.addEventListener('click', () => addProductToCart(product.id));
-                    DOM.productList.appendChild(productEl);
-                });
             }
 
             function renderCategories() {
@@ -591,7 +733,7 @@
                         const noteHtml = item.note ? `<div class="item-note" data-bs-toggle="tooltip" data-bs-placement="top" title="${item.note}">Ghi chú: ${item.note}</div>` : '';
                         const itemEl = document.createElement('div');
                         itemEl.className = 'order-item mb-3';
-                        const imageUrl = product.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh';
+                        const imageUrl = (product.image || 'https://placehold.co/400x300/ccc/fff?text=Lỗi+ảnh').replace(/\\/g, '/');
                         itemEl.innerHTML = ` <img src="${imageUrl}" class="rounded" width="50" height="50" style="object-fit:cover; flex-shrink: 0;" alt="${product.name}"> <div class="order-item-details"> <div class="fw-bold small">${product.name}</div> ${noteHtml} </div> <div class="order-item-controls"> <button class="btn btn-sm p-0 add-note-btn" data-id="${item.cartItemId}"><i class="bi bi-pencil-square text-muted"></i></button> <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 decrease-qty ms-2" style="width:25px;height:25px;" data-id="${item.cartItemId}">-</button> <span class="px-2 fw-bold">${item.quantity}</span> <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 increase-qty" style="width:25px;height:25px;" data-id="${item.cartItemId}">+</button> </div> <button class="btn btn-sm text-danger delete-btn ms-2" style="flex-shrink: 0;" data-id="${item.cartItemId}"><i class="bi bi-trash3-fill"></i></button> `;
                         DOM.orderItemsContainer.appendChild(itemEl);
                     });
@@ -646,35 +788,6 @@
                 if (mergeTablesBtn) {
                     mergeTablesBtn.classList.toggle('disabled', !canPerformTableActions);
                 }
-            }
-
-            function setupEventListeners() {
-                if (DOM.retailSaleBtn) DOM.retailSaleBtn.addEventListener('click', handleRetailSelect);
-                if (DOM.productSearchInput) DOM.productSearchInput.addEventListener('keyup', handleSearch);
-                if (DOM.clearCartBtn) DOM.clearCartBtn.addEventListener('click', confirmClearCart);
-                if (DOM.confirmClearCartBtn) DOM.confirmClearCartBtn.addEventListener('click', executeClearCart);
-                if (DOM.checkoutBtn) DOM.checkoutBtn.addEventListener('click', showCheckoutModal);
-                if (DOM.cashReceivedInput) DOM.cashReceivedInput.addEventListener('input', calculateChange);
-                if (DOM.confirmPaymentBtn) DOM.confirmPaymentBtn.addEventListener('click', handleConfirmPayment);
-                if (DOM.printInvoiceBtn) DOM.printInvoiceBtn.addEventListener('click', () => {
-                    finishPaymentProcess();
-                    window.print();
-                });
-                if (DOM.saveNoteBtn) DOM.saveNoteBtn.addEventListener('click', handleSaveNote);
-                if (DOM.confirmSplitBtn) DOM.confirmSplitBtn.addEventListener('click', handleConfirmSplit);
-                if (DOM.confirmMergeBtn) DOM.confirmMergeBtn.addEventListener('click', handleConfirmMerge);
-                DOM.mobileProductsTab.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    DOM.mainWrapper.classList.remove('mobile-view-billing');
-                    DOM.mobileBillingTab.classList.remove('active');
-                    DOM.mobileProductsTab.classList.add('active');
-                });
-                DOM.mobileBillingTab.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    DOM.mainWrapper.classList.add('mobile-view-billing');
-                    DOM.mobileProductsTab.classList.remove('active');
-                    DOM.mobileBillingTab.classList.add('active');
-                });
             }
 
             function updateUIForNewTable() {
@@ -736,14 +849,14 @@
                 currentCart = [];
                 updateUIForNewTable();
                 renderCart();
-                tableModal.hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
+                if (modal) {
+                    modal.hide();
+                }
             }
 
             function addProductToCart(productId) {
-                if (!isDataLoaded) {
-                    notyf.error('Dữ liệu chưa sẵn sàng, vui lòng đợi.');
-                    return;
-                }
+                if (!isDataLoaded) { notyf.error('Dữ liệu chưa sẵn sàng, vui lòng đợi.'); return; }
                 if (currentTableId === null && currentTableName !== RETAIL_CUSTOMER_NAME) {
                     notyf.error('Vui lòng chọn bàn trước khi thêm món!');
                     renderAreaAndTableSelection(DOM.areaTabs, DOM.areaTabContent, handleTableSelect, 'main-');
@@ -758,15 +871,10 @@
                 } else {
                     currentCart.push({
                         cartItemId: Date.now() + Math.random(),
-                        id: productId,
-                        name: product.name,
-                        price: product.price,
-                        quantity: 1,
-                        note: '',
-                        image: product.image
+                        id: productId, name: product.name, price: product.price,
+                        quantity: 1, note: '', image: product.image
                     });
                 }
-                notyf.success(`Đã thêm: ${product.name}`);
                 renderCart();
                 saveCurrentOrder();
             }
@@ -775,7 +883,9 @@
                 const itemIndex = currentCart.findIndex(i => i.cartItemId == cartItemId);
                 if (itemIndex > -1) {
                     currentCart[itemIndex].quantity += change;
-                    if (currentCart[itemIndex].quantity <= 0) currentCart.splice(itemIndex, 1);
+                    if (currentCart[itemIndex].quantity <= 0) {
+                        currentCart.splice(itemIndex, 1);
+                    }
                     renderCart();
                     saveCurrentOrder();
                 }
@@ -802,14 +912,9 @@
                 const itemIndex = currentCart.findIndex(i => i.cartItemId == cartItemId);
                 if (itemIndex > -1) {
                     const originalItem = currentCart[itemIndex];
-                    if (originalItem.quantity > 1 && newNote && !originalItem.note) {
+                    if (originalItem.quantity > 1 && newNote && (originalItem.note || '') !== newNote) {
                         originalItem.quantity--;
-                        const newItemWithNote = {
-                            ...originalItem,
-                            cartItemId: Date.now() + Math.random(),
-                            quantity: 1,
-                            note: newNote
-                        };
+                        const newItemWithNote = { ...originalItem, cartItemId: Date.now() + Math.random(), quantity: 1, note: newNote };
                         currentCart.push(newItemWithNote);
                     } else {
                         originalItem.note = newNote;
@@ -827,25 +932,14 @@
             }
 
             async function executeClearCart() {
-                const clearedTableId = currentTableId;
                 currentCart = [];
+                renderCart();
                 await saveCurrentOrder();
-                if (allTables[clearedTableId]) {
-                    allTables[clearedTableId].status = 'available';
-                    updateTableVisuals(clearedTableId, 'available');
-                }
                 confirmClearModal.hide();
                 notyf.success(`Đã xóa đơn hàng của ${currentTableName}.`);
-                resetToInitialState();
-            }
-
-            function resetToInitialState() {
-                currentTableId = null;
-                currentTableName = null;
-                currentCart = [];
-                isFinalPayment = false;
-                updateUIForNewTable();
-                renderCart();
+                if (currentTableId !== RETAIL_CUSTOMER_ID) {
+                    resetToInitialState();
+                }
             }
 
             function showSwitchTableModal() {
@@ -863,11 +957,7 @@
 
             async function handleSwitchTableSelect(toTableCode) {
                 try {
-                    const response = await fetch(`${API_URL_PREFIX}/MoveTable`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fromTableCode: currentTableId, toTableCode: toTableCode })
-                    });
+                    const response = await fetch(`${API_URL_PREFIX}/MoveTable`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromTableCode: currentTableId, toTableCode: toTableCode }) });
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.message || "Lỗi chuyển bàn.");
@@ -914,11 +1004,7 @@
                 }
                 const checkoutVM = { tableCode: currentTableId, cashReceived: parseFloat(DOM.cashReceivedInput.value) || 0 };
                 try {
-                    const response = await fetch(`${API_URL_PREFIX}/Checkout`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(checkoutVM)
-                    });
+                    const response = await fetch(`${API_URL_PREFIX}/Checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(checkoutVM) });
                     if (!response.ok) throw new Error("Lỗi khi xác nhận thanh toán.");
                     const result = await response.json();
                     notyf.success(result.message);
@@ -997,7 +1083,7 @@
             function handleMoveSplitItem(cartItemId, moveType) {
                 const toDestination = moveType === 'one' || moveType === 'all';
                 let sourceList = toDestination ? splitSourceItems : splitDestinationItems;
-                let destList = toDestination ? splitDestinationItems : splitSourceItems;
+                let destList = toDestination ? splitDestinationItems : sourceList;
                 const itemIndex = sourceList.findIndex(i => i.cartItemId == cartItemId);
                 if (itemIndex === -1) return;
                 const itemToMove = sourceList[itemIndex];

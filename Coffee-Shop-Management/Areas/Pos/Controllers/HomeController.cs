@@ -26,6 +26,42 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
             _hubContext = hubContext;
         }
 
+        // === HÀM HELPER MỚI: DÙNG ĐỂ PHÁT TÍN HIỆU CẬP NHẬT ĐƠN HÀNG ===
+        private async Task BroadcastOrderUpdate(string tableCode)
+        {
+            var updatedOrder = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .AsNoTracking() // Dùng AsNoTracking để tăng hiệu suất khi chỉ đọc dữ liệu
+                .Where(o => o.TableCode == tableCode && o.StatusPayment != 1)
+                .FirstOrDefaultAsync();
+
+            object orderData;
+            if (updatedOrder != null)
+            {
+                orderData = new
+                {
+                    tableCode = updatedOrder.TableCode,
+                    // Ánh xạ dữ liệu chi tiết đơn hàng sang một định dạng đơn giản
+                    items = updatedOrder.OrderDetails.Select(od => new OrderItemViewModel
+                    {
+                        Id = od.ProductId,
+                        Quantity = od.Quantity,
+                        Price = od.UnitPrice,
+                        Note = od.Note
+                    }).ToList()
+                };
+            }
+            else
+            {
+                // Nếu bàn đã được thanh toán hoặc dọn sạch, gửi một danh sách món trống
+                orderData = new { tableCode, items = new List<OrderItemViewModel>() };
+            }
+
+            // Gửi sự kiện 'OrderUpdated' tới TẤT CẢ các client
+            await _hubContext.Clients.All.SendAsync("OrderUpdated", orderData);
+        }
+
+
         public IActionResult Index()
         {
             return View();
@@ -61,14 +97,14 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                 {
                     Name = a.Name,
                     Tables = a.Tables.Where(t => t.IsActive)
-                                      .OrderBy(t => t.DisplayOrder)
-                                      .Select(t => new TableViewModel
-                                      {
-                                          Id = t.TableCode,
-                                          Name = t.NameTable,
-                                          Status = t.Orders.Any(o => o.StatusPayment != 1) ? "occupied" : "available",
-                                          Request = t.Request 
-                                      }).ToList()
+                                     .OrderBy(t => t.DisplayOrder)
+                                     .Select(t => new TableViewModel
+                                     {
+                                         Id = t.TableCode,
+                                         Name = t.NameTable,
+                                         Status = t.Orders.Any(o => o.StatusPayment != 1) ? "occupied" : "available",
+                                         Request = t.Request
+                                     }).ToList()
                 }).ToListAsync();
 
             var model = new PosDataViewModel
@@ -178,6 +214,10 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                 }
             }
             await _context.SaveChangesAsync();
+
+            // === BROADCAST: Gửi cập nhật chi tiết đơn hàng cho tất cả client ===
+            await BroadcastOrderUpdate(model.TableId);
+
             return Ok(new { success = true, message = "Lưu đơn hàng thành công!" });
         }
 
@@ -198,6 +238,9 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
 
             await _context.SaveChangesAsync();
             await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = table.TableCode, newStatus = "available" });
+
+            // === BROADCAST: Bàn đã thanh toán xong, gửi đơn hàng trống ===
+            await BroadcastOrderUpdate(model.TableCode);
 
             return Ok(new { success = true, message = "Thanh toán thành công!" });
         }
@@ -225,6 +268,10 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
 
             await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = fromTable.TableCode, newStatus = "available" });
             await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = toTable.TableCode, newStatus = "occupied" });
+
+            // === BROADCAST: Cập nhật cho cả 2 bàn liên quan ===
+            await BroadcastOrderUpdate(model.FromTableCode); // Bàn nguồn giờ đã trống
+            await BroadcastOrderUpdate(model.ToTableCode);   // Bàn đích có đơn hàng mới
 
             return Ok(new { success = true, message = $"Đã chuyển đơn từ {fromTable.NameTable} sang {toTable.NameTable}" });
         }
@@ -268,11 +315,9 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                     var product = await _context.Products.FindAsync(itemToMove.Id);
                     if (product == null) continue;
 
-                    // === FIX: Sửa đổi logic so sánh Note để an toàn hơn ===
                     var sourceDetail = sourceOrder.OrderDetails.FirstOrDefault(d => d.ProductId == itemToMove.Id && (d.Note ?? string.Empty) == itemToMove.Note);
                     if (sourceDetail == null || sourceDetail.Quantity < itemToMove.Quantity) throw new Exception($"Không đủ số lượng sản phẩm '{product.Name}' để tách.");
 
-                    // === FIX: Sửa đổi logic so sánh Note để an toàn hơn ===
                     var destinationDetail = destinationOrder.OrderDetails.FirstOrDefault(d => d.ProductId == itemToMove.Id && (d.Note ?? string.Empty) == itemToMove.Note);
 
                     if (destinationDetail != null)
@@ -326,6 +371,10 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                     await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = model.SourceTableCode, newStatus = "available" });
                 }
 
+                // === BROADCAST: Cập nhật cho cả 2 bàn liên quan ===
+                await BroadcastOrderUpdate(model.SourceTableCode);
+                await BroadcastOrderUpdate(model.DestinationTableCode);
+
                 return Ok(new { success = true, message = "Tách/Gộp món thành công!" });
             }
             catch (Exception ex)
@@ -363,7 +412,6 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                     if (sourceOrder == null) continue;
                     foreach (var sourceDetail in sourceOrder.OrderDetails)
                     {
-                        // === FIX: Sửa đổi logic so sánh Note để an toàn hơn, tránh lỗi 500 ===
                         var destinationDetail = destinationOrder.OrderDetails.FirstOrDefault(d =>
                             d.ProductId == sourceDetail.ProductId &&
                             (d.Note ?? string.Empty) == (sourceDetail.Note ?? string.Empty));
@@ -391,10 +439,15 @@ namespace Coffee_Shop_Management.Areas.Pos.Controllers
                 await transaction.CommitAsync();
 
                 await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = destinationTable.TableCode, newStatus = "occupied" });
+
+                // === BROADCAST: Cập nhật cho tất cả các bàn liên quan ===
                 foreach (var sourceCode in model.SourceTableCodes)
                 {
                     await _hubContext.Clients.All.SendAsync("ReceiveTableStatusUpdate", new { tableId = sourceCode, newStatus = "available" });
+                    await BroadcastOrderUpdate(sourceCode);
                 }
+                await BroadcastOrderUpdate(model.DestinationTableCode);
+
 
                 return Ok(new { success = true, message = "Gộp bàn thành công!" });
             }
